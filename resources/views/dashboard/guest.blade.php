@@ -1,58 +1,71 @@
 <x-guest-layout>
-    <div class="min-h-screen bg-[#f5f4f0] text-neutral-900 font-sans antialiased flex">
 
-        <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 z-30">
+    <div class="min-h-screen bg-[#faf9f5] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900">
+
+        <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 z-30 relative shadow-2xl">
             <div>
-                <div class="p-8 border-b border-neutral-900 text-center">
-                    <h2 class="text-2xl font-serif italic tracking-widest text-white select-none">Oasis</h2>
-                    <p class="text-[9px] uppercase tracking-[0.3em] text-amber-500 font-bold mt-1">Guest Portal</p>
+                <div class="p-8 border-b border-neutral-900 text-center relative group">
+                    <h2 class="text-3xl font-serif tracking-[0.2em] text-white uppercase select-none transition-colors group-hover:text-amber-400">Oasis</h2>
+                    <p class="text-[9px] uppercase tracking-[0.4em] text-amber-500 font-bold mt-1">Guest Portal</p>
+                    <div class="w-6 h-px bg-amber-500/30 mx-auto mt-4 transition-all group-hover:w-16"></div>
                 </div>
 
-                <nav class="p-4 space-y-1">
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold bg-neutral-900 text-amber-400 border-l-2 border-amber-500 rounded-none transition-all">
-                        <i class="fa-solid fa-gauge-high w-4"></i> Dashboard
+                <nav class="p-4 pt-6 space-y-1">
+                    <span class="px-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Main Ledger</span>
+                    
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-bold uppercase tracking-widest bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500 transition-all">
+                        <i class="fa-solid fa-square-poll-horizontal text-sm"></i> Dashboard
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-calendar-check w-4"></i> My Booking
+                    
+                    <a href="{{ route('bookings.my') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-medium uppercase tracking-widest hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700 transition-all">
+                        <i class="fa-solid fa-calendar-days text-sm"></i> My Bookings
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-bed w-4"></i> My Stay
+                    
+                    <a href="{{ route('stay.my') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-medium uppercase tracking-widest hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700 transition-all">
+                        <i class="fa-solid fa-key text-sm"></i> My Stay
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-bell-concierge w-4"></i> Room Service
+
+                    <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">In-House Services</span>
+                    
+                    <a href="{{ route('room.service') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-medium uppercase tracking-widest hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700 transition-all">
+                        <i class="fa-solid fa-bell-concierge text-sm"></i> Room Service
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-utensils w-4"></i> Restaurant Orders
+                    
+                    <a href="{{ route('restaurant.orders') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-medium uppercase tracking-widest hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700 transition-all flex justify-between">
+                        <span class="flex items-center gap-3.5"><i class="fa-solid fa-utensils text-sm"></i> Restaurant</span>
+                        @if($activeOrders->isNotEmpty())
+                            <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
+                        @endif
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-spa w-4"></i> Facilities Booking
+                    
+                    <a href="{{ route('facilities.booking') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-medium uppercase tracking-widest hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700 transition-all">
+                        <i class="fa-solid fa-spa text-sm"></i> Facilities
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-envelope w-4"></i> Messages <span class="ms-auto bg-amber-600 text-white text-[9px] px-1.5 py-0.5 font-bold">2</span>
-                    </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-credit-card w-4"></i> Billing & Payments
-                    </a>
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                        <i class="fa-solid fa-sliders w-4"></i> Profile Settings
+
+                    <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Account Control</span>
+                    
+                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs font-medium uppercase tracking-widest hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700 transition-all">
+                        <i class="fa-solid fa-sliders text-sm"></i> Profile Settings
                     </a>
                 </nav>
             </div>
 
             <div class="p-4 border-t border-neutral-900 space-y-4">
-                <div class="p-3 bg-neutral-900/50 border border-neutral-900 text-neutral-400 text-left">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] uppercase tracking-wider font-bold text-neutral-500">Bali, Indonesia</span>
-                        <span class="text-amber-500 text-xs"><i class="fa-solid fa-sun animate-spin-slow"></i></span>
+                <div class="p-4 bg-neutral-900/40 border border-neutral-900/60 rounded-none flex items-center justify-between">
+                    <div>
+                        <span class="text-[9px] uppercase tracking-widest font-bold text-neutral-500 block">Nusa Dua, Bali</span>
+                        <span class="text-xs text-neutral-400 font-medium mt-0.5 inline-block">Tropical Clearness</span>
                     </div>
-                    <div class="text-xl font-light font-serif text-white mt-1">28°C</div>
-                    <div class="text-[9px] uppercase tracking-widest font-medium mt-0.5 text-neutral-500">Local Time: 10:30 AM</div>
+                    <div class="text-right">
+                        <div class="text-xl font-light font-serif text-white tracking-wide">{{ $temperature }}</div>
+                        <span class="text-amber-500 text-[10px]"><i class="fa-solid fa-sun mr-1"></i> Live</span>
+                    </div>
                 </div>
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-bold text-red-400 hover:bg-red-950/20 transition-all text-left">
-                        <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Logout
+                    <button type="submit" class="w-full flex items-center gap-3.5 px-4 py-3 text-xs uppercase tracking-widest font-bold text-red-400/80 hover:text-red-400 hover:bg-red-950/20 transition-all text-left">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i> Logout Portal
                     </button>
                 </form>
             </div>
@@ -60,163 +73,158 @@
 
         <main class="flex-1 flex flex-col h-screen overflow-y-auto">
             
-            <header class="bg-white border-b border-neutral-200 px-8 py-4 sticky top-0 z-20 flex justify-between items-center h-20">
+            <header class="bg-white border-b border-neutral-200/70 px-10 py-4 sticky top-0 z-20 flex justify-between items-center h-20">
                 <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Welcome Back,</span>
-                    <h1 class="text-lg font-serif text-neutral-900 font-medium leading-none mt-1">{{ auth()->user()->name }}</h1>
+                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">Welcome Back,</span>
+                    <h1 class="text-xl font-serif text-neutral-900 font-normal tracking-wide mt-0.5">{{ auth()->user()->name }}</h1>
                 </div>
                 <div class="flex items-center space-x-6">
-                    <span class="border border-amber-700/30 bg-amber-50 text-amber-900 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-none">
-                        <i class="fa-solid fa-crown mr-1"></i> Gold Member
+                    <span class="border border-amber-700/20 bg-amber-50/60 text-amber-900 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 flex items-center gap-1.5 select-none">
+                        <i class="fa-solid fa-crown text-amber-700 text-xs"></i> Oasis Patron Member
                     </span>
-                    <button class="text-neutral-400 hover:text-neutral-900 relative transition-colors">
-                        <i class="fa-regular fa-bell text-sm"></i>
-                        <span class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-amber-600 rounded-full animate-pulse"></span>
-                    </button>
-                    <div class="h-8 w-px bg-neutral-200"></div>
-                    <a href="{{ route('home') }}" class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors">
-                        Exit Portal <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+                    <div class="h-6 w-px bg-neutral-200"></div>
+                    <a href="{{ route('home') }}" class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1.5 group">
+                        Exit Portal <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-neutral-400 group-hover:text-neutral-900 transition-colors"></i>
                     </a>
                 </div>
             </header>
 
-            <div class="p-8 space-y-8 flex-1">
+            <div class="p-10 space-y-8 flex-1">
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-                    <div class="lg:col-span-2 relative bg-neutral-900 overflow-hidden border border-neutral-200 flex flex-col justify-end p-8 min-h-[240px]">
-                        <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1000" alt="Resort Atmosphere" class="absolute inset-0 w-full h-full object-cover opacity-50">
+                    <div class="lg:col-span-2 relative bg-neutral-950 overflow-hidden border border-neutral-200/40 flex flex-col justify-end p-8 min-h-[260px] shadow-sm group">
+                        <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1200&auto=format&fit=crop" alt="Resort Atmosphere" class="absolute inset-0 w-full h-full object-cover opacity-45 scale-102 group-hover:scale-100 transition-transform duration-[4000ms]">
+                        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-transparent"></div>
                         <div class="relative z-10 text-white space-y-2">
-                            <h2 class="text-3xl font-serif tracking-wide">Enjoy your stay at Oasis Hotel</h2>
-                            <p class="text-neutral-300 text-xs font-medium max-w-md leading-relaxed">We hope you have a memorable and comfortable experience. Contact our 24/7 internal concierge line for any custom room allocations.</p>
+                            <span class="text-[9px] font-bold uppercase tracking-[0.3em] text-amber-400 block">Sanctuary Experience</span>
+                            <h2 class="text-3xl font-serif tracking-wide font-light">Where Luxury Meets Serenity</h2>
+                            <p class="text-neutral-300 text-xs font-normal max-w-md leading-relaxed">We hope you have a memorable stay. Contact our internal concierge desk anytime for bespoke activity coordinates, transport arrangements, or technical support.</p>
                         </div>
                     </div>
 
-                    <div class="bg-neutral-900 text-white p-6 border border-neutral-950 rounded-none flex flex-col justify-between">
-                        <div class="flex justify-between items-center border-b border-neutral-800 pb-3 mb-4">
-                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Current Reservation</h3>
-                            <span class="bg-emerald-900 text-emerald-300 border border-emerald-800 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Confirmed</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-y-4 gap-x-2 text-xs font-medium text-neutral-400">
+                    <div class="bg-neutral-900 text-white p-6 border border-neutral-800 rounded-none flex flex-col justify-between shadow-md relative">
+                        @if($bookings->isNotEmpty())
+                            @php $latest = $bookings->first(); @endphp
                             <div>
-                                <span class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-0.5">Check-In</span>
-                                <span class="text-neutral-100 font-bold">May 24, 2026</span>
+                                <div class="flex justify-between items-center border-b border-neutral-800 pb-3.5 mb-4">
+                                    <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Current Reservation</h3>
+                                    <span class="bg-amber-950/60 text-amber-400 border border-amber-900/60 text-[8px] font-bold uppercase tracking-[0.15em] px-2.5 py-0.5">{{ $latest->status }}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-y-4 gap-x-4 text-xs font-medium text-neutral-400">
+                                    <div>
+                                        <span class="block text-[8px] font-bold uppercase tracking-widest text-neutral-500 mb-0.5">Check-In Date</span>
+                                        <span class="text-neutral-100 font-bold tracking-wide">{{ date('d M Y', strtotime($latest->check_in_date)) }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-[8px] font-bold uppercase tracking-widest text-neutral-500 mb-0.5">Check-Out Date</span>
+                                        <span class="text-neutral-100 font-bold tracking-wide">{{ date('d M Y', strtotime($latest->check_out_date)) }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-[8px] font-bold uppercase tracking-widest text-neutral-500 mb-0.5">Suite Designation</span>
+                                        <span class="text-neutral-100 font-bold line-clamp-1 uppercase tracking-wide">{{ $latest->type_name ?? 'Premium Enclave' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-[8px] font-bold uppercase tracking-widest text-neutral-500 mb-0.5">Room Inventory</span>
+                                        <span class="text-amber-400 font-bold tracking-wide">Suite {{ $latest->room_number ?? 'Assigning...' }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <span class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-0.5">Check-Out</span>
-                                <span class="text-neutral-100 font-bold">May 28, 2026</span>
+                            <div class="pt-4 border-t border-neutral-800 mt-4 flex justify-between items-center">
+                                <span class="text-[10px] text-neutral-500 uppercase tracking-wider">ID: #OA-{{ $latest->id }}</span>
+                                <a href="{{ route('bookings.my') }}" class="text-[10px] font-bold uppercase tracking-widest text-white underline hover:text-amber-400 transition-colors">Manage Stay &rarr;</a>
                             </div>
-                            <div>
-                                <span class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-0.5">Room Type</span>
-                                <span class="text-neutral-100 font-bold line-clamp-1">Deluxe Ocean Horizon</span>
+                        @else
+                            <div class="text-center py-8 my-auto space-y-4">
+                                <div class="w-10 h-10 border border-neutral-800 rounded-full flex items-center justify-center mx-auto text-neutral-500">
+                                    <i class="fa-solid fa-bed text-sm"></i>
+                                </div>
+                                <p class="text-xs text-neutral-400 max-w-[200px] mx-auto leading-relaxed">No active luxury room reservation found for your account.</p>
+                                <a href="{{ route('home') }}#booking-bar" class="inline-block text-[9px] font-bold uppercase tracking-widest bg-white hover:bg-amber-400 text-neutral-950 py-2.5 px-5 transition-colors">Book A Suite Now</a>
                             </div>
-                            <div>
-                                <span class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-0.5">Room Number</span>
-                                <span class="text-amber-400 font-bold">Suite 1205</span>
-                            </div>
-                        </div>
-                        <button class="w-full bg-white hover:bg-neutral-200 text-neutral-950 font-bold text-[10px] uppercase tracking-widest py-2.5 mt-5 rounded-none transition-colors">
-                            View Booking Details
-                        </button>
+                        @endif
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                    <div class="bg-white border border-neutral-200 p-4 text-center cursor-pointer hover:border-neutral-400 transition-all group">
-                        <div class="text-amber-800 text-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-bell-concierge"></i></div>
-                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-800 mt-2">Room Service</h4>
+                    <a href="{{ route('room.service') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-900 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
+                        <div class="text-neutral-800 text-lg group-hover:text-amber-700 transition-colors"><i class="fa-solid fa-bell-concierge"></i></div>
+                        <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Room Service</h4>
+                    </a>
+                    <a href="{{ route('restaurant.orders') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-900 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
+                        <div class="text-neutral-800 text-lg group-hover:text-amber-700 transition-colors"><i class="fa-solid fa-utensils"></i></div>
+                        <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Restaurant</h4>
+                    </a>
+                    <a href="{{ route('facilities.booking') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-900 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
+                        <div class="text-neutral-800 text-lg group-hover:text-amber-700 transition-colors"><i class="fa-solid fa-spa"></i></div>
+                        <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Facilities</h4>
+                    </a>
+                    <div class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-900 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm cursor-pointer">
+                        <div class="text-neutral-800 text-lg group-hover:text-amber-700 transition-colors"><i class="fa-solid fa-feather-pointed"></i></div>
+                        <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Special Requests</h4>
                     </div>
-                    <div class="bg-white border border-neutral-200 p-4 text-center cursor-pointer hover:border-neutral-400 transition-all group">
-                        <div class="text-amber-800 text-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-utensils"></i></div>
-                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-800 mt-2">Restaurant</h4>
+                    <div class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-900 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm cursor-pointer">
+                        <div class="text-neutral-800 text-lg group-hover:text-amber-700 transition-colors"><i class="fa-solid fa-message"></i></div>
+                        <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Messages Center</h4>
                     </div>
-                    <div class="bg-white border border-neutral-200 p-4 text-center cursor-pointer hover:border-neutral-400 transition-all group">
-                        <div class="text-amber-800 text-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-spa"></i></div>
-                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-800 mt-2">Facilities</h4>
-                    </div>
-                    <div class="bg-white border border-neutral-200 p-4 text-center cursor-pointer hover:border-neutral-400 transition-all group">
-                        <div class="text-amber-800 text-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-feather-pointed"></i></div>
-                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-800 mt-2">Special Requests</h4>
-                    </div>
-                    <div class="bg-white border border-neutral-200 p-4 text-center cursor-pointer hover:border-neutral-400 transition-all group">
-                        <div class="text-amber-800 text-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-message"></i></div>
-                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-800 mt-2">Messages</h4>
-                    </div>
-                    <div class="bg-white border border-neutral-200 p-4 text-center cursor-pointer hover:border-neutral-400 transition-all group">
-                        <div class="text-amber-800 text-lg group-hover:scale-105 transition-transform"><i class="fa-solid fa-receipt"></i></div>
-                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-800 mt-2">Billing Matrix</h4>
-                    </div>
+                    <a href="{{ route('billing.matrix') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-900 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
+                        <div class="text-neutral-800 text-lg group-hover:text-amber-700 transition-colors"><i class="fa-solid fa-receipt"></i></div>
+                        <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Billing Matrix</h4>
+                    </a>
                 </div>
 
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
                     
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none space-y-4">
-                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Upcoming Activities</h3>
-                            <a href="#" class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold hover:text-neutral-900 underline">View All</a>
+                    <div class="bg-white border border-neutral-200/80 p-6 shadow-sm rounded-none space-y-4">
+                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3.5">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-amber-700 rounded-full"></span> Your Active Manifest Stays
+                            </h3>
+                            <span class="text-[10px] bg-neutral-50 border px-2.5 py-0.5 text-neutral-500 font-mono font-bold">{{ $bookings->count() }} Total Tracked</span>
                         </div>
-                        <div class="space-y-4 divide-y divide-neutral-100">
-                            <div class="flex items-center gap-4 pt-3 first:pt-0">
-                                <img src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=150" alt="Sunset Dinner" class="w-12 h-12 object-cover rounded-none">
-                                <div class="flex-1">
-                                    <h4 class="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Sunset Dinner by Beach</h4>
-                                    <p class="text-[10px] text-neutral-400 font-medium mt-0.5">May 25, 2026 &bull; 07:00 PM</p>
+                        <div class="divide-y divide-neutral-100">
+                            @forelse($bookings as $b)
+                                <div class="flex items-center justify-between py-4 first:pt-0 last:pb-0 group/row">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wide text-neutral-900 transition-colors group-hover/row:text-amber-800">#OA-{{ $b->id }} &bull; {{ $b->type_name ?? 'Deluxe Room' }}</h4>
+                                        <p class="text-[10px] text-neutral-400 font-medium mt-1">Schedule Matrix: <span class="text-neutral-600 font-bold">{{ date('d M Y', strtotime($b->check_in_date)) }}</span> &rarr; <span class="text-neutral-600 font-bold">{{ date('d M Y', strtotime($b->check_out_date)) }}</span></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-mono font-bold text-neutral-900 block">Rp {{ number_format($b->total_price, 0, ',', '.') }}</span>
+                                        <span class="text-[8px] uppercase font-bold tracking-widest inline-block px-1.5 py-0.2 mt-1 {{ $b->status === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-100' }}">{{ $b->status }}</span>
+                                    </div>
                                 </div>
-                                <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Confirmed</span>
-                            </div>
-                            <div class="flex items-center gap-4 pt-3">
-                                <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=150" alt="Spa and Health" class="w-12 h-12 object-cover rounded-none">
-                                <div class="flex-1">
-                                    <h4 class="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Couple Spa Deep Healing</h4>
-                                    <p class="text-[10px] text-neutral-400 font-medium mt-0.5">May 26, 2026 &bull; 11:00 AM</p>
+                            @empty
+                                <div class="p-8 text-center space-y-2">
+                                    <p class="text-neutral-400 text-xs italic">Belum ada rincian manifes reservasi menginap di data server.</p>
                                 </div>
-                                <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Confirmed</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none space-y-4">
-                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Recent Orders</h3>
-                            <a href="#" class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold hover:text-neutral-900 underline">View All</a>
-                        </div>
-                        <div class="space-y-4 divide-y divide-neutral-100">
-                            <div class="flex items-center gap-4 pt-3 first:pt-0">
-                                <div class="flex-1">
-                                    <h4 class="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Grilled Atlantic Salmon with Lemon</h4>
-                                    <p class="text-[10px] text-amber-800 font-bold mt-0.5">Rp 245.000 &bull; <span class="text-neutral-400 font-normal">Qty: 1</span></p>
-                                </div>
-                                <span class="bg-neutral-900 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Delivered</span>
-                            </div>
-                            <div class="flex items-center gap-4 pt-3">
-                                <div class="flex-1">
-                                    <h4 class="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Tropical Fresh Fruit Platter</h4>
-                                    <p class="text-[10px] text-amber-800 font-bold mt-0.5">Rp 120.000 &bull; <span class="text-neutral-400 font-normal">Qty: 1</span></p>
-                                </div>
-                                <span class="bg-neutral-900 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Delivered</span>
-                            </div>
+                            @endforelse
                         </div>
                     </div>
 
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none space-y-4">
-                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">My Requests</h3>
-                            <a href="#" class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold hover:text-neutral-900 underline">New Request</a>
+                    <div class="bg-white border border-neutral-200/80 p-6 shadow-sm rounded-none space-y-4">
+                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3.5">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-neutral-900 rounded-full"></span> Recent Culinary Gastronomy Orders
+                            </h3>
+                            <span class="text-[10px] bg-neutral-50 border px-2.5 py-0.5 text-neutral-500 font-mono font-bold">{{ $activeOrders->count() }} Submissions</span>
                         </div>
-                        <div class="space-y-3 text-[11px] font-medium text-neutral-600">
-                            <div class="flex justify-between items-center border-b border-neutral-50 pb-2">
-                                <div>
-                                    <h5 class="text-neutral-900 font-bold uppercase tracking-wide text-[10px]">Extra Feather Pillows (2)</h5>
-                                    <span class="text-[9px] text-neutral-400">Requested Today, 09:30 AM</span>
+                        <div class="divide-y divide-neutral-100">
+                            @forelse($activeOrders as $order)
+                                <div class="flex items-center justify-between py-4 first:pt-0 last:pb-0 group/row">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wide text-neutral-900 transition-colors group-hover/row:text-amber-800">Order #F&B-{{ $order->id }}</h4>
+                                        <p class="text-[10px] text-neutral-400 font-medium mt-1">Placed Log: {{ date('d M Y H:i', strtotime($order->created_at)) }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-mono font-bold text-neutral-900 block">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
+                                        <span class="bg-neutral-950 text-white text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 inline-block mt-1">{{ $order->status }}</span>
+                                    </div>
                                 </div>
-                                <span class="bg-neutral-100 text-neutral-800 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Completed</span>
-                            </div>
-                            <div class="flex justify-between items-center border-b border-neutral-50 pb-2">
-                                <div>
-                                    <h5 class="text-neutral-900 font-bold uppercase tracking-wide text-[10px]">Airport Luxury Transit Pickup</h5>
-                                    <span class="text-[9px] text-neutral-400">Requested May 20, 2026</span>
+                            @empty
+                                <div class="p-8 text-center space-y-2">
+                                    <p class="text-neutral-400 text-xs italic">Tidak ada antrean pesanan makanan yang sedang diproses.</p>
                                 </div>
-                                <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Confirmed</span>
-                            </div>
+                            @endforelse
                         </div>
                     </div>
 

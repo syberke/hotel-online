@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div class="min-h-screen bg-[#fcfcfc] text-neutral-900 font-sans antialiased">
         
-      @include('layouts.navigation')
+        @include('layouts.navigation')
 
         <header class="relative h-[90vh] bg-neutral-950 overflow-hidden">
             <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop" 
@@ -29,54 +29,67 @@
             </div>
         </header>
 
+        @if(session('success') || session('error') || session('info'))
+        <div class="max-w-6xl mx-auto px-6 mt-6">
+            @if(session('success'))
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider rounded-none">
+                    <i class="fa-solid fa-circle-check mr-2"></i> {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="p-4 bg-red-50 border border-red-200 text-red-800 text-xs font-bold uppercase tracking-wider rounded-none">
+                    <i class="fa-solid fa-circle-exclamation mr-2"></i> {{ session('error') }}
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold uppercase tracking-wider rounded-none flex justify-between items-center">
+                    <div>
+                        <i class="fa-solid fa-circle-info mr-2"></i> {{ session('info') }}
+                    </div>
+                    <a href="{{ route('login') }}" class="bg-amber-800 text-white px-3 py-1 text-[10px] uppercase font-bold tracking-widest">Login Now</a>
+                </div>
+            @endif
+        </div>
+        @endif
+
         <section id="booking-bar" class="max-w-6xl mx-auto px-6 relative -mt-16 z-20">
-            <div class="bg-white border border-neutral-200/80 p-6 rounded-none shadow-xl grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
-                
+            <form action="{{ route('rooms.check') }}" method="POST" class="bg-white border border-neutral-200/80 p-6 rounded-none shadow-xl grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+                @csrf
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">
-                        <i class="fa-regular fa-calendar mr-1 text-amber-700"></i> Check In
-                    </label>
-                    <input type="date" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check In</label>
+                    <input type="date" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
                 </div>
 
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">
-                        <i class="fa-regular fa-calendar mr-1 text-amber-700"></i> Check Out
-                    </label>
-                    <input type="date" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check Out</label>
+                    <input type="date" name="check_out" required min="{{ date('Y-m-d', strtotime('+1 day')) }}" value="{{ date('Y-m-d', strtotime('+1 day')) }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
                 </div>
 
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">
-                        <i class="fa-solid fa-user-group mr-1 text-amber-700"></i> Guests
-                    </label>
-                    <select class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
-                        <option>1 Adult</option>
-                        <option selected>2 Adults</option>
-                        <option>3 Adults</option>
-                        <option>4 Adults</option>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Guests</label>
+                    <select name="guests" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
+                        <option value="1 Adult">1 Adult</option>
+                        <option value="2 Adults, 1 Room" selected>2 Adults</option>
+                        <option value="3 Adults, 1 Room">3 Adults</option>
+                        <option value="4 Guests, 2 Rooms">4 Adults</option>
                     </select>
                 </div>
 
                 <div class="pb-4 md:pb-0">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">
-                        <i class="fa-solid fa-bed mr-1 text-amber-700"></i> Suite Type
-                    </label>
-                    <select class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
-                        <option>Standard Room</option>
-                        <option selected>Deluxe Room</option>
-                        <option>Executive Suite</option>
-                        <option>Presidential Suite</option>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Suite Type</label>
+                    <select name="suite_type" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
+                        @foreach($roomsLiveList as $rl)
+                            <option value="{{ $rl->name }}">{{ $rl->name }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div>
-                    <button class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none">
+                    <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none">
                         Search Availability
                     </button>
                 </div>
-
-            </div>
+            </form>
         </section>
 
         <section class="max-w-7xl mx-auto px-6 pt-24 pb-12">
@@ -133,89 +146,54 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white border border-neutral-200 group flex flex-col justify-between">
+                @forelse($roomsLiveList as $room)
+                <div class="bg-white border border-neutral-200 group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
                     <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2070&auto=format&fit=crop" 
-                                 alt="Standard Room" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
+                        <div class="h-48 overflow-hidden relative bg-neutral-100">
+                            <img src="{{ $room->foto_url }}" alt="{{ $room->name }}" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
+                            <div class="absolute top-3 left-3">
+                                <span class="text-[8px] tracking-widest font-bold uppercase px-2 py-0.5 text-white {{ $room->available_count > 0 ? 'bg-emerald-800' : 'bg-red-800' }}">
+                                    {{ $room->available_count > 0 ? 'Vacant' : 'Sold Out' }}
+                                </span>
+                            </div>
                         </div>
                         <div class="p-5">
-                            <h3 class="text-base font-bold text-neutral-900 mb-1">Standard Room</h3>
-                            <p class="text-amber-700 font-bold text-sm mb-3">Rp 600.000 <span class="text-neutral-400 font-normal text-xs">/ night</span></p>
-                            <p class="text-neutral-500 text-xs leading-relaxed mb-4">Elegant courtyard layouts equipped with essential high-end amenities.</p>
+                            <h3 class="text-base font-bold text-neutral-900 mb-1 uppercase tracking-wide">{{ $room->name }}</h3>
+                            <p class="text-amber-800 font-bold text-sm mb-3">Rp {{ number_format($room->price_per_night, 0, ',', '.') }} <span class="text-neutral-400 font-normal text-xs">/ night</span></p>
+                            <p class="text-neutral-500 text-xs leading-relaxed mb-4 line-clamp-2">{{ $room->description }}</p>
+                            
                             <div class="text-[10px] text-neutral-400 font-medium space-y-1 border-t pt-3">
-                                <div><i class="fa-solid fa-wifi mr-1"></i> Free High-Speed Wi-Fi</div>
-                                <div><i class="fa-solid fa-tv mr-1"></i> Smart IPTV Console</div>
+                                <div><i class="fa-solid fa-wifi mr-1 text-amber-800"></i> Free High-Speed Wi-Fi</div>
+                                <div><i class="fa-solid fa-circle-check mr-1 text-amber-800"></i> In-House Premium Amenity Kit</div>
                             </div>
                         </div>
                     </div>
-                    <div class="p-5 pt-0">
-                        <button class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-wider rounded-none">Book Now</button>
-                    </div>
+                 <div class="p-5 pt-0">
+    <form action="{{ route('rooms.check') }}" method="POST">
+        @csrf
+        <input type="hidden" name="check_in" value="{{ date('Y-m-d') }}">
+        
+        <input type="hidden" name="check_out" value="{{ date('Y-m-d', strtotime('+1 day')) }}">
+        
+        <input type="hidden" name="guests" value="2 Adults, 1 Room">
+        <input type="hidden" name="suite_type" value="{{ $room->name }}">
+        
+        <div class="grid grid-cols-2 gap-2">
+            <a href="{{ route('rooms.show', $room->id) }}" class="border border-neutral-300 text-center py-2 text-neutral-800 text-[10px] font-bold uppercase tracking-wider hover:border-neutral-900 transition-colors">
+                Details
+            </a>
+            <button type="submit" {{ $room->available_count == 0 ? 'disabled' : '' }} class="py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-wider disabled:bg-neutral-200 disabled:cursor-not-allowed transition-all">
+                Book Now
+            </button>
+        </div>
+    </form>
+</div>
                 </div>
-
-                <div class="bg-white border border-neutral-200 group flex flex-col justify-between">
-                    <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2070&auto=format&fit=crop" 
-                                 alt="Deluxe Room" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
-                        </div>
-                        <div class="p-5">
-                            <h3 class="text-base font-bold text-neutral-900 mb-1">Deluxe Room</h3>
-                            <p class="text-amber-700 font-bold text-sm mb-3">Rp 850.000 <span class="text-neutral-400 font-normal text-xs">/ night</span></p>
-                            <p class="text-neutral-500 text-xs leading-relaxed mb-4">Kamar nyaman dengan desain elegan dan pemandangan kota atau taman menawan.</p>
-                            <div class="text-[10px] text-neutral-400 font-medium space-y-1 border-t pt-3">
-                                <div><i class="fa-solid fa-mountain-sun mr-1"></i> Garden / Partial Sea View</div>
-                                <div><i class="fa-solid fa-couch mr-1"></i> Premium Lounge Sofa</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-5 pt-0">
-                        <button class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-wider rounded-none">Book Now</button>
-                    </div>
+                @empty
+                <div class="col-span-4 p-8 text-center bg-white border">
+                    <p class="text-xs italic text-neutral-400">Belum ada konfigurasi tipe kamar riil di dalam database ledger.</p>
                 </div>
-
-                <div class="bg-white border border-neutral-200 group flex flex-col justify-between">
-                    <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070&auto=format&fit=crop" 
-                                 alt="Suite Room" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
-                        </div>
-                        <div class="p-5">
-                            <h3 class="text-base font-bold text-neutral-900 mb-1">Executive Suite</h3>
-                            <p class="text-amber-700 font-bold text-sm mb-3">Rp 1.650.000 <span class="text-neutral-400 font-normal text-xs">/ night</span></p>
-                            <p class="text-neutral-500 text-xs leading-relaxed mb-4">Ruang lebih luas dengan ruang tamu terpisah dan fasilitas premium terbaik.</p>
-                            <div class="text-[10px] text-neutral-400 font-medium space-y-1 border-t pt-3">
-                                <div><i class="fa-solid fa-water mr-1"></i> Full Ocean Horizon View</div>
-                                <div><i class="fa-solid fa-hot-tub-person mr-1"></i> Marble Bathtub System</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-5 pt-0">
-                        <button class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-wider rounded-none">Book Now</button>
-                    </div>
-                </div>
-
-                <div class="bg-white border border-neutral-200 group flex flex-col justify-between">
-                    <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=2070&auto=format&fit=crop" 
-                                 alt="Presidential Suite" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
-                        </div>
-                        <div class="p-5">
-                            <h3 class="text-base font-bold text-neutral-900 mb-1">Presidential Suite</h3>
-                            <p class="text-amber-700 font-bold text-sm mb-3">Rp 3.500.000 <span class="text-neutral-400 font-normal text-xs">/ night</span></p>
-                            <p class="text-neutral-500 text-xs leading-relaxed mb-4">The ultimate indulgence. Private plunge pool, curated art, and unmatched scales.</p>
-                            <div class="text-[10px] text-neutral-400 font-medium space-y-1 border-t pt-3">
-                                <div><i class="fa-solid fa-water-ladder mr-1"></i> Private Infinity Plunge Pool</div>
-                                <div><i class="fa-solid fa-user-tie mr-1"></i> 24-Hour Assigned Butler</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-5 pt-0">
-                        <button class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-wider rounded-none">Book Now</button>
-                    </div>
-                </div>
+                @endforelse
             </div>
         </section>
 
@@ -249,21 +227,6 @@
                         <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Fitness Center</h3>
                         <p class="text-neutral-500 text-xs leading-relaxed">Pusat kebugaran 24 jam dengan peralatan kardio dan beban berstandar internasional.</p>
                     </div>
-                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300 group">
-                        <div class="text-3xl text-amber-400 mb-6"><i class="fa-solid fa-briefcase"></i></div>
-                        <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Business Lounge</h3>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Complimentary high-speed computing terminals, dynamic workstations, and fine coffee bars.</p>
-                    </div>
-                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300 group">
-                        <div class="text-3xl text-amber-400 mb-6"><i class="fa-solid fa-users-rectangle"></i></div>
-                        <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Meeting Rooms</h3>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Acoustically micro-sealed boardrooms equipped with contemporary secure matrix visual gear.</p>
-                    </div>
-                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300 group">
-                        <div class="text-3xl text-amber-400 mb-6"><i class="fa-solid fa-umbrella-beach"></i></div>
-                        <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Private Beach Access</h3>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Direct protected transit pathways into soft pristine sands completely isolated from traffic.</p>
-                    </div>
                 </div>
             </div>
         </section>
@@ -291,7 +254,6 @@
                             <span class="text-xs font-bold text-amber-700">Rp 375.000</span>
                         </div>
                         <p class="text-neutral-500 text-xs leading-relaxed">Daging wagyu pilihan panggang dengan saus jamur khas dan kentang tumbuk lembut.</p>
-                        <p class="text-[10px] text-amber-800 font-bold uppercase tracking-wider mt-2"><i class="fa-solid fa-award"></i> Chef Recommendation</p>
                     </div>
                 </div>
 
@@ -455,7 +417,7 @@
                 </div>
                 <div class="w-full h-80 bg-neutral-200 border border-neutral-300 relative">
                     <div class="absolute inset-0 bg-cover bg-center opacity-70" style="background-image: url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/115.2126,-8.8034,12,0/600x400?access_token=mock')"></div>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-white/40 backdrop-blur-xs">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-white/40 backdrop-blur-sm">
                         <div class="w-10 h-10 bg-neutral-900 text-white rounded-full flex items-center justify-center shadow-lg mb-2 animate-bounce">
                             <i class="fa-solid fa-location-crosshairs"></i>
                         </div>
@@ -470,7 +432,6 @@
                 <p class="text-xs uppercase tracking-widest font-bold text-amber-700 mb-2">Information</p>
                 <h2 class="text-3xl font-serif text-neutral-900">Frequently Asked Queries</h2>
             </div>
-            
             <div class="space-y-4">
                 <div class="border-b border-neutral-200 pb-4">
                     <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wide mb-1">What are the precise Check-in and Check-out configurations?</h4>
@@ -502,7 +463,7 @@
             </div>
         </section>
 
-     @include('layouts.footer')
+        @include('layouts.footer')
 
     </div>
 </x-guest-layout>

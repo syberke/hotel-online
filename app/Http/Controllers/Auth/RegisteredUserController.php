@@ -9,8 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -25,27 +25,59 @@ class RegisteredUserController extends Controller
 
     /**
      * Handle an incoming registration request.
-     *
-     * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+public function store(Request $request): RedirectResponse
     {
+        // Validasi utama (Mencegah email ganda terdaftar di tabel users)
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format alamat email tidak valid.',
+            'email.unique' => 'Email ini sudah terdaftar di Oasis, silakan gunakan email lain.',
+            'password.required' => 'Password wajib ditentukan.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        $user->assignRole('guest');
+        $user = DB::transaction(function () use ($request) {
+            
+            // 1. Buat data dasar otentikasi di tabel public.users
+            $newUser = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'guest',
+            ]);
+
+            // 2. Tugaskan peran Spatie Roles Engine jika digunakan
+            if (method_exists($newUser, 'assignRole')) {
+                $newUser->assignRole('guest');
+            }
+
+            // 3. SINKRONISASI PINTAR: Gunakan updateOrInsert agar tidak memicu Unique Violation Error
+            DB::table('guests')->updateOrInsert(
+                ['email' => $request->email], // Kondisi pengecekan keunikan data
+                [
+                    'name' => $request->name,
+                    'password' => Hash::make($request->password),
+                    'phone' => '-',
+                    'identity_number' => '-',
+                    'address' => '-',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]
+            );
+
+            return $newUser;
+        });
+
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect()->route('dashboard');
     }
-}
+    }
