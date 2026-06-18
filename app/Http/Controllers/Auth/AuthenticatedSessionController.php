@@ -32,16 +32,20 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         // Mengambil data user yang baru saja login
-        $user = Auth::user();
+      $user = Auth::user();
 
-        // Mengarahkan ke dashboard dinamis sesuai nama rute (role.dashboard)
-        // Contoh: jika role adalah 'manager', akan mengarah ke route('manager.dashboard')
-        if (in_array($user->role, ['admin', 'manager', 'receptionist', 'guest'])) {
-            return redirect()->route($user->role . '.dashboard');
-        }
+    // PERBAIKAN: Arahkan ke rute spesifik sesuai konfigurasi web.php kamu
+    if ($user->role === 'guest') {
+        return redirect()->route('dashboard'); // Mengarah ke rute bernama 'dashboard' (dashboard.guest)
+    }
 
-        // Fallback default jika role tidak dikenali
-        return redirect()->route('home');
+    if (in_array($user->role, ['admin', 'manager', 'receptionist'])) {
+        // Jika kamu menggunakan rute seperti admin.dashboard, manager.dashboard, dll.
+        return redirect()->route($user->role . '.dashboard'); 
+    }
+
+    // Fallback default jika role tidak dikenali
+    return redirect()->route('home');
     }
 
     /**

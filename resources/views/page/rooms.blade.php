@@ -142,9 +142,7 @@
                 <div>
                     <div class="h-56 overflow-hidden relative bg-neutral-100">
                         <img src="{{ $room->foto_url }}" alt="{{ $room->name }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
-                        <button class="absolute top-4 right-4 w-8 h-8 bg-white/80 backdrop-blur-md rounded-none flex items-center justify-center text-neutral-500 hover:text-red-600 transition-colors">
-                            <i class="fa-regular fa-heart"></i>
-                        </button>
+                   
                         <div class="absolute bottom-4 left-4 flex flex-col gap-1.5 items-start">
                             <span class="bg-neutral-900/90 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-none">Oasis Exclusive</span>
                             <span class="text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-none {{ $room->available_count > 0 ? 'bg-emerald-800' : 'bg-red-800' }}">
@@ -175,15 +173,18 @@
                         <a href="{{ route('rooms.show', $room->id) }}" class="flex items-center justify-center border border-neutral-300 hover:border-neutral-900 text-neutral-800 text-[10px] font-bold uppercase tracking-widest py-3 rounded-none text-center transition-colors h-full">
                             View Details
                         </a>
-                        <form action="{{ route('rooms.check') }}" method="POST" class="h-full">
-                            @csrf
-                            <input type="hidden" name="check_in" value="{{ request('check_in', date('Y-m-d')) }}">
-                            <input type="hidden" name="check_out" value="{{ request('check_out', date('Y-m-d', strtotime('+1 day'))) }}">
-                            <input type="hidden" name="suite_type" value="{{ $room->name }}">
-                            <button type="submit" {{ $room->available_count == 0 ? 'disabled' : '' }} class="w-full bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-3 rounded-none transition-all disabled:bg-neutral-300 disabled:cursor-not-allowed h-full">
-                                {{ $room->available_count > 0 ? 'Book Now' : 'Sold Out' }}
-                            </button>
-                        </form>
+                       <div class="h-full">
+    @if($room->available_count > 0)
+        <a href="{{ route('rooms.show', $room->id) }}?check_in={{ request('check_in', date('Y-m-d')) }}&check_out={{ request('check_out', date('Y-m-d', strtotime('+1 day'))) }}&guests={{ request('guests', '2 Adults, 1 Room') }}" 
+           class="flex items-center justify-center w-full bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-3 rounded-none transition-all text-center h-full">
+            Book Now
+        </a>
+    @else
+        <button type="button" disabled class="w-full bg-neutral-200 text-neutral-400 text-[10px] font-bold uppercase tracking-widest py-3 rounded-none cursor-not-allowed h-full">
+            Sold Out
+        </button>
+    @endif
+</div>
                     </div>
                 </div>
             </div>

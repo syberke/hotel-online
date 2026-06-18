@@ -12,8 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // 1. Mendaftarkan alias middleware custom milikmu
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
+        // 2. PERBAIKAN: Mengecualikan rute callback Midtrans dari pemeriksaan CSRF bawaan Laravel 11
+        $middleware->validateCsrfTokens(except: [
+            '/midtrans/callback',
         ]);
     })
     

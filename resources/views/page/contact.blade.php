@@ -160,50 +160,52 @@
                     </form>
                 </section>
 
-                <section id="map-block" class="w-full lg:w-5/12 bg-white border border-neutral-200 p-8 rounded-none flex flex-col justify-between self-stretch">
-                    <div>
-                        <div class="mb-6">
-                            <h3 class="text-sm font-bold uppercase tracking-widest text-neutral-900 mb-1">Our Location</h3>
-                            <p class="text-neutral-400 text-xs">Uninterrupted beachfront positioning inside the exclusive security enclave of Nusa Dua, Bali.</p>
-                        </div>
+           <section id="map-block" class="w-full lg:w-5/12 bg-white border border-neutral-200 p-8 rounded-none flex flex-col justify-between self-stretch">
+    <div>
+        <div class="mb-6">
+            <h3 class="text-sm font-bold uppercase tracking-widest text-neutral-900 mb-1">Our Location</h3>
+            <p class="text-neutral-400 text-xs">Uninterrupted beachfront positioning inside the exclusive security enclave of Nusa Dua, Bali.</p>
+        </div>
 
-                        <div class="h-64 w-full bg-neutral-100 border border-neutral-200 relative mb-6 flex items-center justify-center text-center p-4 overflow-hidden group">
-                            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600" alt="Resort Map Context" class="absolute inset-0 w-full h-full object-cover opacity-20 filter grayscale group-hover:scale-102 transition-transform duration-700">
-                            <div class="relative z-10 space-y-2">
-                                <div class="text-2xl text-amber-800"><i class="fa-solid fa-map-location-dot animate-bounce"></i></div>
-                                <h5 class="text-xs font-bold uppercase tracking-wider text-neutral-800">Oasis Luxury Enclave</h5>
-                                <p class="text-[10px] text-neutral-400 max-w-xs mx-auto font-medium">Map system offline for sandbox simulation render. Live production maps bind automatically on release tracks.</p>
-                            </div>
-                        </div>
+        <div class="w-full border border-neutral-200 relative mb-6 overflow-hidden shadow-sm" style="height: 280px;">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15771.691771146743!2d115.22244243673752!3d-8.798035133276184!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd243236e768b57%3A0x6bda190979fa4f5b!2sNusa%20Dua%2C%20Kuta%20Selatan%2C%20Badung%20Regency%2C%20Bali!5e0!3m2!1sid!2sid!4v1710000000000!5m2!1sid!2sid" 
+                class="w-full h-full absolute inset-0 border-0 m-0 p-0" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade"
+                style="filter: grayscale(15%) contrast(105%);">
+            </iframe>
+        </div>
 
-                        <div class="space-y-4 border-t border-neutral-100 pt-6">
-                            <h4 class="text-[10px] font-bold uppercase tracking-wider text-neutral-800 mb-2"><i class="fa-solid fa-plane-arrival text-amber-800 mr-1.5"></i> Transit Vectors & Logistics</h4>
-                            <div class="grid grid-cols-1 gap-3 text-[11px] font-medium text-neutral-500">
-                                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
-                                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Ngurah Rai Airport (DPS)</span>
-                                    <span>12.4 km / 20 Mins Drive</span>
-                                </div>
-                                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
-                                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Benoa Luxury Cruise Port</span>
-                                    <span>15.1 km / 25 Mins Drive</span>
-                                </div>
-                                <div class="flex justify-between items-baseline pb-1">
-                                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Private Transit Helicopter Pad</span>
-                                    <span>In-Resort Access (North Field)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="space-y-4 border-t border-neutral-100 pt-6">
+            <h4 class="text-[10px] font-bold uppercase tracking-wider text-neutral-800 mb-2"><i class="fa-solid fa-plane-arrival text-amber-800 mr-1.5"></i> Transit Vectors & Logistics</h4>
+            <div class="grid grid-cols-1 gap-3 text-[11px] font-medium text-neutral-500">
+                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
+                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Ngurah Rai Airport (DPS)</span>
+                    <span>12.4 km / 20 Mins Drive</span>
+                </div>
+                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
+                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Benoa Luxury Cruise Port</span>
+                    <span>15.1 km / 25 Mins Drive</span>
+                </div>
+                <div class="flex justify-between items-baseline pb-1">
+                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Private Transit Helicopter Pad</span>
+                    <span>In-Resort Access (North Field)</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="border-t border-neutral-100 pt-6 mt-6 grid grid-cols-2 gap-3 text-center">
-                        <a href="tel:+623611234567" class="border border-neutral-300 hover:border-neutral-900 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors">
-                            <i class="fa-solid fa-phone"></i> Call Concierge
-                        </a>
-                        <a href="https://wa.me/6281234567890" target="_blank" class="border border-neutral-300 hover:border-neutral-900 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors">
-                            <i class="fa-brands fa-whatsapp"></i> Chat Live Support
-                        </a>
-                    </div>
-                </section>
+    <div class="border-t border-neutral-100 pt-6 mt-6 grid grid-cols-2 gap-3 text-center">
+        <a href="https://maps.google.com/?q=Nusa+Dua+Bali" target="_blank" rel="noopener noreferrer" class="border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-map-location-dot text-amber-800"></i> Open Google Maps
+        </a>
+        <a href="https://maps.apple.com/?q=Nusa+Dua+Bali" target="_blank" rel="noopener noreferrer" class="border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors flex items-center justify-center gap-1.5">
+            <i class="fa-brands fa-apple text-neutral-900"></i> Open Apple Maps
+        </a>
+    </div>
+</section>
             </div>
         </main>
 

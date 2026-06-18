@@ -1,4 +1,6 @@
 <x-guest-layout>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
     <div class="min-h-screen bg-[#fcfcfc] text-neutral-900 font-sans antialiased">
         
         @include('layouts.navigation')
@@ -57,17 +59,17 @@
                 @csrf
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check In</label>
-                    <input type="date" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
+                    <input type="date" id="bar_check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
                 </div>
 
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check Out</label>
-                    <input type="date" name="check_out" required min="{{ date('Y-m-d', strtotime('+1 day')) }}" value="{{ date('Y-m-d', strtotime('+1 day')) }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
+                    <input type="date" id="bar_check_out" name="check_out" required min="{{ date('Y-m-d', strtotime('+1 day')) }}" value="{{ date('Y-m-d', strtotime('+1 day')) }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
                 </div>
 
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Guests</label>
-                    <select name="guests" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
+                    <select id="bar_guests" name="guests" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
                         <option value="1 Adult">1 Adult</option>
                         <option value="2 Adults, 1 Room" selected>2 Adults</option>
                         <option value="3 Adults, 1 Room">3 Adults</option>
@@ -85,7 +87,7 @@
                 </div>
 
                 <div>
-                    <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none">
+                    <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none cursor-pointer">
                         Search Availability
                     </button>
                 </div>
@@ -113,27 +115,6 @@
                     <div>
                         <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Luxury Spa & Wellness</h4>
                         <p class="text-neutral-500 text-xs leading-relaxed">Immersive clinical thermal suites and indigenous, organic custom therapy tracks.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="text-amber-700 text-xl"><i class="fa-solid fa-utensils"></i></div>
-                    <div>
-                        <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Fine Dining Gastronomy</h4>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Michelin-starred culinary development featuring local raw seasonal execution.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="text-amber-700 text-xl"><i class="fa-solid fa-car-side"></i></div>
-                    <div>
-                        <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Airport Transfer</h4>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Complimentary executive private fleet collection directly from the tarmac console.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="text-amber-700 text-xl"><i class="fa-solid fa-clock"></i></div>
-                    <div>
-                        <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">24/7 Elite Concierge</h4>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Instant secure deployment for private island charters, global event booking, and transport.</p>
                     </div>
                 </div>
             </div>
@@ -168,26 +149,25 @@
                             </div>
                         </div>
                     </div>
-                 <div class="p-5 pt-0">
-    <form action="{{ route('rooms.check') }}" method="POST">
-        @csrf
-        <input type="hidden" name="check_in" value="{{ date('Y-m-d') }}">
-        
-        <input type="hidden" name="check_out" value="{{ date('Y-m-d', strtotime('+1 day')) }}">
-        
-        <input type="hidden" name="guests" value="2 Adults, 1 Room">
-        <input type="hidden" name="suite_type" value="{{ $room->name }}">
-        
-        <div class="grid grid-cols-2 gap-2">
-            <a href="{{ route('rooms.show', $room->id) }}" class="border border-neutral-300 text-center py-2 text-neutral-800 text-[10px] font-bold uppercase tracking-wider hover:border-neutral-900 transition-colors">
-                Details
-            </a>
-            <button type="submit" {{ $room->available_count == 0 ? 'disabled' : '' }} class="py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-wider disabled:bg-neutral-200 disabled:cursor-not-allowed transition-all">
-                Book Now
-            </button>
-        </div>
-    </form>
-</div>
+                    
+                    <div class="p-5 pt-0">
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="{{ route('rooms.show', $room->id) }}" class="border border-neutral-300 text-center py-2 text-neutral-800 text-[10px] font-bold uppercase tracking-wider hover:border-neutral-900 transition-colors">
+                                Details
+                            </a>
+                            
+                            @if($room->available_count > 0)
+                                <button type="button" onclick="navigateWithDates({{ $room->id }})" class="py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center">
+                                    Book Now
+                                </button>
+                            @else
+                                <button type="button" disabled class="py-2 bg-neutral-200 text-neutral-400 text-[10px] font-bold uppercase tracking-wider cursor-not-allowed transition-all text-center">
+                                    Sold Out
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
                 </div>
                 @empty
                 <div class="col-span-4 p-8 text-center bg-white border">
@@ -212,17 +192,17 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300 group">
+                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300">
                         <div class="text-3xl text-amber-400 mb-6"><i class="fa-solid fa-person-swimming"></i></div>
                         <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Swimming Pool</h3>
                         <p class="text-neutral-500 text-xs leading-relaxed">Kolam renang air hangat luar ruangan dengan pemandangan lanskap alam yang spektakuler.</p>
                     </div>
-                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300 group">
+                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300">
                         <div class="text-3xl text-amber-400 mb-6"><i class="fa-solid fa-spa"></i></div>
                         <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Spa & Wellness</h3>
                         <p class="text-neutral-500 text-xs leading-relaxed">Perawatan tubuh dan pijat relaksasi tradisional yang ditangani langsung oleh terapis profesional.</p>
                     </div>
-                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300 group">
+                    <div class="border border-neutral-800 p-8 rounded-none bg-neutral-950 hover:border-amber-400 transition-all duration-300">
                         <div class="text-3xl text-amber-400 mb-6"><i class="fa-solid fa-dumbbell"></i></div>
                         <h3 class="text-lg font-bold uppercase tracking-wider mb-2">Fitness Center</h3>
                         <p class="text-neutral-500 text-xs leading-relaxed">Pusat kebugaran 24 jam dengan peralatan kardio dan beban berstandar internasional.</p>
@@ -237,55 +217,65 @@
                     <p class="text-xs uppercase tracking-widest font-bold text-amber-700 mb-2">Gastronomy Operations</p>
                     <h2 class="text-3xl md:text-4xl font-serif text-neutral-900">Fine Dining Atmosphere</h2>
                 </div>
-                <a href="#" class="text-xs font-bold uppercase tracking-widest text-neutral-900 underline hover:text-amber-700 transition-colors">
+                <a href="{{ route('restaurant') }}" class="text-xs font-bold uppercase tracking-widest text-neutral-900 underline hover:text-amber-700 transition-colors">
                     View Full Menu &rarr;
                 </a>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="border border-neutral-200 bg-white group">
-                    <div class="h-56 overflow-hidden bg-neutral-100">
-                        <img src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2069&auto=format&fit=crop" 
-                             alt="Wagyu Ribeye Steak" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-wide">Wagyu Ribeye Steak</h3>
-                            <span class="text-xs font-bold text-amber-700">Rp 375.000</span>
+                @foreach($culinaryMenus as $menu)
+                <div class="border border-neutral-200 bg-white group flex flex-col justify-between">
+                    <div>
+                        <div class="h-56 overflow-hidden bg-neutral-100">
+                            <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
                         </div>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Daging wagyu pilihan panggang dengan saus jamur khas dan kentang tumbuk lembut.</p>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-wide">{{ $menu->name }}</h3>
+                                <span class="text-xs font-bold text-amber-700">Rp {{ number_format($menu->price, 0, ',', '.') }}</span>
+                            </div>
+                            <p class="text-neutral-500 text-xs leading-relaxed">{{ $menu->description }}</p>
+                        </div>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <button type="button" onclick="openOrderModal('{{ $menu->name }}', {{ $menu->price }})" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-3 transition-all cursor-pointer">
+                            Order To Room
+                        </button>
                     </div>
                 </div>
-
-                <div class="border border-neutral-200 bg-white group">
-                    <div class="h-56 overflow-hidden bg-neutral-100">
-                        <img src="https://images.unsplash.com/photo-1603133872878-6967b646c03b?q=80&w=2070&auto=format&fit=crop" 
-                             alt="Oasis Fried Rice" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-wide">Oasis Fried Rice</h3>
-                            <span class="text-xs font-bold text-amber-700">Rp 95.000</span>
-                        </div>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Nasi goreng tradisional kaya rempah disajikan dengan sate ayam, telur mata sapi, dan kerupuk udang.</p>
-                    </div>
-                </div>
-
-                <div class="border border-neutral-200 bg-white group">
-                    <div class="h-56 overflow-hidden bg-neutral-100">
-                        <img src="https://images.unsplash.com/photo-1536935338788-846bb9981813?q=80&w=2072&auto=format&fit=crop" 
-                             alt="Fresh Avocado Juice" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-wide">Fresh Avocado Juice</h3>
-                            <span class="text-xs font-bold text-amber-700">Rp 45.000</span>
-                        </div>
-                        <p class="text-neutral-500 text-xs leading-relaxed">Jus alpukat mentega segar pilihan yang disajikan dingin dengan siraman susu cokelat premium.</p>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </section>
+
+        <div id="culinaryOrderModal" class="fixed inset-0 z-50 overflow-y-auto hidden flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-sm">
+            <div class="bg-white max-w-sm w-full border border-neutral-200 p-8 shadow-2xl relative">
+                <button type="button" onclick="closeOrderModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900"><i class="fa-solid fa-xmark"></i></button>
+                <div class="mb-4">
+                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700 block">Suite Gastronomy Service</span>
+                    <h3 id="modal-food-title" class="text-lg font-serif text-neutral-900 mt-1">Item Name</h3>
+                </div>
+                <form id="gastronomy-ajax-form" action="{{ route('restaurant.order') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <input type="hidden" id="final-invoice-price" name="total_price">
+                    <div class="flex items-center justify-between border-y border-neutral-100 py-3">
+                        <span class="text-xs font-bold text-neutral-700 uppercase tracking-wider">Portion Quantity</span>
+                        <div class="flex items-center border border-neutral-300">
+                            <button type="button" onclick="changeQty(-1)" class="px-3 py-1 text-xs font-bold hover:bg-neutral-100">-</button>
+                            <input type="text" id="display-qty" value="1" readonly class="w-10 text-center border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800">
+                            <button type="button" onclick="changeQty(1)" class="px-3 py-1 text-xs font-bold hover:bg-neutral-100">+</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider">
+                        <span>Total Price</span>
+                        <span id="display-total-cost" class="text-amber-800 font-mono text-sm">Rp 0</span>
+                    </div>
+                    <div id="modal-response-message" class="hidden p-3 text-[10px] font-bold uppercase tracking-wider"></div>
+                    <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
+                        Confirm Order To Room
+                    </button>
+                </form>
+            </div>
+        </div>
 
         <section id="experiences" class="bg-neutral-50 py-24 px-6 border-t border-neutral-100">
             <div class="max-w-7xl mx-auto">
@@ -296,31 +286,31 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div class="relative h-80 group overflow-hidden bg-black">
-                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
+                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
                             <h4 class="text-white text-sm font-bold uppercase tracking-wider">Sunset Dinner</h4>
                         </div>
                     </div>
                     <div class="relative h-80 group overflow-hidden bg-black">
-                        <img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
+                        <img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=2070" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
                             <h4 class="text-white text-sm font-bold uppercase tracking-wider">Private Yacht Tour</h4>
                         </div>
                     </div>
                     <div class="relative h-80 group overflow-hidden bg-black">
-                        <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
+                        <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=2070" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
                             <h4 class="text-white text-sm font-bold uppercase tracking-wider">Couple Retreat</h4>
                         </div>
                     </div>
                     <div class="relative h-80 group overflow-hidden bg-black">
-                        <img src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
+                        <img src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=2070" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
                             <h4 class="text-white text-sm font-bold uppercase tracking-wider">Family Activities</h4>
                         </div>
                     </div>
                     <div class="relative h-80 group overflow-hidden bg-black">
-                        <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=2038&auto=format&fit=crop" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
+                        <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=2038" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
                             <h4 class="text-white text-sm font-bold uppercase tracking-wider">Cultural Tours</h4>
                         </div>
@@ -344,20 +334,20 @@
             <div class="max-w-7xl mx-auto">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="space-y-4">
-                        <img class="w-full object-cover h-40 border border-neutral-100" src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=500&auto=format&fit=crop" alt="Lobby Area">
-                        <img class="w-full object-cover h-72 border border-neutral-100" src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=500&auto=format&fit=crop" alt="Luxury Room View">
+                        <img class="w-full object-cover h-40 border border-neutral-100" src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=500" alt="Lobby Area">
+                        <img class="w-full object-cover h-72 border border-neutral-100" src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=500" alt="Luxury Room View">
                     </div>
                     <div class="space-y-4">
-                        <img class="w-full object-cover h-80 border border-neutral-100" src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=500&auto=format&fit=crop" alt="Restaurant Interior">
-                        <img class="w-full object-cover h-36 border border-neutral-100" src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=500&auto=format&fit=crop" alt="Executive Suite Bed">
+                        <img class="w-full object-cover h-80 border border-neutral-100" src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=500" alt="Restaurant Interior">
+                        <img class="w-full object-cover h-36 border border-neutral-100" src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=500" alt="Executive Suite Bed">
                     </div>
                     <div class="space-y-4">
-                        <img class="w-full object-cover h-44 border border-neutral-100" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=500&auto=format&fit=crop" alt="Outdoor Lounge Area">
-                        <img class="w-full object-cover h-64 border border-neutral-100" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500&auto=format&fit=crop" alt="Poolside Deck">
+                        <img class="w-full object-cover h-44 border border-neutral-100" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=500" alt="Outdoor Lounge Area">
+                        <img class="w-full object-cover h-64 border border-neutral-100" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500" alt="Poolside Deck">
                     </div>
                     <div class="space-y-4">
-                        <img class="w-full object-cover h-72 border border-neutral-100" src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=500&auto=format&fit=crop" alt="Family Suite Living">
-                        <img class="w-full object-cover h-40 border border-neutral-100" src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=500&auto=format&fit=crop" alt="Yacht Deck Deck">
+                        <img class="w-full object-cover h-72 border border-neutral-100" src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=500" alt="Family Suite Living">
+                        <img class="w-full object-cover h-40 border border-neutral-100" src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=500" alt="Yacht Deck Deck">
                     </div>
                 </div>
             </div>
@@ -415,15 +405,7 @@
                         <div><i class="fa-solid fa-map-pin text-amber-700 w-5"></i> Proximity: Uluwatu Temple (20m), Pandawa Horizon Beach (5m)</div>
                     </div>
                 </div>
-                <div class="w-full h-80 bg-neutral-200 border border-neutral-300 relative">
-                    <div class="absolute inset-0 bg-cover bg-center opacity-70" style="background-image: url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/115.2126,-8.8034,12,0/600x400?access_token=mock')"></div>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-white/40 backdrop-blur-sm">
-                        <div class="w-10 h-10 bg-neutral-900 text-white rounded-full flex items-center justify-center shadow-lg mb-2 animate-bounce">
-                            <i class="fa-solid fa-location-crosshairs"></i>
-                        </div>
-                        <span class="text-xs font-bold uppercase tracking-wider text-neutral-800">Interactive Map Interface</span>
-                    </div>
-                </div>
+                <div id="liveOasisMap" class="w-full h-80 bg-neutral-200 border border-neutral-300 shadow-md z-10"></div>
             </div>
         </section>
 
@@ -466,4 +448,108 @@
         @include('layouts.footer')
 
     </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        var map = L.map('liveOasisMap').setView([-8.8034, 115.2126], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        var marker = L.marker([-8.8034, 115.2126]).addTo(map);
+        marker.bindPopup("<b>Oasis Premium Resort</b><br>Nusa Dua, Bali.").openPopup();
+    </script>
+
+    <script>
+        const orderModalBox = document.getElementById('culinaryOrderModal');
+        const foodTitleLabel = document.getElementById('modal-food-title');
+        const invoicePriceInput = document.getElementById('final-invoice-price');
+        const qtyCountInput = document.getElementById('display-qty');
+        const totalCostLabel = document.getElementById('display-total-cost');
+        const resAlertBox = document.getElementById('modal-response-message');
+        const culinaryForm = document.getElementById('gastronomy-ajax-form');
+        const actionSubmitBtn = document.getElementById('modal-submit-btn');
+
+        let rawFoodPrice = 0;
+
+        function openOrderModal(itemName, unitPrice) {
+            rawFoodPrice = unitPrice;
+            foodTitleLabel.innerText = itemName;
+            qtyCountInput.value = 1;
+            recalculateInvoiceCost();
+            resAlertBox.classList.add('hidden');
+            orderModalBox.classList.remove('hidden');
+        }
+
+        function closeOrderModal() { 
+            orderModalBox.classList.add('hidden'); 
+        }
+
+        function changeQty(delta) {
+            let targetAmount = parseInt(qtyCountInput.value) + delta;
+            if (targetAmount >= 1 && targetAmount <= 10) {
+                qtyCountInput.value = targetAmount;
+                recalculateInvoiceCost();
+            }
+        }
+
+        function recalculateInvoiceCost() {
+            let combinedSum = rawFoodPrice * parseInt(qtyCountInput.value);
+            invoicePriceInput.value = combinedSum;
+            totalCostLabel.innerText = 'Rp ' + combinedSum.toLocaleString('id-ID');
+        }
+
+        culinaryForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            actionSubmitBtn.disabled = true;
+            actionSubmitBtn.innerText = "Transmitting Order Request...";
+
+            fetch(culinaryForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: new FormData(culinaryForm)
+            })
+            .then(async res => {
+                const serverData = await res.json();
+                actionSubmitBtn.disabled = false;
+                actionSubmitBtn.innerText = "Confirm Order To Room";
+                resAlertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
+
+                if (res.ok && serverData.success) {
+                    resAlertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                    resAlertBox.innerText = serverData.message;
+                    setTimeout(() => { closeOrderModal(); }, 2000);
+                } else {
+                    resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    resAlertBox.innerText = serverData.message || "Pemesanan ditolak oleh server internal.";
+                }
+            })
+            .catch(() => {
+                actionSubmitBtn.disabled = false;
+                actionSubmitBtn.innerText = "Confirm Order To Room";
+                resAlertBox.classList.remove('hidden');
+                resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                resAlertBox.innerText = "Terjadi gangguan transmisi jaringan lokal.";
+            });
+        });
+
+        // JAVASCRIPT DETEKTIF TANGGAL: Mengikat kalender atas ke dalam URL tujuan halaman detail
+        function navigateWithDates(roomId) {
+            const checkInVal = document.getElementById('bar_check_in').value;
+            const checkOutVal = document.getElementById('bar_check_out').value;
+            const guestsVal = document.getElementById('bar_guests').value;
+            
+            // Generate link dinamis menuju route detail
+            const baseTargetUrl = "{{ route('rooms.show', ':id') }}".replace(':id', roomId);
+            const compiledUrl = `${baseTargetUrl}?check_in=${checkInVal}&check_out=${checkOutVal}&guests=${encodeURIComponent(guestsVal)}`;
+            
+            // Eksekusi pemindahan halaman tanpa amnesia input tanggal!
+            window.location.href = compiledUrl;
+        }
+    </script>
 </x-guest-layout>

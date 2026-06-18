@@ -134,9 +134,14 @@
 </div>
 @endforeach
 
-<div id="facilityBookingModal" class="fixed inset-0 z-50 overflow-y-auto hidden flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-sm animate-fade-in">
-    <div class="bg-white max-w-md w-full border border-neutral-200 p-8 shadow-2xl relative">
-        <button type="button" onclick="closeFacilityModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+<div id="facilityBookingModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 sm:p-6">
+    <div onclick="closeFacilityModal()" class="absolute inset-0 bg-neutral-950/50 backdrop-blur-sm cursor-pointer"></div>
+    
+    <div class="relative bg-white max-w-md w-full border border-neutral-200 p-8 shadow-2xl rounded-none transform scale-95 transition-transform duration-300 z-10">
+        
+        <button type="button" onclick="closeFacilityModal()" class="absolute top-4 right-4 z-20 text-neutral-400 hover:text-neutral-900 w-8 h-8 flex items-center justify-center transition-colors focus:outline-none cursor-pointer" aria-label="Close modal">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
         
         <div class="mb-6">
             <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700 block">Reservation Module</span>
@@ -149,13 +154,13 @@
 
             <div>
                 <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Appointment Date</label>
-                <input type="date" name="booking_date" required min="{{ date('Y-m-d') }}" class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900">
+                <input type="date" name="booking_date" required min="{{ date('Y-m-d') }}" class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900 bg-transparent cursor-pointer">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Preferred Time Space</label>
-                    <select name="booking_time" required class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900">
+                    <select name="booking_time" required class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900 cursor-pointer bg-transparent">
                         <option value="09:00">09:00 AM</option>
                         <option value="11:00">11:00 AM</option>
                         <option value="14:00">02:00 PM</option>
@@ -171,12 +176,12 @@
 
             <div>
                 <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Bespoke Requests / Notes (Optional)</label>
-                <textarea name="notes" rows="2" placeholder="Dietary alignments, therapy focus preferences, etc." class="w-full border border-neutral-200 px-3 py-2 text-xs text-neutral-800 placeholder-neutral-400 focus:ring-0 focus:border-neutral-900 resize-none"></textarea>
+                <textarea name="notes" rows="2" placeholder="Dietary alignments, therapy focus preferences, etc." class="w-full border border-neutral-200 px-3 py-2 text-xs text-neutral-800 placeholder-neutral-400 focus:ring-0 focus:border-neutral-900 resize-none bg-transparent"></textarea>
             </div>
 
             <div id="modal-alert-box" class="hidden p-3 text-[11px] font-bold uppercase tracking-wider"></div>
 
-            <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md">
+            <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
                 Secure Slot Appointment
             </button>
         </form>
@@ -195,14 +200,34 @@
         modalTitle.innerText = facilityName;
         modalInput.value = facilityName;
         alertBox.classList.add('hidden');
+        
+        // Membuka modal dengan animasi transisi membesar yang halus (fade-in zoom)
         modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.relative').classList.remove('scale-95');
+        }, 10);
     }
 
     function closeFacilityModal() {
-        modal.classList.add('hidden');
-        form.reset();
+        // Efek animasi mengecil sebelum ditutup penuh
+        modal.classList.add('opacity-0');
+        modal.querySelector('.relative').classList.add('scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            form.reset();
+        }, 300);
     }
 
+    // Dukungan Aksesibilitas: Menutup modal jika tombol 'Escape' ditekan
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeFacilityModal();
+        }
+    });
+
+    // PROSES AJAX SUBMISSION FORM
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         submitBtn.disabled = true;

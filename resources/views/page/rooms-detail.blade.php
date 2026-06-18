@@ -22,15 +22,19 @@
         const msgBox = document.getElementById('validation-message-box');
         const checkInInput = document.getElementById('check_in');
         const checkOutInput = document.getElementById('check_out');
+        const guestsSelect = document.getElementById('guests-select');
 
-        // Kembalikan tombol ke "Check" jika user mengubah tanggal kembali
-        [checkInInput, checkOutInput].forEach(input => {
-            input.addEventListener('change', () => {
-                btn.setAttribute('data-state', 'check');
-                btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2";
-                btn.querySelector('span').innerText = "Check Availability";
-                msgBox.classList.add('hidden');
-            });
+        // Kembalikan tombol ke "Check" jika user mengubah tanggal atau jumlah tamu
+        [checkInInput, checkOutInput, guestsSelect].forEach(input => {
+            if(input) {
+                input.addEventListener('change', () => {
+                    btn.disabled = false;
+                    btn.setAttribute('data-state', 'check');
+                    btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
+                    btn.querySelector('span').innerText = "Check Availability";
+                    msgBox.classList.add('hidden');
+                });
+            }
         });
 
         btn.addEventListener('click', function () {
@@ -58,15 +62,13 @@
                     msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
 
                     if (data.available) {
-                        // Kamar Ada: Ubah tombol menjadi emas "Book Now"
                         btn.setAttribute('data-state', 'book');
-                        btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse";
+                        btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse cursor-pointer";
                         btn.querySelector('span').innerText = "Book Your Stay Now";
                         
                         msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
                         msgBox.innerText = data.message;
                     } else {
-                        // Kamar Penuh
                         btn.querySelector('span').innerText = "Check Availability";
                         msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
                         msgBox.innerText = data.message;
@@ -77,7 +79,7 @@
                     btn.querySelector('span').innerText = "Check Availability";
                 });
 
-            // STATE 2: Kamar sudah dipastikan ada, langsung kirim data untuk disimpan
+            // STATE 2: Simpan reservasi sah
             } else if (state === 'book') {
                 btn.disabled = true;
                 btn.querySelector('span').innerText = "Reserving Sanctuary...";
@@ -90,28 +92,51 @@
                     },
                     body: new FormData(form)
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
+                .then(async res => {
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        btn.disabled = false;
+                        btn.setAttribute('data-state', 'check');
+                        btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
+                        btn.querySelector('span').innerText = "Check Availability";
+                        
+                        msgBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+                        msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                        msgBox.innerText = data.message || "Kamar sudah penuh dipesan.";
                     } else {
-                        window.location.reload();
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            window.location.reload();
+                        }
                     }
+                })
+                .catch(() => {
+                    btn.disabled = false;
+                    btn.querySelector('span').innerText = "Check Availability";
                 });
             }
         });
     });
-</script>
+    </script>
+
     <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
         @include('layouts.navigation')
 
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex items-center space-x-2 text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
-            <a href="{{ route('home') }}" class="hover:text-neutral-900 transition-colors">Home</a>
-            <span>/</span>
-            <a href="{{ route('rooms') }}" class="hover:text-neutral-900 transition-colors">Rooms & Suites</a>
-            <span>/</span>
-            <span class="text-amber-700">{{ $room->name }}</span>
-        </nav>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <nav class="flex items-center space-x-2 text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
+                <a href="{{ route('home') }}" class="hover:text-neutral-900 transition-colors">Home</a>
+                <span>/</span>
+                <a href="{{ route('rooms') }}" class="hover:text-neutral-900 transition-colors">Rooms & Suites</a>
+                <span>/</span>
+                <span class="text-amber-700">{{ $room->name }}</span>
+            </nav>
+
+            <a href="{{ route('rooms') }}" class="inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors border border-neutral-300 hover:border-neutral-900 px-4 py-2 bg-white self-start sm:self-auto">
+                <i class="fa-solid fa-arrow-left me-2"></i> Back To Accommodations
+            </a>
+        </div>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
@@ -175,7 +200,9 @@
                             <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-users"></i></div>
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Max Occupancy</p>
-                                <p class="text-xs font-bold text-neutral-800">2 Adults, 1 Child</p>
+                                <p class="text-xs font-bold text-neutral-800">
+                                    {{ $room->max_adults ?? 2 }} Adults, {{ $room->max_children ?? 1 }} {{ ($room->max_children ?? 1) > 1 ? 'Children' : 'Child' }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -220,6 +247,34 @@
                             <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wide mt-1">Inclusive of Tax & Service Inclusions</p>
                         </div>
 
+                        @if(($room->available_count ?? 0) > 0)
+                            <div class="border border-emerald-200 bg-emerald-50/50 p-3.5 text-xs flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    <span class="font-bold text-neutral-800 uppercase tracking-wide text-[10px]">Current Live Inventory</span>
+                                </div>
+                                <span class="font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 text-[11px]">
+                                    {{ $room->available_count }} Ready
+                                </span>
+                            </div>
+                        @else
+                            <div class="border border-red-200 bg-red-50/50 p-3.5 text-xs flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                    </span>
+                                    <span class="font-bold text-neutral-800 uppercase tracking-wide text-[10px]">Current Live Inventory</span>
+                                </div>
+                                <span class="font-mono font-bold text-red-800 bg-red-100 px-2 py-0.5 text-[11px] uppercase tracking-wider">
+                                    Sold Out
+                                </span>
+                            </div>
+                        @endif
+
                         <div class="flex items-start space-x-3 bg-amber-50/50 border border-amber-100 p-3.5 text-xs">
                             <i class="fa-solid fa-shield-halved text-amber-800 mt-0.5"></i>
                             <div>
@@ -228,46 +283,58 @@
                             </div>
                         </div>
 
-                       <form id="instant-booking-form" action="{{ route('rooms.check') }}" method="POST" class="space-y-4">
-    @csrf
-    <input type="hidden" name="suite_type" value="{{ $room->name }}">
-    
-    <div class="space-y-3">
-        <div>
-            <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check-In Date</label>
-            <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
-                <input type="date" id="check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ request('check_in', date('Y-m-d')) }}" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent cursor-pointer">
-            </div>
-        </div>
-        
-        <div>
-            <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check-Out Date</label>
-            <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
-                <input type="date" id="check_out" name="check_out" required value="{{ request('check_out', date('Y-m-d', strtotime('+1 day'))) }}" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent cursor-pointer">
-            </div>
-        </div>
+                        <form id="instant-booking-form" action="{{ route('rooms.check') }}" method="POST" class="space-y-4">
+                            @csrf
+                            <input type="hidden" name="suite_type" value="{{ $room->name }}">
+                            
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check-In Date</label>
+                                    <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
+                                        <input type="date" id="check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ request('check_in', date('Y-m-d')) }}" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent cursor-pointer">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check-Out Date</label>
+                                    <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
+                                        <input type="date" id="check_out" name="check_out" required value="{{ request('check_out', date('Y-m-d', strtotime('+1 day'))) }}" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent cursor-pointer">
+                                    </div>
+                                </div>
 
-        <div>
-            <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Stay Guests</label>
-            <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
-                <select name="guests" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 appearance-none bg-transparent cursor-pointer">
-                    <option value="1 Adult">1 Adult</option>
-                    <option value="2 Adults, 1 Room" selected>2 Adults, 1 Room</option>
-                    <option value="3 Adults, 1 Room">3 Adults, 1 Room</option>
-                    <option value="4 Guests, 2 Rooms">4 Guests, 2 Rooms</option>
-                </select>
-            </div>
-        </div>
-    </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Stay Guests</label>
+                                    <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
+                                        <select id="guests-select" name="guests" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 appearance-none bg-transparent cursor-pointer">
+                                            
+                                            {{-- 1. LOOPING DEWASA DINAMIS --}}
+                                            @for($i = 1; $i <= ($room->max_adults ?? 2); $i++)
+                                                <option value="{{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}" {{ $i == 2 ? 'selected' : '' }}>
+                                                    {{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}
+                                                </option>
+                                            @endfor
+                                            
+                                            {{-- 2. OPSI MAKSIMAL (DEWASA + ANAK) DINAMIS --}}
+                                            @if(($room->max_children ?? 0) > 0)
+                                                <option value="{{ $room->max_adults ?? 2 }} Adults, {{ $room->max_children }} {{ $room->max_children > 1 ? 'Children' : 'Child' }}">
+                                                    {{ $room->max_adults ?? 2 }} Adults, {{ $room->max_children }} {{ $room->max_children > 1 ? 'Children' : 'Child' }} (Max Pack)
+                                                </option>
+                                            @endif
 
-    <div id="validation-message-box" class="hidden text-[11px] font-bold uppercase tracking-wider p-3 rounded-none"></div>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
 
-    <div id="booking-action-container">
-        <button type="button" id="submit-booking-btn" data-state="check" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2">
-            <span>Check Availability</span>
-        </button>
-    </div>
-</form>
+                            <div id="validation-message-box" class="hidden text-[11px] font-bold uppercase tracking-wider p-3 rounded-none"></div>
+
+                            <div id="booking-action-container">
+                                <button type="button" id="submit-booking-btn" data-state="check" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                                    <span>Check Availability</span>
+                                </button>
+                            </div>
+                        </form>
+
                         <p class="text-center text-[10px] text-emerald-800 font-bold uppercase tracking-widest"><i class="fa-solid fa-circle-check"></i> Free Cancellation Up to 48 Hours Before Arrival</p>
 
                         <div class="border-t border-neutral-100 pt-6 space-y-2.5 text-xs font-medium text-neutral-600">
