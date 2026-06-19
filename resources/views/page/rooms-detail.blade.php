@@ -201,7 +201,12 @@
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Max Occupancy</p>
                                 <p class="text-xs font-bold text-neutral-800">
-                                    {{ $room->max_adults ?? 2 }} Adults, {{ $room->max_children ?? 1 }} {{ ($room->max_children ?? 1) > 1 ? 'Children' : 'Child' }}
+                                    {{-- Mengatur teks dinamis max capacity --}}
+                                    @if(str_contains(strtolower($room->name), 'deluxe')) 4 Persons
+                                    @elseif(str_contains(strtolower($room->name), 'executive')) 6 Persons
+                                    @elseif(str_contains(strtolower($room->name), 'family')) 8 Persons
+                                    @else 2 Persons
+                                    @endif
                                 </p>
                             </div>
                         </div>
@@ -241,7 +246,7 @@
                                 <span class="text-neutral-800 font-sans tracking-normal ms-1 text-[11px]">4.9 (128 Reviews)</span>
                             </div>
                             <div class="text-2xl font-bold text-amber-800">
-                                Rp {{ number_format($room->price_per_night, 0, ',', '.') }} 
+                                Rp {{ number_format($room->price, 0, ',', '.') }} 
                                 <span class="text-neutral-400 text-xs font-normal tracking-wide">/ night</span>
                             </div>
                             <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wide mt-1">Inclusive of Tax & Service Inclusions</p>
@@ -307,19 +312,19 @@
                                     <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
                                         <select id="guests-select" name="guests" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 appearance-none bg-transparent cursor-pointer">
                                             
-                                            {{-- 1. LOOPING DEWASA DINAMIS --}}
-                                            @for($i = 1; $i <= ($room->max_adults ?? 2); $i++)
+                                            {{-- DDL BERBASIS LOGIKA DINAMIS MENYESUAIKAN TIPE SUITE --}}
+                                            @php
+                                                $maxCapacity = 2; // Default untuk Standard
+                                                if (str_contains(strtolower($room->name), 'deluxe')) { $maxCapacity = 4; }
+                                                elseif (str_contains(strtolower($room->name), 'executive')) { $maxCapacity = 6; }
+                                                elseif (str_contains(strtolower($room->name), 'family')) { $maxCapacity = 8; }
+                                            @endphp
+
+                                            @for($i = 1; $i <= $maxCapacity; $i++)
                                                 <option value="{{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}" {{ $i == 2 ? 'selected' : '' }}>
                                                     {{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}
                                                 </option>
                                             @endfor
-                                            
-                                            {{-- 2. OPSI MAKSIMAL (DEWASA + ANAK) DINAMIS --}}
-                                            @if(($room->max_children ?? 0) > 0)
-                                                <option value="{{ $room->max_adults ?? 2 }} Adults, {{ $room->max_children }} {{ $room->max_children > 1 ? 'Children' : 'Child' }}">
-                                                    {{ $room->max_adults ?? 2 }} Adults, {{ $room->max_children }} {{ $room->max_children > 1 ? 'Children' : 'Child' }} (Max Pack)
-                                                </option>
-                                            @endif
 
                                         </select>
                                     </div>
@@ -362,4 +367,4 @@
 
         @include('layouts.footer')
     </div>
-</x-guest-layout>
+</x-guest-layout>   

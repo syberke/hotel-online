@@ -32,9 +32,7 @@
 
             <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
                 
-                <div class="text-xs uppercase tracking-wider font-bold text-neutral-400 mr-2 flex items-center gap-1 cursor-pointer hover:text-neutral-900 transition-colors">
-                    <i class="fa-solid fa-globe"></i> EN <i class="fa-solid fa-chevron-down text-[8px]"></i>
-                </div>
+               
 
                 @guest
                     <div class="flex items-center space-x-6">

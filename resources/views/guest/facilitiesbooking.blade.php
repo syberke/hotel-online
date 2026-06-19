@@ -1,67 +1,116 @@
 <style>
     /* Menyembunyikan scrollbar bawaan untuk sub-kategori fasilitas horizontal */
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-    .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
     /* Scrollbar minimalis untuk area konten utama dan sidebar */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f5f5f3; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #d4d4d4; 
-    }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f3; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d4; }
+    [x-cloak] { display: none !important; }
 </style>
 
-<x-app-layout>
-    <div class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex flex-col lg:flex-row">
-        
-        <aside class="w-full lg:w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between p-6 shrink-0 border-r border-neutral-800">
-            <div class="space-y-8">
-                <div>
-                    <h1 class="text-xl font-serif tracking-[0.3em] text-amber-100 font-bold uppercase">Oasis</h1>
-                    <span class="text-[8px] tracking-widest text-amber-600 uppercase font-bold block mt-0.5">Guest Portal</span>
-                </div>
+<x-guest-dashboard-layout>
+    <div class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex flex-col lg:flex-row"
+         x-data="{
+            // Filter Kategori Utama (Sinkron ke Database)
+            activeCategory: 'All Facilities',
+            
+            // State Manajemen Pop-up Modal Reservasi Dinamis
+            showBookingModal: false,
+            selectedFacilityId: '',
+            selectedFacilityName: '',
+            minDate: '{{ date('Y-m-d') }}',
+            bookingDate: '{{ date('Y-m-d') }}',
+            bookingTime: '',
+            guestsCount: 2,
+            seatingPreference: 'No Preference',
+            notes: '',
+            
+            // Notifikasi Popup
+            alertMessage: '',
+            alertSuccess: true,
+            showAlert: false,
 
-                <nav class="space-y-1 text-xs uppercase tracking-wider font-bold">
-                    <span class="text-[9px] text-neutral-600 tracking-widest uppercase block mb-3 font-mono">Main Ledger</span>
-                    <a href="#" class="flex items-center gap-3 px-3 py-3 text-neutral-400 hover:text-white transition-colors">
-                        <i class="fa-solid fa-chart-pie w-4"></i> Dashboard
-                    </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-3 text-neutral-400 hover:text-white transition-colors">
-                        <i class="fa-solid fa-calendar-check w-4"></i> My Bookings
-                    </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-3 text-neutral-400 hover:text-white transition-colors">
-                        <i class="fa-solid fa-hotel w-4"></i> My Stay
-                    </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-3 text-neutral-400 hover:text-white transition-colors">
-                        <i class="fa-solid fa-bell-concierge w-4"></i> Room Service
-                    </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-3 text-neutral-400 hover:text-white transition-colors">
-                        <i class="fa-solid fa-utensils w-4"></i> Restaurant Orders
-                    </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-3 bg-neutral-900 text-amber-500 border-l-2 border-amber-500 transition-colors">
-                        <i class="fa-solid fa-spa w-4"></i> Facilities
-                    </a>
-                </nav>
-            </div>
+            // Master data array yang disuntik langsung dari database
+            allFacilities: [
+                @foreach($facilities as $f)
+                {
+                    id: {{ $f->id }},
+                    name: '{{ addslashes($f->name) }}',
+                    description: '{{ addslashes($f->description) }}',
+                    image_url: '{{ $f->image_url }}',
+                    hours: '{{ $f->hours }}',
+                    category: '{{ $f->category ?? "Wellness" }}',
+                    access_type: '{{ $f->access_type ?? "Complimentary" }}',
+                    requires_booking: {{ $f->requires_booking ? 'true' : 'false' }}
+                },
+                @endforeach
+            ],
 
-            <div class="border-t border-neutral-800 pt-4 mt-8 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-amber-100 font-serif font-bold text-xs">G1</div>
-                <div>
-                    <p class="text-xs font-bold text-white tracking-wide">guest1</p>
-                    <span class="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Patron Member</span>
-                </div>
-            </div>
-        </aside>
+            // Saringan Filter Frontend Otomatis Tanpa Reload Browser
+            get filteredFacilities() {
+                if (this.activeCategory === 'All Facilities') return this.allFacilities;
+                return this.allFacilities.filter(f => f.category.toLowerCase().trim() === this.activeCategory.toLowerCase().trim());
+            },
+
+            triggerBooking(id, name) {
+                this.selectedFacilityId = id;
+                this.selectedFacilityName = name;
+                this.showBookingModal = true;
+            },
+
+            submitBooking() {
+                if (!this.bookingTime) {
+                    alert('Please select a preferred time slot.');
+                    return;
+                }
+                
+                const submitBtn = document.getElementById('modal-submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Processing Allocation...';
+
+                fetch('{{ route("facilities.book") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        facility_name: this.selectedFacilityName,
+                        booking_date: this.bookingDate,
+                        booking_time: this.bookingTime,
+                        guests_count: this.guestsCount,
+                        seating_preference: this.seatingPreference,
+                        notes: this.notes
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Confirm Reservation Slot';
+                    this.showBookingModal = false;
+
+                    if (data.success) {
+                        this.alertMessage = data.message;
+                        this.alertSuccess = true;
+                        this.showAlert = true;
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        this.alertMessage = data.message || 'Gagal mengalokasikan slot reservasi.';
+                        this.alertSuccess = false;
+                        this.showAlert = true;
+                    }
+                })
+                .catch(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Confirm Reservation Slot';
+                    this.alertMessage = 'Terjadi gangguan transmisi menuju server cloud.';
+                    this.alertSuccess = false;
+                    this.showAlert = true;
+                });
+            }
+         }">
 
         <main class="flex-1 p-6 lg:p-8 overflow-y-auto custom-scrollbar space-y-6">
             
@@ -80,63 +129,63 @@
             </div>
 
             <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                <button type="button" class="flex flex-col items-center justify-center p-3 border border-amber-600 bg-white text-amber-800 min-w-[85px] shadow-sm">
+                <button type="button" @click="activeCategory = 'All Facilities'" :class="activeCategory === 'All Facilities' ? 'border-amber-600 bg-white text-amber-800' : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400'" class="flex flex-col items-center justify-center p-3 border min-w-[85px] shadow-sm cursor-pointer transition-colors">
                     <i class="fa-solid fa-border-all text-xs mb-1"></i>
-                    <span class="text-[9px] font-bold uppercase tracking-wider">All Facilities</span>
+                    <span class="text-[9px] font-bold uppercase tracking-wider">All Venues</span>
                 </button>
-                <button type="button" class="flex flex-col items-center justify-center p-3 border border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 min-w-[85px] shadow-sm transition-colors">
+                <button type="button" @click="activeCategory = 'Wellness'" :class="activeCategory === 'Wellness' ? 'border-amber-600 bg-white text-amber-800' : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400'" class="flex flex-col items-center justify-center p-3 border min-w-[85px] shadow-sm cursor-pointer transition-colors">
                     <i class="fa-solid fa-heart-pulse text-xs mb-1"></i>
                     <span class="text-[9px] font-bold uppercase tracking-wider">Wellness</span>
                 </button>
-                <button type="button" class="flex flex-col items-center justify-center p-3 border border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 min-w-[85px] shadow-sm transition-colors">
+                <button type="button" @click="activeCategory = 'Sports & Fitness'" :class="activeCategory === 'Sports & Fitness' ? 'border-amber-600 bg-white text-amber-800' : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400'" class="flex flex-col items-center justify-center p-3 border min-w-[85px] shadow-sm cursor-pointer transition-colors">
                     <i class="fa-solid fa-dumbbell text-xs mb-1"></i>
-                    <span class="text-[9px] font-bold uppercase tracking-wider">Sports & Fitness</span>
+                    <span class="text-[9px] font-bold uppercase tracking-wider">Fitness</span>
                 </button>
-                <button type="button" class="flex flex-col items-center justify-center p-3 border border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 min-w-[85px] shadow-sm transition-colors">
+                <button type="button" @click="activeCategory = 'Pools & Beach'" :class="activeCategory === 'Pools & Beach' ? 'border-amber-600 bg-white text-amber-800' : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400'" class="flex flex-col items-center justify-center p-3 border min-w-[85px] shadow-sm cursor-pointer transition-colors">
                     <i class="fa-solid fa-umbrella-beach text-xs mb-1"></i>
-                    <span class="text-[9px] font-bold uppercase tracking-wider">Pools & Beach</span>
+                    <span class="text-[9px] font-bold uppercase tracking-wider">Pool & Beach</span>
                 </button>
-                <button type="button" class="flex flex-col items-center justify-center p-3 border border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 min-w-[85px] shadow-sm transition-colors">
+                <button type="button" @click="activeCategory = 'Kids & Family'" :class="activeCategory === 'Kids & Family' ? 'border-amber-600 bg-white text-amber-800' : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400'" class="flex flex-col items-center justify-center p-3 border min-w-[85px] shadow-sm cursor-pointer transition-colors">
                     <i class="fa-solid fa-children text-xs mb-1"></i>
-                    <span class="text-[9px] font-bold uppercase tracking-wider">Kids & Family</span>
+                    <span class="text-[9px] font-bold uppercase tracking-wider">Family</span>
                 </button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach($facilities as $f)
-                <div class="bg-white border border-neutral-200 flex flex-col justify-between hover:border-neutral-400 transition-all duration-300 shadow-sm">
-                    <div>
-                        <div class="h-44 overflow-hidden relative bg-neutral-100">
-                            <img src="{{ $f->image_url }}" class="w-full h-full object-cover" alt="{{ $f->name }}">
-                        </div>
-                        <div class="p-5 space-y-2">
-                            <div class="flex justify-between items-start">
-                                <h4 class="text-xs font-bold uppercase tracking-wide text-neutral-900">{{ $f->name }}</h4>
-                                <span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5">
-                                    <span class="h-1 w-1 rounded-full bg-emerald-500"></span> Open Now
-                                </span>
+                <template x-for="f in filteredFacilities" :key="f.id">
+                    <div class="bg-white border border-neutral-200 flex flex-col justify-between hover:border-neutral-400 transition-all duration-300 shadow-sm">
+                        <div>
+                            <div class="h-44 overflow-hidden relative bg-neutral-100">
+                                <img :src="f.image_url" class="w-full h-full object-cover" :alt="f.name">
                             </div>
-                            <p class="text-neutral-400 text-[11px] leading-relaxed line-clamp-2">{{ $f->description }}</p>
-                            
-                            <div class="text-[10px] text-neutral-500 font-semibold flex gap-4 pt-2 border-t border-neutral-100">
-                                <span><i class="fa-solid fa-clock text-amber-700 mr-1"></i> {{ $f->hours }}</span>
-                                <span><i class="fa-solid fa-circle-info text-amber-700 mr-1"></i> {{ $f->access_type ?? 'Complimentary' }}</span>
+                            <div class="p-5 space-y-2">
+                                <div class="flex justify-between items-start gap-4">
+                                    <h4 class="text-xs font-bold uppercase tracking-wide text-neutral-900" x-text="f.name"></h4>
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 shrink-0">
+                                        <span class="h-1 w-1 rounded-full bg-emerald-500"></span> Open Now
+                                    </span>
+                                </div>
+                                <p class="text-neutral-400 text-[11px] leading-relaxed line-clamp-2" x-text="f.description"></p>
+                                
+                                <div class="text-[10px] text-neutral-500 font-semibold flex gap-4 pt-2 border-t border-neutral-100">
+                                    <span><i class="fa-solid fa-clock text-amber-700 mr-1"></i> <span x-text="f.hours"></span></span>
+                                    <span><i class="fa-solid fa-circle-info text-amber-700 mr-1"></i> <span x-text="f.access_type"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-5 pt-0">
+                            <div class="grid grid-cols-4 gap-2">
+                                <button type="button" @click="f.requires_booking ? triggerBooking(f.id, f.name) : alert('Fasilitas ini bersifat terbuka gratis. Anda bisa langsung berkunjung sesuai jam operasional tanpa registrasi slot.')" class="col-span-3 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors text-center cursor-pointer">
+                                    <span x-text="f.requires_booking ? 'Reserve Slot' : 'Walk-in Entrance'"></span>
+                                </button>
+                                <a :href="'mailto:concierge@oasisresort.com?subject=Inquiry Facilities: ' + f.name" class="border border-neutral-200 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 flex items-center justify-center py-2.5 transition-colors">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="p-5 pt-0">
-                        <div class="grid grid-cols-4 gap-2">
-                            <button type="button" class="col-span-3 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors text-center cursor-pointer">
-                                {{ $f->requires_booking ? 'Reserve Slot' : 'View Activities' }}
-                            </button>
-                            <button type="button" class="border border-neutral-200 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 flex items-center justify-center py-2.5 transition-colors cursor-pointer">
-                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
+                </template>
             </div>
 
             <div class="bg-amber-50/40 border border-amber-200/60 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -147,60 +196,65 @@
                         <p class="text-neutral-500 text-[11px] mt-0.5">Let us help you create an unforgettable private dining, wellness retreat, or custom celebration layout.</p>
                     </div>
                 </div>
-                <button type="button" class="bg-amber-800 hover:bg-amber-900 text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2.5 shrink-0 transition-colors shadow-sm">
+                <a href="mailto:concierge@oasisresort.com?subject=Special Occasion Patrons" class="bg-amber-800 hover:bg-amber-900 text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2.5 shrink-0 transition-colors shadow-sm text-center">
                     Contact Concierge
-                </button>
+                </a>
             </div>
         </main>
 
         <aside class="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-neutral-200 p-6 flex flex-col justify-between shrink-0 space-y-6 custom-scrollbar overflow-y-auto max-h-screen">
             
-            <div class="space-y-3">
+            <div class="space-y-4 flex-1">
                 <div class="flex justify-between items-center pb-2 border-b border-neutral-100">
                     <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">My Reservations</h3>
-                    <a href="#" class="text-[9px] font-bold uppercase tracking-wide text-neutral-400 hover:text-neutral-900">View All</a>
+                    <span class="text-[10px] font-mono font-bold text-neutral-700">({{ $myReservations->count() }} active)</span>
                 </div>
                 
-                <div class="space-y-2">
-                    <div class="bg-[#fafafa] border border-neutral-200 p-3 flex justify-between items-start">
-                        <div class="space-y-1">
-                            <h4 class="text-xs font-bold text-neutral-900 uppercase tracking-wide">Infinity Pool Cabana</h4>
-                            <p class="text-[10px] text-neutral-500 font-medium"><i class="fa-solid fa-calendar text-[9px] mr-1"></i> 17 Jun 2026, 14:00</p>
-                            <p class="text-[10px] text-neutral-400 font-medium">Cabana #3 &bull; 2 Adults</p>
+                <div class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                    @forelse($myReservations as $res)
+                        <div class="bg-[#fafafa] border border-neutral-200 p-3 flex justify-between items-start">
+                            <div class="space-y-1">
+                                <h4 class="text-xs font-bold text-neutral-900 uppercase tracking-wide">{{ $res->facility_name }}</h4>
+                                <p class="text-[10px] text-neutral-500 font-medium">
+                                    <i class="fa-solid fa-calendar text-[9px] mr-1"></i> {{ date('d M Y', strtotime($res->booking_date)) }}, {{ substr($res->booking_time, 0, 5) }}
+                                </p>
+                                <p class="text-[10px] text-neutral-400 font-medium">
+                                 Guests: {{ $res->guests_count }} PPL &bull; <span class="italic text-neutral-500">{{ $res->seating_preference ?? 'Standard Seating' }}</span>
+                                </p>
+                            </div>
+                            <span class="text-[8px] font-bold font-mono tracking-wider px-2 py-0.5 border uppercase
+                                {{ $res->status === 'confirmed' ? 'text-emerald-800 bg-emerald-50 border-emerald-200' : 'text-amber-800 bg-amber-50 border-amber-200' }}">
+                                {{ $res->status }}
+                            </span>
                         </div>
-                        <span class="text-[8px] font-bold font-mono tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5">CONFIRMED</span>
-                    </div>
-
-                    <div class="bg-[#fafafa] border border-neutral-200 p-3 flex justify-between items-start">
-                        <div class="space-y-1">
-                            <h4 class="text-xs font-bold text-neutral-900 uppercase tracking-wide">Spa Treatment</h4>
-                            <p class="text-[10px] text-neutral-500 font-medium"><i class="fa-solid fa-calendar text-[9px] mr-1"></i> 18 Jun 2026, 16:00</p>
-                            <p class="text-[10px] text-neutral-400 font-medium">Therapy Room 2 &bull; 1 Person</p>
+                    @empty
+                        <div class="text-center py-12 text-neutral-400 text-xs italic bg-[#fafafa] border border-neutral-100">
+                            No premium venue bookings data recorded.
                         </div>
-                        <span class="text-[8px] font-bold font-mono tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5">CONFIRMED</span>
-                    </div>
+                    @endforelse
                 </div>
             </div>
 
             <div class="space-y-3 pt-4 border-t border-neutral-100">
-                <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">Operating Hours</h3>
+                <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">Operating Hours Reference</h3>
                 <div class="space-y-2 text-xs font-medium text-neutral-600">
-                    <div class="flex justify-between border-b border-neutral-50 pb-1.5"><span>Infinity Pool</span><span class="font-mono text-neutral-800 font-bold">06:00 AM - 10:00 PM</span></div>
-                    <div class="flex justify-between border-b border-neutral-50 pb-1.5"><span>Fitness Center</span><span class="font-mono text-neutral-800 font-bold">24 Hours Open</span></div>
-                    <div class="flex justify-between border-b border-neutral-50 pb-1.5"><span>Oasis Luxury Spa</span><span class="font-mono text-neutral-800 font-bold">08:00 AM - 09:00 PM</span></div>
-                    <div class="flex justify-between border-b border-neutral-50 pb-1.5"><span>Kids Sanctuary Club</span><span class="font-mono text-neutral-800 font-bold">09:00 AM - 08:00 PM</span></div>
-                    <div class="flex justify-between"><span>Private Horizon Beach</span><span class="font-mono text-neutral-800 font-bold">06:00 AM - 07:00 PM</span></div>
+                    @foreach($facilities->take(5) as $f)
+                        <div class="flex justify-between border-b border-neutral-50 pb-1.5 last:border-none">
+                            <span class="truncate pr-4">{{ $f->name }}</span>
+                            <span class="font-mono text-neutral-800 font-bold shrink-0">{{ $f->hours }}</span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
-            <div class="space-y-3 pt-4 border-t border-neutral-100 flex-1 flex flex-col justify-end">
-                <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">Facilities Map</h3>
+            <div class="space-y-3 pt-4 border-t border-neutral-100 mt-auto">
+                <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">Facilities Layout</h3>
                 <div class="relative h-28 border border-neutral-200 bg-neutral-100 overflow-hidden shadow-inner flex items-center justify-center">
                     <img src="https://images.unsplash.com/photo-1524661135339-9140b0078ee0?q=80&w=400" class="w-full h-full object-cover blur-[1px] opacity-70" alt="Resort layout schematic">
                     <div class="absolute inset-0 bg-neutral-900/10 flex items-center justify-center">
-                        <button type="button" class="bg-white border border-neutral-300 text-neutral-800 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 hover:border-neutral-900 shadow-md transition-colors">
-                            <i class="fa-solid fa-map-location-dot text-amber-700 mr-1"></i> View Resort Map
-                        </button>
+                        <a href="https://images.unsplash.com/photo-1524661135339-9140b0078ee0?q=80&w=1200" target="_blank" class="bg-white border border-neutral-300 text-neutral-800 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 hover:border-neutral-900 shadow-md transition-colors">
+                            <i class="fa-solid fa-map-location-dot text-amber-700 mr-1"></i> Open Resort Map
+                        </a>
                     </div>
                 </div>
 
@@ -210,13 +264,82 @@
                         <a href="tel:+62361123456" class="border border-neutral-200 text-neutral-700 font-bold text-[10px] uppercase tracking-wider py-2 hover:border-neutral-900 transition-colors flex items-center justify-center gap-1">
                             <i class="fa-solid fa-phone text-amber-800"></i> Call Ext. 500
                         </a>
-                        <a href="#" class="border border-neutral-200 text-neutral-700 font-bold text-[10px] uppercase tracking-wider py-2 hover:border-neutral-900 transition-colors flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-comments text-amber-800"></i> Live Chat 24/7
+                        <a href="mailto:concierge@oasisresort.com" class="border border-neutral-200 text-neutral-700 font-bold text-[10px] uppercase tracking-wider py-2 hover:border-neutral-900 transition-colors flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-comments text-amber-800"></i> Mail Concierge
                         </a>
                     </div>
                 </div>
             </div>
 
         </aside>
+
+        <div x-show="showBookingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" x-cloak>
+            <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showBookingModal = false"></div>
+            <div class="relative bg-white max-w-sm w-full border border-neutral-200 p-6 shadow-2xl transform transition-all text-left space-y-4">
+                <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
+                    <div>
+                        <span class="text-[8px] font-bold uppercase tracking-widest text-amber-700">Instant Venue Allocation</span>
+                        <h3 class="text-sm font-serif text-neutral-900 uppercase tracking-wide mt-0.5" x-text="selectedFacilityName"></h3>
+                    </div>
+                    <button @click="showBookingModal = false" class="text-neutral-400 hover:text-neutral-900 text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Select Target Date</label>
+                        <input type="date" :min="minDate" x-model="bookingDate" class="w-full border border-neutral-300 px-3 py-2 text-xs bg-transparent focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
+                    </div>
+
+                    <div>
+                        <label class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Preferred Time Slot</label>
+                        <select x-model="bookingTime" class="w-full border border-neutral-300 px-3 py-2 text-xs bg-white focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
+                            <option value="">Choose slot timing...</option>
+                            <option value="08:00:00">08:00 AM &mdash; Morning Bliss</option>
+                            <option value="10:30:00">10:30 AM &mdash; Late Morning Session</option>
+                            <option value="14:00:00">02:00 PM &mdash; Afternoon Relaxation</option>
+                            <option value="16:30:00">04:30 PM &mdash; Golden Hour Slot</option>
+                            <option value="19:00:00">07:00 PM &mdash; Evening Serenity</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">PPL Count</label>
+                            <input type="number" min="1" max="10" x-model="guestsCount" class="w-full border border-neutral-300 px-3 py-2 text-xs focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Seating Orientation</label>
+                            <select x-model="seatingPreference" class="w-full border border-neutral-300 px-3 py-2 text-xs bg-white focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
+                                <option value="No Preference">Standard Space</option>
+                                <option value="Ocean View Deck">Ocean Window Deck</option>
+                                <option value="VIP Private Corner">VIP Private Corner</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Dietary/Allergy Or Special Requirements</label>
+                        <textarea rows="2" x-model="notes" placeholder="E.g. Nut allergy, wheel chair access, anniversary layout decoration arrangement..." class="w-full border border-neutral-300 px-3 py-2 text-xs placeholder-neutral-300 focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900"></textarea>
+                    </div>
+
+                    <button type="button" @click="submitBooking()" id="modal-submit-btn" class="w-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3 transition-colors cursor-pointer text-center shadow-md">
+                        Confirm Reservation Slot
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="showAlert" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+            <div class="absolute inset-0 bg-neutral-950/20 backdrop-blur-xs" @click="showAlert = false"></div>
+            <div class="relative bg-white max-w-xs w-full border border-neutral-200 p-6 shadow-2xl text-center transform transition-all space-y-3">
+                <div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center border text-sm" :class="alertSuccess ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'">
+                    <i class="fa-solid" :class="alertSuccess ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
+                </div>
+                <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-900" x-text="alertSuccess ? 'Success Allocation' : 'Operation Refused'"></h4>
+                <p class="text-neutral-500 text-[11px] leading-relaxed" x-text="alertMessage"></p>
+                <button @click="showAlert = false" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-2 transition-colors cursor-pointer">Dismiss</button>
+            </div>
+        </div>
+
     </div>
-</x-app-layout>
+</x-guest-dashboard-layout>

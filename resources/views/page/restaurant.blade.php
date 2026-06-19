@@ -1,5 +1,4 @@
 <style>
-   
     /* Desain scrollbar minimalis khusus area menu Oasis */
     .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
@@ -13,10 +12,42 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #a3a3a3; 
     }
+    [x-cloak] { display: none !important; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <x-guest-layout>
-    <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
+    <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased"
+         x-data="{
+            cart: JSON.parse(localStorage.getItem('oasis_restaurant_cart') || '[]'),
+            showToast: false,
+            toastMessage: '',
+
+            init() {
+                this.$watch('cart', value => {
+                    localStorage.setItem('oasis_restaurant_cart', JSON.stringify(value));
+                });
+            },
+
+            addItemToGlobalCart(id, name, price, imageUrl) {
+                let found = this.cart.find(i => i.id === id);
+                if (found) {
+                    found.quantity++;
+                } else {
+                    this.cart.push({
+                        id: id,
+                        title: name,
+                        price: price,
+                        image_url: imageUrl,
+                        quantity: 1,
+                        venue: 'Oasis Fine Dining'
+                    });
+                }
+                this.toastMessage = 'Added ' + name + ' to your dashboard cart!';
+                this.showToast = true;
+                setTimeout(() => this.showToast = false, 2500);
+            }
+         }">
         
         @include('layouts.navigation')
 
@@ -161,7 +192,6 @@
                 
                 <form action="{{ route('restaurant') }}" method="GET" class="w-full lg:w-1/4">
                     <input type="hidden" name="category" value="{{ request('category', 'All Menu') }}">
-
                     <aside class="w-full bg-white border border-neutral-200 p-6 rounded-none space-y-6 sticky top-28">
                         <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
                             <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Search & Options</h3>
@@ -187,8 +217,6 @@
                             </div>
                         </div>
 
-                        
-
                         <div class="border border-amber-800/20 bg-amber-50/40 p-4 rounded-none space-y-2 text-xs">
                             <h5 class="font-bold uppercase tracking-wider text-amber-900"><i class="fa-solid fa-bell-concierge"></i> 24/7 In-Room Delivery</h5>
                             <p class="text-neutral-600 text-[11px] leading-relaxed">All featured dishes can be directly ordered to your personal suite enclosure. Est transit time: 20-30 mins. Standard 10% service premium applies.</p>
@@ -199,89 +227,55 @@
                 <section class="w-full lg:w-3/4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[960px] overflow-y-auto pr-2 custom-scrollbar" id="menu-cards-scrollbox">
                         
-                      @forelse($culinaryMenus as $menu)
-<div class="bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
-    <div>
-        <div class="h-48 overflow-hidden relative bg-neutral-100">
-            <a href="{{ route('restaurant.detail', $menu->id) }}" class="block w-full h-full">
-                <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
-            </a>
-
-            <span class="absolute bottom-4 left-4 bg-amber-800 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-none">
-                <i class="fa-solid fa-star text-amber-400 mr-0.5"></i> Chef Recommendation
-            </span>
-        </div>
-        
-        <div class="p-5">
-            <div class="text-[9px] uppercase tracking-wider font-bold text-neutral-400 mb-1">Premium Gastronomy</div>
-            
-            <a href="{{ route('restaurant.detail', $menu->id) }}" class="block group-hover:text-amber-800 transition-colors">
-                <h4 class="text-sm font-bold uppercase tracking-wide text-neutral-900 font-sans mb-1.5">{{ $menu->name }}</h4>
-            </a>
-            
-            <p class="text-neutral-400 text-[11px] leading-relaxed mb-3 line-clamp-3">{{ $menu->description }}</p>
-            <div class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest"><i class="fa-solid fa-fire-flame-curved text-neutral-400 mr-1"></i> Energy Value: Verified Organic</div>
-        </div>
-    </div>
-    
-    <div class="p-5 pt-0">
-        <div class="flex flex-col gap-3 border-t border-neutral-100 pt-3">
-            <div class="text-base font-bold text-amber-900">
-                Rp {{ number_format($menu->price, 0, ',', '.') }}
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2">
-                <a href="{{ route('restaurant.detail', $menu->id) }}" class="w-full text-center border border-neutral-300 hover:border-neutral-900 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-2 rounded-none transition-colors flex items-center justify-center">
-                    View Detail
-                </a>
-                
-                <button type="button" onclick="openOrderModal('{{ $menu->name }}', {{ $menu->price }})" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white text-[9px] font-bold uppercase tracking-widest py-2 rounded-none transition-colors cursor-pointer text-center">
-                    Add To Order
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-@empty
-<div class="col-span-2 p-12 text-center bg-white border border-neutral-200">
-    <p class="text-xs text-neutral-400 italic font-medium">No gastronomy masterpiece matches your chosen filters.</p>
-</div>
-@endforelse
+                        @forelse($culinaryMenus as $menu)
+                        <div class="bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
+                            <div>
+                                <div class="h-48 overflow-hidden relative bg-neutral-100">
+                                    <a href="{{ route('restaurant.detail', $menu->id) }}" class="block w-full h-full">
+                                        <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
+                                    </a>
+                                    <span class="absolute bottom-4 left-4 bg-amber-800 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-none">
+                                        <i class="fa-solid fa-star text-amber-400 mr-0.5"></i> Chef Recommendation
+                                    </span>
+                                </div>
+                                
+                                <div class="p-5">
+                                    <div class="text-[9px] uppercase tracking-wider font-bold text-neutral-400 mb-1">Premium Gastronomy</div>
+                                    <a href="{{ route('restaurant.detail', $menu->id) }}" class="block group-hover:text-amber-800 transition-colors">
+                                        <h4 class="text-sm font-bold uppercase tracking-wide text-neutral-900 font-sans mb-1.5">{{ $menu->name }}</h4>
+                                    </a>
+                                    <p class="text-neutral-400 text-[11px] leading-relaxed mb-3 line-clamp-3">{{ $menu->description }}</p>
+                                    <div class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest"><i class="fa-solid fa-fire-flame-curved text-neutral-400 mr-1"></i> Energy Value: Verified Organic</div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-5 pt-0">
+                                <div class="flex flex-col gap-3 border-t border-neutral-100 pt-3">
+                                    <div class="text-base font-bold text-amber-900">
+                                        Rp {{ number_format($menu->price, 0, ',', '.') }}
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <a href="{{ route('restaurant.detail', $menu->id) }}" class="w-full text-center border border-neutral-300 hover:border-neutral-900 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-2 rounded-none transition-colors flex items-center justify-center">
+                                            View Detail
+                                        </a>
+                                        <button type="button" @click="addItemToGlobalCart({{ $menu->id }}, '{{ addslashes($menu->name) }}', {{ $menu->price }}, '{{ $menu->foto_url }}')" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white text-[9px] font-bold uppercase tracking-widest py-2 rounded-none transition-colors cursor-pointer text-center">
+                                            Add To Order
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="col-span-2 p-12 text-center bg-white border border-neutral-200">
+                            <p class="text-xs text-neutral-400 italic font-medium">No gastronomy masterpiece matches your chosen filters.</p>
+                        </div>
+                        @endforelse
 
                     </div>
                 </section>
             </div>
         </section>
-
-        <div id="culinaryOrderModal" class="fixed inset-0 z-50 overflow-y-auto hidden flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-sm">
-            <div class="bg-white max-w-sm w-full border border-neutral-200 p-8 shadow-2xl relative">
-                <button type="button" onclick="closeOrderModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900"><i class="fa-solid fa-xmark"></i></button>
-                <div class="mb-4">
-                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700 block">Suite Gastronomy Service</span>
-                    <h3 id="modal-food-title" class="text-lg font-serif text-neutral-900 mt-1">Item Name</h3>
-                </div>
-                <form id="gastronomy-ajax-form" action="{{ route('restaurant.order') }}" method="POST" class="space-y-4">
-                    @csrf
-                    <input type="hidden" id="final-invoice-price" name="total_price">
-                    <div class="flex items-center justify-between border-y border-neutral-100 py-3">
-                        <span class="text-xs font-bold text-neutral-700 uppercase tracking-wider">Portion Quantity</span>
-                        <div class="flex items-center border border-neutral-300">
-                            <button type="button" onclick="changeQty(-1)" class="px-3 py-1 text-xs font-bold hover:bg-neutral-100">-</button>
-                            <input type="text" id="display-qty" value="1" readonly class="w-10 text-center border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800">
-                            <button type="button" onclick="changeQty(1)" class="px-3 py-1 text-xs font-bold hover:bg-neutral-100">+</button>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider">
-                        <span>Total Price</span>
-                        <span id="display-total-cost" class="text-amber-800 font-mono text-sm">Rp 0</span>
-                    </div>
-                    <div id="modal-response-message" class="hidden p-3 text-[10px] font-bold uppercase tracking-wider"></div>
-                    <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
-                        Confirm Order To Room
-                    </button>
-                </form>
-            </div>
-        </div>
 
         <section class="bg-white border-y border-neutral-200 py-24 px-6">
             <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -345,58 +339,57 @@
                 <p class="text-neutral-400 text-xs mt-2">Reservations are highly recommended at least 24 hours in advance to guarantee optimized seating.</p>
             </div>
 
-         <form action="{{ route('facilities.book') }}" method="POST" class="space-y-6" id="restaurant-table-form">
-    @csrf
-    
-    <input type="hidden" name="facility_name" value="Restaurant Table">
+            <form action="{{ route('facilities.book') }}" method="POST" class="space-y-6" id="restaurant-table-form">
+                @csrf
+                <input type="hidden" name="facility_name" value="Restaurant Table">
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Select Date</label>
-            <input type="date" name="booking_date" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
-        </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Select Date</label>
+                        <input type="date" name="booking_date" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
+                    </div>
 
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Select Preferred Time Slot</label>
-            <select name="booking_time" required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
-                <option selected disabled>Choose time slot</option>
-                <option value="12:00:00">12:00 PM &mdash; Lunch</option>
-                <option value="13:30:00">01:30 PM &mdash; Lunch</option>
-                <option value="18:00:00">06:00 PM &mdash; Dinner</option>
-                <option value="19:30:00">07:30 PM &mdash; Dinner</option>
-                <option value="21:00:00">09:00 PM &mdash; Night Cap</option>
-            </select>
-        </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Select Preferred Time Slot</label>
+                        <select name="booking_time" required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
+                            <option selected disabled>Choose time slot</option>
+                            <option value="12:00:00">12:00 PM &mdash; Lunch</option>
+                            <option value="13:30:00">01:30 PM &mdash; Lunch</option>
+                            <option value="18:00:00">06:00 PM &mdash; Dinner</option>
+                            <option value="19:30:00">07:30 PM &mdash; Dinner</option>
+                            <option value="21:00:00">09:00 PM &mdash; Night Cap</option>
+                        </select>
+                    </div>
 
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Number of Guests</label>
-            <input type="number" name="guests_count" min="1" max="20" value="2" required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
-        </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Number of Guests</label>
+                        <input type="number" name="guests_count" min="1" max="20" value="2" required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
+                    </div>
 
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Seating Preference Alignment</label>
-            <select name="seating_preference" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
-                <option selected value="No Preference">No Preference (Optimized Area)</option>
-                <option value="Full Ocean Window">Full Ocean Window Seating</option>
-                <option value="Outdoor Open Air">Outdoor Open Air Deck Area</option>
-                <option value="Isolated Intimate">Isolated Intimate Cozy Booth</option>
-            </select>
-        </div>
-    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Seating Preference Alignment</label>
+                        <select name="seating_preference" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
+                            <option selected value="No Preference">No Preference (Optimized Area)</option>
+                            <option value="Full Ocean Window">Full Ocean Window Seating</option>
+                            <option value="Outdoor Open Air">Outdoor Open Air Deck Area</option>
+                            <option value="Isolated Intimate">Isolated Intimate Cozy Booth</option>
+                        </select>
+                    </div>
+                </div>
 
-    <div>
-        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Special Occasion / Dietary Notes</label>
-        <textarea name="notes" rows="3" placeholder="E.g., Birthday Celebration, Severe Nut Allergies, High Chair Requirements..." class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 placeholder-neutral-300 bg-transparent"></textarea>
-    </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Special Occasion / Dietary Notes</label>
+                    <textarea name="notes" rows="3" placeholder="E.g., Birthday Celebration, Severe Nut Allergies, High Chair Requirements..." class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 placeholder-neutral-300 bg-transparent"></textarea>
+                </div>
 
- <div id="table-alert-box" class="hidden p-3 text-[11px] font-bold uppercase tracking-wider mb-4 rounded-none"></div>
+                <div id="table-alert-box" class="hidden p-3 text-[11px] font-bold uppercase tracking-wider mb-4 rounded-none"></div>
 
-<div class="pt-2">
-    <button type="submit" id="table-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all cursor-pointer">
-        Validate & Confirm Table Allocation
-    </button>
-</div>
-</form>
+                <div class="pt-2">
+                    <button type="submit" id="table-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all cursor-pointer">
+                        Validate & Confirm Table Allocation
+                    </button>
+                </div>
+            </form>
         </section>
 
         <section class="max-w-3xl mx-auto px-6 pb-24 text-center border-b border-neutral-200/60">
@@ -421,20 +414,26 @@
             </div>
         </section>
 
+        <div x-show="showToast" x-cloak 
+             class="fixed bottom-5 right-5 z-50 bg-neutral-900 text-white text-xs uppercase tracking-wider font-bold py-3.5 px-6 shadow-2xl border border-neutral-800 flex items-center gap-2.5"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4"
+             x-transition:leave="transition ease-in duration-200">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+
         @include('layouts.footer')
     </div>
 </x-guest-layout>
 
 <script>
-    // --- SMART FIX: Mengunci Posisi Scroll Saat Melakukan Filter ---
     document.addEventListener("DOMContentLoaded", function() {
-        // Balikkan scroll window ke koordinat terakhir sebelum refresh
         if (localStorage.getItem('restaurant_scroll_y')) {
             window.scrollTo(0, parseInt(localStorage.getItem('restaurant_scroll_y')));
             localStorage.removeItem('restaurant_scroll_y');
         }
         
-        // Balikkan tingkat scroll box grid menu internal agar tidak reset ke atas
         const scrollBox = document.getElementById('menu-cards-scrollbox');
         if (scrollBox && localStorage.getItem('menu_box_scroll_top')) {
             scrollBox.scrollTop = parseInt(localStorage.getItem('menu_box_scroll_top'));
@@ -442,7 +441,6 @@
         }
     });
 
-    // Simpan posisi koordinat tepat sebelum form filter reload dikirim ke server
     window.addEventListener("beforeunload", function() {
         localStorage.setItem('restaurant_scroll_y', window.scrollY);
         const scrollBox = document.getElementById('menu-cards-scrollbox');
@@ -451,131 +449,48 @@
         }
     });
 
-    // --- LOGIKA MODAL RESTORAN AJAX ---
-    const orderModalBox = document.getElementById('culinaryOrderModal');
-    const foodTitleLabel = document.getElementById('modal-food-title');
-    const invoicePriceInput = document.getElementById('final-invoice-price');
-    const qtyCountInput = document.getElementById('display-qty');
-    const totalCostLabel = document.getElementById('display-total-cost');
-    const resAlertBox = document.getElementById('modal-response-message');
-    const culinaryForm = document.getElementById('gastronomy-ajax-form');
-    const actionSubmitBtn = document.getElementById('modal-submit-btn');
+    // RESERVASI MEJA RESTORAN AJAX HANDLING
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableForm = document.getElementById('restaurant-table-form');
+        const tableBtn = document.getElementById('table-submit-btn');
+        const tableAlert = document.getElementById('table-alert-box');
 
-    let rawFoodPrice = 0;
+        if (tableForm) {
+            tableForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                tableBtn.disabled = true;
+                tableBtn.innerText = "Processing Allocation...";
 
-    function openOrderModal(itemName, unitPrice) {
-        rawFoodPrice = unitPrice;
-        foodTitleLabel.innerText = itemName;
-        qtyCountInput.value = 1;
-        recalculateInvoiceCost();
-        resAlertBox.classList.add('hidden');
-        orderModalBox.classList.remove('hidden');
-    }
+                fetch(tableForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(tableForm)
+                })
+                .then(async response => {
+                    const data = await response.json();
+                    tableBtn.disabled = false;
+                    tableBtn.innerText = "Validate & Confirm Table Allocation";
+                    tableAlert.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
 
-    function closeOrderModal() {
-        orderModalBox.classList.add('hidden');
-    }
-
-    function changeQty(delta) {
-        let targetAmount = parseInt(qtyCountInput.value) + delta;
-        if (targetAmount >= 1 && targetAmount <= 10) {
-            qtyCountInput.value = targetAmount;
-            recalculateInvoiceCost();
-        }
-    }
-
-    function recalculateInvoiceCost() {
-        let combinedSum = rawFoodPrice * parseInt(qtyCountInput.value);
-        invoicePriceInput.value = combinedSum;
-        totalCostLabel.innerText = 'Rp ' + combinedSum.toLocaleString('id-ID');
-    }
-
-    culinaryForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        actionSubmitBtn.disabled = true;
-        actionSubmitBtn.innerText = "Transmitting Order Request...";
-
-        fetch(culinaryForm.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            },
-            body: new FormData(culinaryForm)
-        })
-        .then(async res => {
-            const serverData = await res.json();
-            actionSubmitBtn.disabled = false;
-            actionSubmitBtn.innerText = "Confirm Order To Room";
-            resAlertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-            if (res.ok && serverData.success) {
-                resAlertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                resAlertBox.innerText = serverData.message;
-                setTimeout(() => { closeOrderModal(); }, 2000);
-            } else {
-                resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                resAlertBox.innerText = serverData.message || "Pemesanan ditolak oleh server internal.";
-            }
-        })
-        .catch(() => {
-            actionSubmitBtn.disabled = false;
-            actionSubmitBtn.innerText = "Confirm Order To Room";
-            resAlertBox.classList.remove('hidden');
-            resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-            resAlertBox.innerText = "Terjadi gangguan transmisi jaringan lokal.";
-        });
-    });
-    // Taruh kode ini di dalam blok <script> paling bawah halaman restaurant.blade.php
-document.addEventListener('DOMContentLoaded', function () {
-    const tableForm = document.getElementById('restaurant-table-form');
-    const tableBtn = document.getElementById('table-submit-btn');
-    const tableAlert = document.getElementById('table-alert-box');
-
-    if (tableForm) {
-        tableForm.addEventListener('submit', function (e) {
-            e.preventDefault(); // Mencegah browser reload halaman dan memuntahkan JSON mentah
-            
-            tableBtn.disabled = true;
-            tableBtn.innerText = "Processing Allocation...";
-
-            fetch(tableForm.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: new FormData(tableForm)
-            })
-            .then(async response => {
-                const data = await response.json();
-                tableBtn.disabled = false;
-                tableBtn.innerText = "Validate & Confirm Table Allocation";
-                
-                // Bersihkan style alert box sebelumnya
-                tableAlert.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-                if (response.ok && data.success) {
-                    // Jika sukses, berikan warna hijau kemewahan Oasis
-                    tableAlert.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                    tableAlert.innerText = data.message;
-                    
-                    // Reset form otomatis setelah berhasil membooking slot meja
-                    tableForm.reset(); 
-                } else {
-                    // Jika gagal (atau belum login), berikan warna merah peringatan
+                    if (response.ok && data.success) {
+                        tableAlert.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                        tableAlert.innerText = data.message;
+                        tableForm.reset(); 
+                    } else {
+                        tableAlert.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                        tableAlert.innerText = data.message || "Gagal mengalokasikan meja.";
+                    }
+                })
+                .catch(() => {
+                    tableBtn.disabled = false;
+                    tableBtn.innerText = "Validate & Confirm Table Allocation";
                     tableAlert.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    tableAlert.innerText = data.message || "Gagal mengalokasikan meja. Silakan periksa kembali akun login Anda.";
-                }
-            })
-            .catch(() => {
-                tableBtn.disabled = false;
-                tableBtn.innerText = "Validate & Confirm Table Allocation";
-                tableAlert.classList.remove('hidden');
-                tableAlert.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                tableAlert.innerText = "Terjadi gangguan transmisi sinyal menuju server lokal.";
+                    tableAlert.innerText = "Terjadi gangguan transmisi sinyal menuju server lokal.";
+                });
             });
-        });
-    }
-});
+        }
+    });
 </script>

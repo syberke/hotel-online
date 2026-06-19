@@ -1,4 +1,6 @@
 <x-guest-layout>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
     <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
         
         @include('layouts.navigation')
@@ -36,7 +38,7 @@
                 <div class="border-b md:border-b-0 md:border-r border-neutral-100 pb-4 md:pb-0 pr-2">
                     <div class="text-amber-800 text-base mb-2"><i class="fa-solid fa-envelope"></i> Email Matrix</div>
                     <a href="mailto:stay@oasishotel.com" class="text-xs font-bold text-neutral-800 tracking-wide block hover:underline">stay@oasishotel.com</a>
-                    <p class="text-[10px] text-neutral-400 mt-1 uppercase tracking-wider font-semibold">Response < 15 Mins</p>
+                    <p class="text-[10px] text-neutral-400 mt-1 uppercase tracking-wider font-semibold">Response &lt; 15 Mins</p>
                 </div>
                 <div class="border-b md:border-b-0 md:border-r border-neutral-100 pb-4 md:pb-0 pr-2">
                     <div class="text-amber-800 text-base mb-2"><i class="fa-brands fa-whatsapp"></i> WhatsApp Chat</div>
@@ -46,7 +48,7 @@
                 <div class="pr-2">
                     <div class="text-amber-800 text-base mb-2"><i class="fa-solid fa-location-dot"></i> Resort Address</div>
                     <p class="text-xs font-bold text-neutral-800 tracking-wide line-clamp-1">Nusa Dua, Bali, Indonesia</p>
-                    <a href="#map-block" class="text-[10px] text-amber-700 mt-1 uppercase tracking-wider font-bold block hover:text-neutral-900 transition-colors">View Map Location &rarr;</a>
+                    <a href="#map-block" class="text-[10px] text-amber-700 mt-1 uppercase tracking-wider font-bold block hover:text-neutral-900 transition-colors">View Map Location →</a>
                 </div>
             </div>
         </section>
@@ -154,58 +156,50 @@
 
                         <div>
                             <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all">
-                                Dispatch Security Message &rarr;
+                                Dispatch Security Message →
                             </button>
                         </div>
                     </form>
                 </section>
 
-           <section id="map-block" class="w-full lg:w-5/12 bg-white border border-neutral-200 p-8 rounded-none flex flex-col justify-between self-stretch">
-    <div>
-        <div class="mb-6">
-            <h3 class="text-sm font-bold uppercase tracking-widest text-neutral-900 mb-1">Our Location</h3>
-            <p class="text-neutral-400 text-xs">Uninterrupted beachfront positioning inside the exclusive security enclave of Nusa Dua, Bali.</p>
-        </div>
+                <section id="map-block" class="w-full lg:w-5/12 bg-white border border-neutral-200 p-8 rounded-none flex flex-col justify-between self-stretch">
+                    <div>
+                        <div class="mb-6">
+                            <h3 class="text-sm font-bold uppercase tracking-widest text-neutral-900 mb-1">Our Location</h3>
+                            <p class="text-neutral-400 text-xs">Uninterrupted beachfront positioning inside the exclusive security enclave of Nusa Dua, Bali.</p>
+                        </div>
 
-        <div class="w-full border border-neutral-200 relative mb-6 overflow-hidden shadow-sm" style="height: 280px;">
-            <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15771.691771146743!2d115.22244243673752!3d-8.798035133276184!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd243236e768b57%3A0x6bda190979fa4f5b!2sNusa%20Dua%2C%20Kuta%20Selatan%2C%20Badung%20Regency%2C%20Bali!5e0!3m2!1sid!2sid!4v1710000000000!5m2!1sid!2sid" 
-                class="w-full h-full absolute inset-0 border-0 m-0 p-0" 
-                allowfullscreen="" 
-                loading="lazy" 
-                referrerpolicy="no-referrer-when-downgrade"
-                style="filter: grayscale(15%) contrast(105%);">
-            </iframe>
-        </div>
+                        <div id="contactOasisMap" class="w-full border border-neutral-200 mb-6 shadow-sm z-10" style="height: 280px;"></div>
 
-        <div class="space-y-4 border-t border-neutral-100 pt-6">
-            <h4 class="text-[10px] font-bold uppercase tracking-wider text-neutral-800 mb-2"><i class="fa-solid fa-plane-arrival text-amber-800 mr-1.5"></i> Transit Vectors & Logistics</h4>
-            <div class="grid grid-cols-1 gap-3 text-[11px] font-medium text-neutral-500">
-                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
-                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Ngurah Rai Airport (DPS)</span>
-                    <span>12.4 km / 20 Mins Drive</span>
-                </div>
-                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
-                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Benoa Luxury Cruise Port</span>
-                    <span>15.1 km / 25 Mins Drive</span>
-                </div>
-                <div class="flex justify-between items-baseline pb-1">
-                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Private Transit Helicopter Pad</span>
-                    <span>In-Resort Access (North Field)</span>
-                </div>
-            </div>
-        </div>
-    </div>
+                        <div class="space-y-4 border-t border-neutral-100 pt-6">
+                            <h4 class="text-[10px] font-bold uppercase tracking-wider text-neutral-800 mb-2"><i class="fa-solid fa-plane-arrival text-amber-800 mr-1.5"></i> Transit Vectors & Logistics</h4>
+                            <div class="grid grid-cols-1 gap-3 text-[11px] font-medium text-neutral-500">
+                                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
+                                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Ngurah Rai Airport (DPS)</span>
+                                    <span>12.4 km / 20 Mins Drive</span>
+                                </div>
+                                <div class="flex justify-between items-baseline border-b border-dashed border-neutral-200 pb-2">
+                                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Benoa Luxury Cruise Port</span>
+                                    <span>15.1 km / 25 Mins Drive</span>
+                                </div>
+                                <div class="flex justify-between items-baseline pb-1">
+                                    <span class="text-neutral-800 font-bold uppercase tracking-wide text-[10px]">Private Transit Helicopter Pad</span>
+                                    <span>In-Resort Access (North Field)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    <div class="border-t border-neutral-100 pt-6 mt-6 grid grid-cols-2 gap-3 text-center">
-        <a href="https://maps.google.com/?q=Nusa+Dua+Bali" target="_blank" rel="noopener noreferrer" class="border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-map-location-dot text-amber-800"></i> Open Google Maps
-        </a>
-        <a href="https://maps.apple.com/?q=Nusa+Dua+Bali" target="_blank" rel="noopener noreferrer" class="border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors flex items-center justify-center gap-1.5">
-            <i class="fa-brands fa-apple text-neutral-900"></i> Open Apple Maps
-        </a>
-    </div>
-</section>
+                    <div class="border-t border-neutral-100 pt-6 mt-6 grid grid-cols-2 gap-3 text-center">
+                        <a href="https://maps.google.com/?q=-8.8034,115.2126" target="_blank" rel="noopener noreferrer" class="border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-map-location-dot text-amber-800"></i> Open Google Maps
+                        </a>
+                        <a href="https://maps.apple.com/?q=Nusa+Dua+Bali" target="_blank" rel="noopener noreferrer" class="border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-800 text-[9px] font-bold uppercase tracking-widest py-3 rounded-none transition-colors flex items-center justify-center gap-1.5">
+                            <i class="fa-brands fa-apple text-neutral-900"></i> Open Apple Maps
+                        </a>
+                    </div>
+                </section>
+
             </div>
         </main>
 
@@ -242,15 +236,15 @@
                     </div>
                     <div class="space-y-1">
                         <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Signature Dining</div>
-                        <div class="text-neutral-800 font-bold">06:30 AM &mdash; 11:00 PM</div>
+                        <div class="text-neutral-800 font-bold">06:30 AM — 11:00 PM</div>
                     </div>
                     <div class="space-y-1">
                         <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Spa & Wellness</div>
-                        <div class="text-neutral-800 font-bold">09:00 AM &mdash; 09:00 PM</div>
+                        <div class="text-neutral-800 font-bold">09:00 AM — 09:00 PM</div>
                     </div>
                     <div class="space-y-1">
                         <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Executive Lounge</div>
-                        <div class="text-neutral-800 font-bold">07:00 AM &mdash; 11:00 PM</div>
+                        <div class="text-neutral-800 font-bold">07:00 AM — 11:00 PM</div>
                     </div>
                 </div>
             </div>
@@ -281,4 +275,30 @@
         @include('layouts.footer')
 
     </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // Inisialisasi peta Leaflet interaktif pada div #contactOasisMap dengan koordinat Nusa Dua Bali
+        var contactMap = L.map('contactOasisMap', {
+            scrollWheelZoom: false // Mencegah interupsi scroll halaman yang tidak sengaja
+        }).setView([-8.8034, 115.2126], 14);
+
+        // Memuat tile layer bergaya clean openstreetmap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(contactMap);
+
+        // Menambahkan penanda pin (Marker) lokasi resor
+        var resortMarker = L.marker([-8.8034, 115.2126]).addTo(contactMap);
+        
+        // Memasang struktur popup teks kaya otomatis ketika peta termuat sempurna
+        resortMarker.bindPopup(`
+            <div style="font-family: sans-serif; padding: 2px;">
+                <b style="color: #111; font-size: 12px; text-transform: uppercase; tracking: 0.5px;">Oasis Premium Resort</b>
+                <p style="color: #666; font-size: 10px; margin: 4px 0 0 0; line-height: 1.4;">Kawasan Eksklusif ITDC Lot 8,<br>Nusa Dua, Bali, Indonesia.</p>
+            </div>
+        `).openPopup();
+    </script>
 </x-guest-layout>

@@ -1,8 +1,7 @@
-<x-guest-layout>
+  <x-guest-dashboard-layout>
     <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
         
-        @include('layouts.navigation')
-
+   
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             
             <div class="border-b border-neutral-200 pb-6 mb-12">
@@ -34,6 +33,5 @@
             </div>
         </div>
 
-        @include('layouts.footer')
     </div>
-</x-guest-layout>
+  </x-guest-dashboard-layout>

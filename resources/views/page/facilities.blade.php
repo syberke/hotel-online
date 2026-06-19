@@ -99,179 +99,105 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
-                @php
-                $facilitiesList = [
-                    ['name' => 'Infinity Pool', 'img' => 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?q=80&w=600', 'desc' => 'Oceanfront architectural pool outfitted with private service cabanas and elite panoramic sunset viewpoints.'],
-                    ['name' => 'Luxury Spa & Wellness', 'img' => 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=600', 'desc' => 'Signature clinical anatomy rooms delivering custom aromatherapy massage cycles and advanced steam facilities.'],
-                    ['name' => 'Elite Fitness Center', 'img' => 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600', 'desc' => 'State-of-the-art technological athletic conditioning spaces with assigned personal training masters and yoga setups.'],
-                    ['name' => 'Fine Dining Restaurant', 'img' => 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=600', 'desc' => 'Michelin-concept gastronomy modules combining curated local seasonal harvests with uninterrupted ocean vistas.'],
-                    ['name' => 'Executive Lounge Access', 'img' => 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600', 'desc' => 'VIP sanctuary configured for enterprise validation tracks, corporate assemblies, and fine premium micro-bars.'],
-                    ['name' => 'Private Beach Access', 'img' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600', 'desc' => 'Secured pristine sandy coastline paths entirely structuralized with premium sun loungers and water-sport equipment.']
-                ];
-                @endphp
-
-              @foreach($facilitiesList as $item)
-<div class="bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
-    <div>
-        <div class="h-60 overflow-hidden relative bg-neutral-100">
-            <img src="{{ $item['img'] }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
-            <div class="absolute top-4 left-4 bg-neutral-950/80 backdrop-blur-md px-3 py-1 text-white text-[8px] font-bold uppercase tracking-widest">
-                Premium Access
-            </div>
-        </div>
-        <div class="p-6">
-            <h3 class="text-base font-bold uppercase tracking-wider text-neutral-900 mb-2 font-sans">{{ $item['name'] }}</h3>
-            <p class="text-neutral-500 text-xs leading-relaxed">{{ $item['desc'] }}</p>
-        </div>
-    </div>
-    <div class="p-6 pt-0">
-        <button type="button" 
-                onclick="openFacilityModal('{{ $item['name'] }}')" 
-                class="text-[10px] font-bold uppercase tracking-widest text-neutral-900 border-b border-neutral-900 pb-0.5 hover:text-amber-700 hover:border-amber-700 transition-colors inline-block cursor-pointer">
-            Reserve Appointment &rarr;
-        </button>
-    </div>
-</div>
-@endforeach
-
-<div id="facilityBookingModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 sm:p-6">
-    <div onclick="closeFacilityModal()" class="absolute inset-0 bg-neutral-950/50 backdrop-blur-sm cursor-pointer"></div>
-    
-    <div class="relative bg-white max-w-md w-full border border-neutral-200 p-8 shadow-2xl rounded-none transform scale-95 transition-transform duration-300 z-10">
-        
-        <button type="button" onclick="closeFacilityModal()" class="absolute top-4 right-4 z-20 text-neutral-400 hover:text-neutral-900 w-8 h-8 flex items-center justify-center transition-colors focus:outline-none cursor-pointer" aria-label="Close modal">
-            <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-        
-        <div class="mb-6">
-            <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700 block">Reservation Module</span>
-            <h3 id="modal-facility-title" class="text-xl font-serif text-neutral-900 mt-1">Facility Name</h3>
-        </div>
-
-        <form id="facility-ajax-form" action="{{ route('facilities.book') }}" method="POST" class="space-y-4">
-            @csrf
-            <input type="hidden" id="modal-facility-name-input" name="facility_name">
-
-            <div>
-                <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Appointment Date</label>
-                <input type="date" name="booking_date" required min="{{ date('Y-m-d') }}" class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900 bg-transparent cursor-pointer">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Preferred Time Space</label>
-                    <select name="booking_time" required class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900 cursor-pointer bg-transparent">
-                        <option value="09:00">09:00 AM</option>
-                        <option value="11:00">11:00 AM</option>
-                        <option value="14:00">02:00 PM</option>
-                        <option value="16:00">04:00 PM</option>
-                        <option value="19:00">07:00 PM</option>
-                    </select>
+                @forelse($facilities as $item)
+                <div class="bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
+                    <div>
+                        <div class="h-60 overflow-hidden relative bg-neutral-100">
+                            <img src="{{ $item->image_url ?? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600' }}" alt="{{ $item->name }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
+                            <div class="absolute top-4 left-4 bg-neutral-950/80 backdrop-blur-md px-3 py-1 text-white text-[8px] font-bold uppercase tracking-widest">
+                                {{ $item->access_type ?? 'Premium Access' }}
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <span class="text-[9px] font-bold text-amber-700/80 uppercase tracking-widest block mb-1.5">{{ $item->category }}</span>
+                            <h3 class="text-base font-bold uppercase tracking-wider text-neutral-900 mb-2 font-sans">{{ $item->name }}</h3>
+                            <p class="text-neutral-500 text-xs leading-relaxed mb-4">{{ $item->description }}</p>
+                            
+                            <div class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider space-y-1 border-t border-neutral-100 pt-3">
+                                <div><i class="fa-regular fa-clock text-amber-800 w-4 mr-1"></i> {{ $item->hours }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 pt-0">
+                        @if($item->requires_booking)
+                            <button type="button" 
+                                    onclick="openFacilityModal('{{ addslashes($item->name) }}')" 
+                                    class="text-[10px] font-bold uppercase tracking-widest text-neutral-900 border-b border-neutral-900 pb-0.5 hover:text-amber-700 hover:border-amber-700 transition-colors inline-block cursor-pointer">
+                                Reserve Appointment &rarr;
+                            </button>
+                        @else
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-1 select-none">
+                                <i class="fa-solid fa-door-open mr-1"></i> Direct Access
+                            </span>
+                        @endif
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Attendees</label>
-                    <input type="number" name="guests_count" min="1" max="10" value="1" required class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900">
+                @empty
+                <div class="col-span-3 p-16 text-center bg-white border border-neutral-200 shadow-sm flex flex-col items-center justify-center">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-800 flex items-center justify-center text-lg border border-amber-100 mb-3"><i class="fa-solid fa-boxes-pool"></i></div>
+                    <p class="text-xs italic text-neutral-400">Belum ada daftar data fasilitas resort aktif di dalam database internal.</p>
                 </div>
-            </div>
+                @endforelse
 
-            <div>
-                <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Bespoke Requests / Notes (Optional)</label>
-                <textarea name="notes" rows="2" placeholder="Dietary alignments, therapy focus preferences, etc." class="w-full border border-neutral-200 px-3 py-2 text-xs text-neutral-800 placeholder-neutral-400 focus:ring-0 focus:border-neutral-900 resize-none bg-transparent"></textarea>
-            </div>
-
-            <div id="modal-alert-box" class="hidden p-3 text-[11px] font-bold uppercase tracking-wider"></div>
-
-            <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
-                Secure Slot Appointment
-            </button>
-        </form>
-    </div>
-</div>
-
-<script>
-    const modal = document.getElementById('facilityBookingModal');
-    const modalTitle = document.getElementById('modal-facility-title');
-    const modalInput = document.getElementById('modal-facility-name-input');
-    const alertBox = document.getElementById('modal-alert-box');
-    const form = document.getElementById('facility-ajax-form');
-    const submitBtn = document.getElementById('modal-submit-btn');
-
-    function openFacilityModal(facilityName) {
-        modalTitle.innerText = facilityName;
-        modalInput.value = facilityName;
-        alertBox.classList.add('hidden');
-        
-        // Membuka modal dengan animasi transisi membesar yang halus (fade-in zoom)
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            modal.querySelector('.relative').classList.remove('scale-95');
-        }, 10);
-    }
-
-    function closeFacilityModal() {
-        // Efek animasi mengecil sebelum ditutup penuh
-        modal.classList.add('opacity-0');
-        modal.querySelector('.relative').classList.add('scale-95');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            form.reset();
-        }, 300);
-    }
-
-    // Dukungan Aksesibilitas: Menutup modal jika tombol 'Escape' ditekan
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-            closeFacilityModal();
-        }
-    });
-
-    // PROSES AJAX SUBMISSION FORM
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Securing Allocation Space...";
-
-        fetch(form.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            },
-            body: new FormData(form)
-        })
-        .then(async response => {
-            const data = await response.json();
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Secure Slot Appointment";
-            
-            alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-            if (response.ok && data.success) {
-                alertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                alertBox.innerText = data.message;
-                setTimeout(() => { closeFacilityModal(); }, 1800);
-            } else {
-                alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                alertBox.innerText = data.message || "Proses validasi gagal di server.";
-            }
-        })
-        .catch(() => {
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Secure Slot Appointment";
-            alertBox.classList.remove('hidden');
-            alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-            alertBox.innerText = "Terjadi gangguan jaringan internet internal.";
-        });
-    });
-</script>
             </div>
         </section>
 
+        <div id="facilityBookingModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 sm:p-6">
+            <div onclick="closeFacilityModal()" class="absolute inset-0 bg-neutral-950/50 backdrop-blur-sm cursor-pointer"></div>
+            
+            <div class="relative bg-white max-w-md w-full border border-neutral-200 p-8 shadow-2xl rounded-none transform scale-95 transition-transform duration-300 z-10">
+                
+                <button type="button" onclick="closeFacilityModal()" class="absolute top-4 right-4 z-20 text-neutral-400 hover:text-neutral-900 w-8 h-8 flex items-center justify-center transition-colors focus:outline-none cursor-pointer" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+                
+                <div class="mb-6">
+                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700 block">Reservation Module</span>
+                    <h3 id="modal-facility-title" class="text-xl font-serif text-neutral-900 mt-1">Facility Name</h3>
+                </div>
+
+                <form id="facility-ajax-form" action="{{ route('facilities.book') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <input type="hidden" id="modal-facility-name-input" name="facility_name">
+
+                    <div>
+                        <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Appointment Date</label>
+                        <input type="date" name="booking_date" required min="{{ date('Y-m-d') }}" class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900 bg-transparent cursor-pointer">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Preferred Time Space</label>
+                            <select name="booking_time" required class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900 cursor-pointer bg-transparent">
+                                <option value="09:00">09:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="14:00">02:00 PM</option>
+                                <option value="16:00">04:00 PM</option>
+                                <option value="19:00">07:00 PM</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Attendees</label>
+                            <input type="number" name="guests_count" min="1" max="10" value="1" required class="w-full border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-800 focus:ring-0 focus:border-neutral-900">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Bespoke Requests / Notes (Optional)</label>
+                        <textarea name="notes" rows="2" placeholder="Dietary alignments, therapy focus preferences, etc." class="w-full border border-neutral-200 px-3 py-2 text-xs text-neutral-800 placeholder-neutral-400 focus:ring-0 focus:border-neutral-900 resize-none bg-transparent"></textarea>
+                    </div>
+
+                    <div id="modal-alert-box" class="hidden p-3 text-[11px] font-bold uppercase tracking-wider"></div>
+
+                    <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
+                        Secure Slot Appointment
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <section class="bg-white border-y border-neutral-200 py-24 px-6 space-y-24">
             <div class="max-w-7xl mx-auto">
-                
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24">
                     <div class="space-y-5">
                         <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-700 block">Sanctuary Framework</span>
@@ -282,7 +208,7 @@
                         <ul class="grid grid-cols-2 gap-3 text-xs font-bold uppercase tracking-wider text-neutral-700 pt-2">
                             <li><i class="fa-solid fa-circle text-[6px] text-amber-700 mr-2 align-middle"></i> Personalized Massage</li>
                             <li><i class="fa-solid fa-circle text-[6px] text-amber-700 mr-2 align-middle"></i> Dawn Yoga Guidance</li>
-                            <li><li><i class="fa-solid fa-circle text-[6px] text-amber-700 mr-2 align-middle"></i> Clinical Consultations</li>
+                            <li><i class="fa-solid fa-circle text-[6px] text-amber-700 mr-2 align-middle"></i> Clinical Consultations</li>
                             <li><i class="fa-solid fa-circle text-[6px] text-amber-700 mr-2 align-middle"></i> Thermal Steam Suites</li>
                         </ul>
                     </div>
@@ -309,7 +235,6 @@
                         </ul>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -399,3 +324,97 @@
 
     </div>
 </x-guest-layout>
+
+<style>
+    /* Desain scrollbar minimalis khusus area menu Oasis */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #faf9f6; 
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e5e5; 
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #a3a3a3; 
+    }
+    [x-cloak] { display: none !important; }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script>
+    const modal = document.getElementById('facilityBookingModal');
+    const modalTitle = document.getElementById('modal-facility-title');
+    const modalInput = document.getElementById('modal-facility-name-input');
+    const alertBox = document.getElementById('modal-alert-box');
+    const form = document.getElementById('facility-ajax-form');
+    const submitBtn = document.getElementById('modal-submit-btn');
+
+    function openFacilityModal(facilityName) {
+        modalTitle.innerText = facilityName;
+        modalInput.value = facilityName;
+        alertBox.classList.add('hidden');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.relative').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeFacilityModal() {
+        modal.classList.add('opacity-0');
+        modal.querySelector('.relative').classList.add('scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            form.reset();
+        }, 300);
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeFacilityModal();
+        }
+    });
+
+    // PROSES AJAX SUBMISSION FORM RESERVASI
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Securing Allocation Space...";
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: new FormData(form)
+        })
+        .then(async response => {
+            const data = await response.json();
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Secure Slot Appointment";
+            
+            alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
+
+            if (response.ok && data.success) {
+                alertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                alertBox.innerText = data.message;
+                setTimeout(() => { closeFacilityModal(); }, 1800);
+            } else {
+                alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                alertBox.innerText = data.message || "Proses validasi gagal di server.";
+            }
+        })
+        .catch(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Secure Slot Appointment";
+            alertBox.classList.remove('hidden');
+            alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+            alertBox.innerText = "Terjadi gangguan jaringan internet internal.";
+        });
+    });
+</script>

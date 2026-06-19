@@ -18,10 +18,17 @@ class OasisHotelSeeder extends Seeder
         // =========================================================================
         // 1. DATA MASTER: ROOM TYPES
         // =========================================================================
+          $deluxeId = DB::table('room_types')->insertGetId([
+            'name' => 'Standard Room',
+            'description' => 'This room provides the essential amenities and features to ensure a comfortable and practical stay without the frills.',
+            'price' => 550000,
+            'foto_url' => 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'created_at' => now(), 'updated_at' => now()
+        ]);
         $deluxeId = DB::table('room_types')->insertGetId([
             'name' => 'Deluxe Room',
             'description' => 'A stylish sanctuary featuring partial sea views, custom timber finishes, an integrated media console, and a tropical rain shower assembly.',
-            'price_per_night' => 1050000,
+            'price' => 1050000,
             'foto_url' => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600',
             'created_at' => now(), 'updated_at' => now()
         ]);
@@ -29,7 +36,7 @@ class OasisHotelSeeder extends Seeder
         $executiveId = DB::table('room_types')->insertGetId([
             'name' => 'Executive Suite',
             'description' => 'Uninterrupted ocean horizon views from floor-to-ceiling glass systems. Outfitted with an elite king bedding configuration and a private veranda footprint.',
-            'price_per_night' => 1650000,
+            'price' => 1650000,
             'foto_url' => 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=600',
             'created_at' => now(), 'updated_at' => now()
         ]);
@@ -37,7 +44,7 @@ class OasisHotelSeeder extends Seeder
         $familyId = DB::table('room_types')->insertGetId([
             'name' => 'Family Room',
             'description' => 'Expansive adjoining suite configurations built with internal dining nodes, child-safe infrastructure layout, and tranquil botanical garden outlooks.',
-            'price_per_night' => 2400000,
+            'price' => 2400000,
             'foto_url' => 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=600',
             'created_at' => now(), 'updated_at' => now()
         ]);
