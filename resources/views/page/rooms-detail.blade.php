@@ -17,108 +17,116 @@
 <x-guest-layout>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('instant-booking-form');
-        const btn = document.getElementById('submit-booking-btn');
-        const msgBox = document.getElementById('validation-message-box');
-        const checkInInput = document.getElementById('check_in');
-        const checkOutInput = document.getElementById('check_out');
-        const guestsSelect = document.getElementById('guests-select');
+    const form = document.getElementById('instant-booking-form');
+    const btn = document.getElementById('submit-booking-btn');
+    const msgBox = document.getElementById('validation-message-box');
+    const checkInInput = document.getElementById('check_in');
+    const checkOutInput = document.getElementById('check_out');
+    const guestsSelect = document.getElementById('guests-select');
+    const roomIdInput = document.getElementById('selected-room-id-input'); // Mengunci elemen ID Kamar
 
-        // Kembalikan tombol ke "Check" jika user mengubah tanggal atau jumlah tamu
-        [checkInInput, checkOutInput, guestsSelect].forEach(input => {
-            if(input) {
-                input.addEventListener('change', () => {
+    // Kembalikan tombol ke "Check" jika user mengubah tanggal atau jumlah tamu
+    [checkInInput, checkOutInput, guestsSelect].forEach(input => {
+        if(input) {
+            input.addEventListener('change', () => {
+                btn.disabled = false;
+                btn.setAttribute('data-state', 'check');
+                btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
+                btn.querySelector('span').innerText = "Check Availability";
+                msgBox.classList.add('hidden');
+                if(roomIdInput) roomIdInput.value = ""; // Reset kunci kamar
+            });
+        }
+    });
+
+    btn.addEventListener('click', function () {
+        const state = btn.getAttribute('data-state');
+
+        // STATE 1: Mengecek ketersediaan ke server via AJAX
+        if (state === 'check') {
+            btn.disabled = true;
+            btn.querySelector('span').innerText = "Verifying...";
+
+            const formData = new FormData(form);
+            formData.append('mode_check_only', '1');
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
+
+                if (data.available) {
+                    btn.setAttribute('data-state', 'book');
+                    btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse cursor-pointer";
+                    btn.querySelector('span').innerText = "Book Your Stay Now";
+                    
+                    if(roomIdInput && data.room_id) {
+                        roomIdInput.value = data.room_id; // MENGUNCI ID KAMAR DI FORM GUEST
+                    }
+
+                    msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                    msgBox.innerText = data.message;
+                } else {
+                    btn.querySelector('span').innerText = "Check Availability";
+                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    msgBox.innerText = data.message;
+                    if(roomIdInput) roomIdInput.value = "";
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.querySelector('span').innerText = "Check Availability";
+            });
+
+        // STATE 2: Simpan reservasi menggunakan nomor kamar yang telah dikunci
+        } else if (state === 'book') {
+            btn.disabled = true;
+            btn.querySelector('span').innerText = "Reserving Sanctuary...";
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: new FormData(form)
+            })
+            .then(async res => {
+                const data = await res.json();
+                
+                if (!res.ok) {
                     btn.disabled = false;
                     btn.setAttribute('data-state', 'check');
                     btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
                     btn.querySelector('span').innerText = "Check Availability";
-                    msgBox.classList.add('hidden');
-                });
-            }
-        });
-
-        btn.addEventListener('click', function () {
-            const state = btn.getAttribute('data-state');
-
-            // STATE 1: Mengecek ketersediaan ke server via AJAX
-            if (state === 'check') {
-                btn.disabled = true;
-                btn.querySelector('span').innerText = "Verifying...";
-
-                const formData = new FormData(form);
-                formData.append('mode_check_only', '1');
-
-                fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    btn.disabled = false;
-                    msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-                    if (data.available) {
-                        btn.setAttribute('data-state', 'book');
-                        btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse cursor-pointer";
-                        btn.querySelector('span').innerText = "Book Your Stay Now";
-                        
-                        msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                        msgBox.innerText = data.message;
-                    } else {
-                        btn.querySelector('span').innerText = "Check Availability";
-                        msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                        msgBox.innerText = data.message;
-                    }
-                })
-                .catch(() => {
-                    btn.disabled = false;
-                    btn.querySelector('span').innerText = "Check Availability";
-                });
-
-            // STATE 2: Simpan reservasi sah
-            } else if (state === 'book') {
-                btn.disabled = true;
-                btn.querySelector('span').innerText = "Reserving Sanctuary...";
-
-                fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    body: new FormData(form)
-                })
-                .then(async res => {
-                    const data = await res.json();
+                    if(roomIdInput) roomIdInput.value = "";
                     
-                    if (!res.ok) {
-                        btn.disabled = false;
-                        btn.setAttribute('data-state', 'check');
-                        btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
-                        btn.querySelector('span').innerText = "Check Availability";
-                        
-                        msgBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
-                        msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                        msgBox.innerText = data.message || "Kamar sudah penuh dipesan.";
+                    msgBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    msgBox.innerText = data.message || "Kamar sudah penuh dipesan.";
+                } else {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
                     } else {
-                        if (data.redirect) {
-                            window.location.href = data.redirect;
-                        } else {
-                            window.location.reload();
-                        }
+                        window.location.reload();
                     }
-                })
-                .catch(() => {
-                    btn.disabled = false;
-                    btn.querySelector('span').innerText = "Check Availability";
-                });
-            }
-        });
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.querySelector('span').innerText = "Check Availability";
+            });
+        }
     });
+});
     </script>
 
     <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
@@ -332,7 +340,7 @@
                             </div>
 
                             <div id="validation-message-box" class="hidden text-[11px] font-bold uppercase tracking-wider p-3 rounded-none"></div>
-
+<input type="hidden" id="selected-room-id-input" name="room_id">
                             <div id="booking-action-container">
                                 <button type="button" id="submit-booking-btn" data-state="check" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
                                     <span>Check Availability</span>

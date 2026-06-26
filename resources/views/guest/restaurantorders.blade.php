@@ -5,6 +5,63 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f3; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d4; }
     [x-cloak] { display: none !important; }
+
+    /* ==========================================================================
+       PENGATURAN CETAK STRUK RESTORAN (HILANGKAN HEADER/FOOTER & CENTER CONTENT)
+       ========================================================================== */
+    @media print {
+        /* 1. Paksa browser membuang margin bawaan yang memicu teks otomatis */
+        @page {
+            size: auto;
+            margin: 0mm;
+        }
+
+        /* 2. Sembunyikan seluruh isi aplikasi dashboard & overlay */
+        body * {
+            visibility: hidden;
+        }
+
+        /* 3. Tampilkan hanya modal struk invoice dan paksa layout flexbox ke tengah */
+        #print-invoice-wrapper, #print-invoice-wrapper * {
+            visibility: visible;
+        }
+
+        #print-invoice-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex !important;
+            align-items: center;     /* Penataan Vertikal ke Tengah */
+            justify-content: center; /* Penataan Horizontal ke Tengah */
+            background: #ffffff !important;
+            width: 100vw;
+            height: 100vh;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Hilangkan backdrop gelap dan tombol aksi penutup/cetak agar tidak ikut ter-print */
+        #print-invoice-wrapper .absolute,
+        #print-invoice-wrapper .print-action-buttons,
+        #print-invoice-wrapper button {
+            display: none !important;
+        }
+
+        /* 4. Atur dimensi kertas nota di tengah agar proporsional */
+        #print-invoice-wrapper .relative {
+            box-shadow: none !important;
+            border: 1px solid #e5e5e5 !important; /* Batas box nota */
+            padding: 35px !important;
+            width: 90% !important;
+            max-width: 500px !important;
+            margin: 0 auto !important;
+            transform: none !important;
+            background-color: #ffffff !important;
+        }
+
+        /* 5. Jaga kecerahan warna badge/background sub-elemen */
+        .bg-emerald-50 { background-color: #ecfdf5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .bg-amber-50 { background-color: #fffbeb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
 </style>
 
 <x-guest-dashboard-layout>
@@ -25,10 +82,10 @@
             deliveryType: 'Dine-in at Venue',
             activeVenue: 'Oasis Fine Dining',
 
-            // STATE NAVIGASI TAB KANAN: 'cart', 'pending', 'kitchen', 'completed'
+            // STATE NAVIGASI TAB KANAN
             activeHistoryTab: 'cart',
 
-            // Pop-up Notifikasi & Invoice (Clean UI)
+            // Pop-up Notifikasi & Invoice
             modalTitle: '',
             modalMessage: '',
             modalSuccess: true,
@@ -36,7 +93,7 @@
             invoiceData: { order_id: '', date: '', status: '', total: 0, items: [] },
             showInvoice: false,
 
-            // State Interaksi Konfirmasi Pembatalan Pengganti Window Confirm
+            // Konfirmasi Pembatalan
             showCancelConfirmation: false,
             targetCancelFormId: null,
 
@@ -234,7 +291,6 @@
          }">
         
         <main class="flex-1 p-6 lg:p-8 overflow-y-auto custom-scrollbar space-y-6">
-            
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-neutral-200">
                 <div>
                     <h2 class="text-3xl font-serif text-neutral-900">Restaurant Orders</h2>
@@ -319,7 +375,6 @@
         </main>
 
         <aside class="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-neutral-200 p-4 flex flex-col justify-between shrink-0 space-y-4 custom-scrollbar overflow-y-auto max-h-screen">
-            
             <div class="space-y-4 flex-1 flex flex-col">
                 <div class="grid grid-cols-4 gap-1 border-b border-neutral-200 pb-2 text-center text-[9px] font-bold uppercase tracking-wider">
                     <button type="button" @click="activeHistoryTab = 'cart'" :class="activeHistoryTab === 'cart' ? 'text-amber-800 border-b-2 border-amber-800 pb-1' : 'text-neutral-400'" class="cursor-pointer">
@@ -337,7 +392,6 @@
                 </div>
 
                <div class="flex-1 overflow-y-auto custom-scrollbar max-h-[70vh]">
-                    
                     <div x-show="activeHistoryTab === 'cart'" class="space-y-4">
                         <div class="space-y-2">
                             <template x-for="item in cart" :key="item.id">
@@ -416,7 +470,7 @@
                                             <p class="font-mono font-bold text-neutral-800">#RS-{{ str_pad($hist->id, 4, '0', STR_PAD_LEFT) }}</p>
                                             <span class="text-[9px] text-neutral-400 block mt-0.5">{{ date('d M Y, H:i', strtotime($hist->created_at)) }}</span>
                                         </div>
-                                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase animate-pulse">PROCESSING IN KITCHEN</span>
+                                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">PROCESSING IN KITCHEN</span>
                                     </div>
                                     <div class="flex justify-between items-center pt-1 border-t border-neutral-100">
                                         <p class="font-mono font-bold text-neutral-800">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
@@ -431,24 +485,33 @@
                     </div>
 
                     <div x-show="activeHistoryTab === 'completed'" class="space-y-2">
-                        @php $hasFailed = false; @endphp
+                        @php $hasHistoryAll = false; @endphp
                         @foreach($orderHistory as $hist)
-                            @if($hist->payment_status === 'failed')
-                                @php $hasFailed = true; @endphp
-                                <div class="p-3 bg-neutral-50 border border-neutral-200 text-[11px] flex justify-between items-center">
+                            @php $hasHistoryAll = true; @endphp
+                            <div class="p-3 bg-white border border-neutral-200 text-[11px] space-y-2">
+                                <div class="flex justify-between items-center">
                                     <div>
                                         <p class="font-mono font-bold text-neutral-800">#RS-{{ str_pad($hist->id, 4, '0', STR_PAD_LEFT) }}</p>
                                         <span class="text-[9px] text-neutral-400 block mt-0.5">{{ date('d M Y, H:i', strtotime($hist->created_at)) }}</span>
                                     </div>
-                                    <span class="text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">FAILED</span>
+                                    @if($hist->payment_status === 'paid')
+                                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">PAID</span>
+                                    @elseif($hist->payment_status === 'pending')
+                                        <span class="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">UNPAID</span>
+                                    @else
+                                        <span class="text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">FAILED</span>
+                                    @endif
                                 </div>
-                            @endif
+                                <div class="flex justify-between items-center pt-1 border-t border-neutral-100">
+                                    <p class="font-mono font-bold text-neutral-800">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
+                                    <button type="button" @click="fetchInvoiceDetails({{ $hist->id }})" class="text-[9px] text-neutral-600 font-bold underline cursor-pointer">View Manifest</button>
+                                </div>
+                            </div>
                         @endforeach
-                        @if(!$hasFailed)
-                            <div class="text-center py-12 text-neutral-400 text-xs italic">Tidak ada rekam jejak pesanan gagal.</div>
+                        @if(!$hasHistoryAll)
+                            <div class="text-center py-12 text-neutral-400 text-xs italic">Tidak ada rekam jejak riwayat pesanan kuliner.</div>
                         @endif
                     </div>
-
                 </div>
             </div>
         </aside>
@@ -465,7 +528,7 @@
             </div>
         </div>
 
-        <div x-show="showInvoice" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+        <div id="print-invoice-wrapper" x-show="showInvoice" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
             <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showInvoice = false"></div>
             <div class="relative bg-white max-w-sm w-full border border-neutral-200 p-6 shadow-2xl transform transition-all text-left">
                 <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
@@ -500,9 +563,18 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-neutral-100 pt-3 flex justify-between items-baseline">
+                    <div class="border-t border-neutral-100 pt-3 flex justify-between items-baseline pb-4">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-900">Grand Total Invoiced</span>
                         <span class="font-mono text-amber-800 font-bold text-sm" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(invoiceData.total)"></span>
+                    </div>
+
+                    <div class="print-action-buttons grid grid-cols-2 gap-2 pt-2 border-t border-neutral-100">
+                        <button type="button" @click="window.print()" class="w-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs">
+                            <i class="fa-solid fa-print"></i> Print Receipt
+                        </button>
+                        <button type="button" @click="showInvoice = false" class="w-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer">
+                            Dismiss
+                        </button>
                     </div>
                 </div>
             </div>

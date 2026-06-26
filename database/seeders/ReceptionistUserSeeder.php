@@ -18,6 +18,7 @@ class ReceptionistUserSeeder extends Seeder
                 'name' => 'Receptionist',
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
+                   'role' => 'receptionist', 
             ]
         );
 

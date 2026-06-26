@@ -1,301 +1,311 @@
-<x-guest-layout>
-    <div class="min-h-screen bg-[#f8f7f5] text-neutral-900 font-sans antialiased flex">
+<x-manager-dashboard-layout>
 
-        <aside class="w-64 bg-[#141414] text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-800 z-30 select-none">
-            <div class="overflow-y-auto flex-1 custom-scrollbar">
-                <div class="p-6 border-b border-neutral-800 bg-[#0d0d0d]">
-                    <h2 class="text-xl font-serif italic tracking-widest text-white">Oasis Hotel</h2>
-                    <p class="text-[9px] uppercase tracking-[0.3em] text-amber-500 font-bold mt-1">Business Intelligence</p>
-                </div>
-
-                <div class="p-3 space-y-6">
-                    <div>
-                        <span class="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-600 block mb-2">Executive Overview</span>
-                        <nav class="space-y-0.5">
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold bg-neutral-900 text-amber-400 border-l-2 border-amber-500 rounded-none transition-all">
-                                <i class="fa-solid fa-chart-pie w-4"></i> Dashboard
-                            </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-folder-tree w-4"></i> Bookings & Rooms
-                            </a>
-                        </nav>
-                    </div>
-
-                    <div>
-                        <span class="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-600 block mb-2">Yield Analytics</span>
-                        <nav class="space-y-0.5">
-                            <a href="#" class="flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-chart-line w-4"></i> Reports Matrix</span>
-                                <i class="fa-solid fa-chevron-down text-[9px] text-neutral-600"></i>
-                            </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-users w-4"></i> Staff Performance
-                            </a>
-                            <a href="#" class="flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-star-half-stroke w-4"></i> Guest Reviews</span>
-                                <span class="bg-amber-600 text-white text-[8px] px-1.5 py-0.2 font-bold font-sans">New</span>
-                            </a>
-                            <a href="#" class="flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-square-check w-4"></i> Approvals</span>
-                                <span class="bg-neutral-800 text-neutral-400 text-[9px] px-1.5 py-0.2 font-mono font-bold">5 Pending</span>
-                            </a>
-                        </nav>
-                    </div>
-                </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white p-4 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Occupancy Rate</span>
+            <div class="mt-2">
+                <span class="text-2xl font-light font-serif text-neutral-900 block">64.3%</span>
+                <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 8.2% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
             </div>
+        </div>
 
-            <div class="p-4 bg-[#0d0d0d] border-t border-neutral-800 space-y-3">
-                <div class="flex items-center gap-3 p-2 bg-neutral-900/40 border border-neutral-900">
-                    <div class="w-8 h-8 bg-neutral-800 border border-neutral-700 flex items-center justify-center font-serif text-white text-xs rounded-none">
-                        M
-                    </div>
-                    <div>
-                        <span class="text-xs font-bold text-neutral-200 block truncate max-w-[140px]">{{ auth()->user()->name }}</span>
-                        <span class="text-[9px] uppercase tracking-widest text-amber-500 font-bold block mt-0.5">Hotel Manager</span>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold text-red-400 hover:bg-red-950/20 transition-all text-left">
-                        <i class="fa-solid fa-right-from-bracket w-4"></i> End Session
-                    </button>
-                </form>
+        <div class="bg-white p-4 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">ADR (Average Daily Rate)</span>
+            <div class="mt-2">
+                <span class="text-base font-bold text-neutral-900 block font-mono">Rp 1.125.000</span>
+                <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 11.3% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
             </div>
-        </aside>
+        </div>
 
-        <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-            
-            <header class="bg-white border-b border-neutral-200 px-8 py-4 sticky top-0 z-20 flex justify-between items-center h-20 shadow-sm">
-                <div>
-                    <span class="text-[9px] font-mono uppercase tracking-widest text-neutral-400">Welcome Back, Executive Console</span>
-                    <h1 class="text-base font-serif text-neutral-900 font-bold mt-0.5">Manager Dashboard</h1>
-                </div>
-
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[11px] font-bold uppercase tracking-wider"><i class="fa-regular fa-calendar-days mr-1"></i> Period:</span>
-                        <select class="bg-neutral-50 border border-neutral-200 pl-20 pr-8 py-2 text-[11px] font-bold uppercase tracking-wider rounded-none focus:outline-none focus:border-neutral-400 cursor-pointer appearance-none">
-                            <option selected>May 24, 2026 - May 30, 2026</option>
-                            <option>This Quarter</option>
-                            <option>Fiscal Year 2026</option>
-                        </select>
-                    </div>
-                    <button class="bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 px-4 rounded-none transition-colors">
-                        <i class="fa-solid fa-arrow-up-from-bracket mr-1"></i> Export Sheet
-                    </button>
-                </div>
-            </header>
-
-            <div class="p-8 space-y-8 flex-1">
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                    
-                    <div class="bg-white border border-neutral-200 p-4 rounded-none flex flex-col justify-between shadow-xs">
-                        <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Total Revenue</span>
-                        <div class="mt-2">
-                            <span class="text-lg font-mono font-bold tracking-tight text-neutral-900">Rp 125.4M</span>
-                            <p class="text-[8px] text-emerald-600 font-bold mt-1"><i class="fa-solid fa-caret-up"></i> +12.4% vs lw</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-4 rounded-none flex flex-col justify-between shadow-xs">
-                        <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Occupancy Rate</span>
-                        <div class="mt-2">
-                            <span class="text-lg font-mono font-bold tracking-tight text-neutral-900">87.3%</span>
-                            <p class="text-[8px] text-emerald-600 font-bold mt-1"><i class="fa-solid fa-caret-up"></i> +8.7% vs lw</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-4 rounded-none flex flex-col justify-between shadow-xs">
-                        <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Total Bookings</span>
-                        <div class="mt-2">
-                            <span class="text-lg font-mono font-bold tracking-tight text-neutral-900">146</span>
-                            <p class="text-[8px] text-emerald-600 font-bold mt-1"><i class="fa-solid fa-caret-up"></i> +15.2% vs lw</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-4 rounded-none flex flex-col justify-between shadow-xs">
-                        <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Avg Daily Rate</span>
-                        <div class="mt-2">
-                            <span class="text-lg font-mono font-bold tracking-tight text-neutral-900">Rp 1.45M</span>
-                            <p class="text-[8px] text-red-600 font-bold mt-1"><i class="fa-solid fa-caret-down"></i> -3.1% vs lw</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-4 rounded-none flex flex-col justify-between shadow-xs">
-                        <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">RevPAR Metric</span>
-                        <div class="mt-2">
-                            <span class="text-lg font-mono font-bold tracking-tight text-neutral-900">Rp 1.26M</span>
-                            <p class="text-[8px] text-emerald-600 font-bold mt-1"><i class="fa-solid fa-caret-up"></i> +6.3% vs lw</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-4 rounded-none flex flex-col justify-between shadow-xs">
-                        <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Guest Satisfaction</span>
-                        <div class="mt-2">
-                            <span class="text-lg font-mono font-bold tracking-tight text-neutral-900">4.8 / 5</span>
-                            <p class="text-[8px] text-emerald-600 font-bold mt-1"><i class="fa-solid fa-plus"></i> +0.2 point shift</p>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-                    
-                    <div class="xl:col-span-2 bg-white border border-neutral-200 p-6 rounded-none shadow-xs space-y-4">
-                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3">
-                            <div class="flex items-baseline gap-2">
-                                <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Revenue Evolution Matrix</h3>
-                                <span class="text-emerald-600 font-mono text-[10px] font-bold">+12.4% Yield Shift</span>
-                            </div>
-                            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Scope: Weekly Distribution Cycle</span>
-                        </div>
-                        
-                        <div class="h-64 bg-neutral-50 border border-neutral-100 relative p-4 flex items-end justify-between group overflow-hidden">
-                            <div class="absolute top-4 left-4 z-10 text-[10px] font-mono text-neutral-400 space-y-1">
-                                <div>Peak Target Allocation: Rp 150M</div>
-                                <div>Rolling Operational Floor: Rp 25M</div>
-                            </div>
-                            <div class="w-1/7 space-y-2 text-center z-10 flex flex-col items-center justify-end h-full">
-                                <div class="bg-amber-700/10 hover:bg-amber-700/20 w-12 border-t-2 border-amber-600 transition-all" style="height: 50%"></div>
-                                <span class="text-[9px] font-mono font-bold text-neutral-400">May 24</span>
-                            </div>
-                            <div class="w-1/7 space-y-2 text-center z-10 flex flex-col items-center justify-end h-full">
-                                <div class="bg-amber-700/10 hover:bg-amber-700/20 w-12 border-t-2 border-amber-600 transition-all" style="height: 68%"></div>
-                                <span class="text-[9px] font-mono font-bold text-neutral-400">May 25</span>
-                            </div>
-                            <div class="w-1/7 space-y-2 text-center z-10 flex flex-col items-center justify-end h-full">
-                                <div class="bg-amber-700/10 hover:bg-amber-700/20 w-12 border-t-2 border-amber-600 transition-all" style="height: 45%"></div>
-                                <span class="text-[9px] font-mono font-bold text-neutral-400">May 26</span>
-                            </div>
-                            <div class="w-1/7 space-y-2 text-center z-10 flex flex-col items-center justify-end h-full">
-                                <div class="bg-amber-700/10 hover:bg-amber-700/20 w-12 border-t-2 border-amber-600 transition-all" style="height: 85%"></div>
-                                <span class="text-[9px] font-mono font-bold text-neutral-400">May 27</span>
-                            </div>
-                            <div class="w-1/7 space-y-2 text-center z-10 flex flex-col items-center justify-end h-full">
-                                <div class="bg-amber-700/10 hover:bg-amber-700/20 w-12 border-t-2 border-amber-600 transition-all" style="height: 92%"></div>
-                                <span class="text-[9px] font-mono font-bold text-neutral-400">May 28</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none shadow-xs space-y-4">
-                        <div class="border-b border-neutral-100 pb-3 flex justify-between items-baseline">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Yield Share By Department</h3>
-                            <span class="text-[9px] font-mono text-neutral-400">MBS Allocation Matrix</span>
-                        </div>
-                        <div class="space-y-3.5 text-xs">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between items-baseline font-bold text-neutral-800">
-                                    <span>Rooms & Accommodations</span>
-                                    <span class="font-mono text-neutral-900">68.7% <span class="text-neutral-400 font-normal font-sans text-[10px]">(Rp 86.2M)</span></span>
-                                </div>
-                                <div class="bg-neutral-100 h-1.5 w-full rounded-none overflow-hidden">
-                                    <div class="bg-neutral-900 h-1.5" style="width: 68.7%"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between items-baseline font-bold text-neutral-800">
-                                    <span>Restaurant & F&B Outlets</span>
-                                    <span class="font-mono text-neutral-900">14.9% <span class="text-neutral-400 font-normal font-sans text-[10px]">(Rp 18.7M)</span></span>
-                                </div>
-                                <div class="bg-neutral-100 h-1.5 w-full rounded-none overflow-hidden">
-                                    <div class="bg-neutral-900 h-1.5" style="width: 14.9%"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between items-baseline font-bold text-neutral-800">
-                                    <span>Spa & Integrative Wellness</span>
-                                    <span class="font-mono text-neutral-900">8.4% <span class="text-neutral-400 font-normal font-sans text-[10px]">(Rp 10.5M)</span></span>
-                                </div>
-                                <div class="bg-neutral-100 h-1.5 w-full rounded-none overflow-hidden">
-                                    <div class="bg-neutral-900 h-1.5" style="width: 8.4%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-                    
-                    <div class="xl:col-span-2 bg-white border border-neutral-200 rounded-none shadow-xs">
-                        <div class="p-5 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Recent Operational Bookings</h3>
-                            <a href="#" class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold hover:text-neutral-900 underline">View System Log</a>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs tracking-wide border-collapse">
-                                <thead class="bg-neutral-50 text-neutral-400 text-[10px] font-bold uppercase tracking-wider border-b border-neutral-200">
-                                    <tr>
-                                        <th class="p-4 font-bold">Booking ID</th>
-                                        <th class="p-4 font-bold">Guest Account</th>
-                                        <th class="p-4 font-bold">Room Category</th>
-                                        <th class="p-4 font-bold">Stay Track</th>
-                                        <th class="p-4 font-bold">Gross Folio</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-neutral-100 font-medium text-neutral-700">
-                                    <tr class="hover:bg-neutral-50/50 transition-colors">
-                                        <td class="p-4 font-mono font-bold text-neutral-900">#BK-240530</td>
-                                        <td class="p-4 font-bold text-neutral-900">John Anderson</td>
-                                        <td class="p-4">Deluxe Ocean View</td>
-                                        <td class="p-4 text-neutral-400">May 30 &rarr; Jun 02</td>
-                                        <td class="p-4 font-bold text-amber-900">Rp 4.350.000</td>
-                                    </tr>
-                                    <tr class="hover:bg-neutral-50/50 transition-colors">
-                                        <td class="p-4 font-mono font-bold text-neutral-900">#BK-240532</td>
-                                        <td class="p-4 font-bold text-neutral-900">Maria Garcia</td>
-                                        <td class="p-4">Executive Suite</td>
-                                        <td class="p-4 text-neutral-400">May 30 &rarr; Jun 03</td>
-                                        <td class="p-4 font-bold text-amber-900">Rp 6.750.000</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none shadow-xs space-y-4">
-                        <div class="border-b border-neutral-100 pb-3 flex justify-between items-baseline">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Staff Quality Audit</h3>
-                            <span class="text-[9px] font-mono text-neutral-400">KPI Rolling Cycle</span>
-                        </div>
-                        <div class="space-y-4 divide-y divide-neutral-50">
-                            <div class="flex items-center justify-between pt-3 first:pt-0">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-7 h-7 bg-neutral-100 border border-neutral-200 flex items-center justify-center font-bold text-neutral-700 text-[10px] rounded-none">SJ</div>
-                                    <div>
-                                        <h5 class="text-[11px] font-bold uppercase tracking-wide text-neutral-900 leading-tight">Sarah Johnson</h5>
-                                        <span class="text-[9px] text-neutral-400">Front Office Manager</span>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-xs font-mono font-bold text-neutral-900">4.9 / 5.0</span>
-                                    <span class="block text-[8px] text-emerald-600 font-bold font-sans"><i class="fa-solid fa-arrow-trend-up"></i> +0.3</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between pt-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-7 h-7 bg-neutral-100 border border-neutral-200 flex items-center justify-center font-bold text-neutral-700 text-[10px] rounded-none">JS</div>
-                                    <div>
-                                        <h5 class="text-[11px] font-bold uppercase tracking-wide text-neutral-900 leading-tight">James Smith</h5>
-                                        <span class="text-[9px] text-neutral-400">Restaurant Lead Steward</span>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-xs font-mono font-bold text-neutral-900">4.8 / 5.0</span>
-                                    <span class="block text-[8px] text-emerald-600 font-bold font-sans"><i class="fa-solid fa-arrow-trend-up"></i> +0.2</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
+        <div class="bg-white p-4 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">RevPAR (Revenue Per Room)</span>
+            <div class="mt-2">
+                <span class="text-base font-bold text-neutral-900 block font-mono">Rp 722.175</span>
+                <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 20.2% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
             </div>
+        </div>
 
-            @include('layouts.footer')
-        </main>
+        <div class="bg-white p-4 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Revenue (This Week)</span>
+            <div class="mt-2">
+                <span class="text-base font-bold text-neutral-900 block font-mono">Rp 152.450.000</span>
+                <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 18.7% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
+            </div>
+        </div>
 
+        <div class="bg-white p-4 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Bookings (This Week)</span>
+            <div class="mt-2">
+                <span class="text-2xl font-light font-serif text-neutral-900 block">128</span>
+                <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 16.4% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Guest Satisfaction (GSS)</span>
+            <div class="mt-2">
+                <span class="text-2xl font-light font-serif text-neutral-900 block">4.7 / 5.0</span>
+                <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 0.2 <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
+            </div>
+        </div>
     </div>
-</x-guest-layout>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Performance Overview</h3>
+                <div class="flex items-center gap-2 text-[8px] font-mono font-bold uppercase text-neutral-400">
+                    <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-blue-600 inline-block"></span> This Week</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-neutral-300 inline-block"></span> Last Week</span>
+                    <span class="bg-neutral-50 border px-1 py-0.5 text-neutral-500 font-bold ml-1">Daily <i class="fa-solid fa-chevron-down text-[7px] ml-0.5"></i></span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 flex-1">
+                <div class="relative w-full h-36 flex flex-col justify-between pt-1">
+                    <svg viewBox="0 0 600 140" class="w-full h-full overflow-visible">
+                        <line x1="0" y1="20" x2="600" y2="20" stroke="#f4f4f5" stroke-width="1" />
+                        <line x1="0" y1="60" x2="600" y2="60" stroke="#f4f4f5" stroke-width="1" />
+                        <line x1="0" y1="100" x2="600" y2="100" stroke="#f4f4f5" stroke-width="1" />
+                        <path d="M 0,95 L 100,65 L 200,100 L 300,80 L 400,100 L 500,60 L 600,75" fill="none" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4" />
+                        <path d="M 0,85 L 100,40 L 200,80 L 300,65 L 400,90 L 500,45 L 600,60" fill="none" stroke="#2563eb" stroke-width="2.5" />
+                        <circle cx="100" cy="40" r="3" fill="#2563eb" />
+                        <circle cx="500" cy="45" r="3" fill="#2563eb" />
+                    </svg>
+                    <div class="flex justify-between text-[8px] text-neutral-400 font-mono font-bold pt-1.5 border-t border-neutral-100">
+                        <span>17 Jun</span><span>18 Jun</span><span>19 Jun</span><span>20 Jun</span><span>21 Jun</span><span>22 Jun</span><span>23 Jun</span>
+                    </div>
+                </div>
+                
+                <div class="w-40 border-l border-neutral-100 pl-4 space-y-2.5 shrink-0">
+                    <div><span class="text-[8px] text-neutral-400 font-bold uppercase tracking-wider block">Revenue (This Week)</span><span class="text-xs font-bold font-mono text-neutral-900 block mt-0.5">Rp 152.450.000</span><span class="text-[8px] text-emerald-600 font-bold block mt-0.5"><i class="fa-solid fa-arrow-up"></i> 18.7%</span></div>
+                    <div><span class="text-[8px] text-neutral-400 font-bold uppercase tracking-wider block">Revenue (This Month)</span><span class="text-xs font-bold font-mono text-neutral-900 block mt-0.5">Rp 652.870.000</span><span class="text-[8px] text-emerald-600 font-bold block mt-0.5"><i class="fa-solid fa-arrow-up"></i> 12.5%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Today's Snapshot</h3>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-y-2.5 gap-x-4 text-[11px] font-semibold text-neutral-600 flex-1 my-auto">
+                <div class="flex items-center justify-between border-b border-neutral-50 pb-1.5">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-right-to-bracket text-neutral-400 text-xs w-4"></i> Check-in</span>
+                    <span class="font-mono text-neutral-900 font-bold">18</span>
+                </div>
+                <div class="flex items-center justify-between border-b border-neutral-50 pb-1.5">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-right-from-bracket text-neutral-400 text-xs w-4"></i> Check-out</span>
+                    <span class="font-mono text-neutral-900 font-bold">22</span>
+                </div>
+                <div class="flex items-center justify-between border-b border-neutral-50 pb-1.5">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-users text-neutral-400 text-xs w-4"></i> In House Guests</span>
+                    <span class="font-mono text-neutral-900 font-bold">186</span>
+                </div>
+                <div class="flex items-center justify-between border-b border-neutral-50 pb-1.5">
+                    <span class="flex items-center gap-2"><i class="fa-regular fa-calendar-check text-neutral-400 text-xs w-4"></i> Arrivals</span>
+                    <span class="font-mono text-neutral-900 font-bold">24</span>
+                </div>
+                <div class="flex items-center justify-between border-b border-neutral-50 pb-1.5">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-plane-departure text-neutral-400 text-xs w-4"></i> Departures</span>
+                    <span class="font-mono text-neutral-900 font-bold">26</span>
+                </div>
+                <div class="flex items-center justify-between border-b border-neutral-50 pb-1.5">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-broom text-neutral-400 text-xs w-4"></i> Housekeeping (To Do)</span>
+                    <span class="font-mono text-neutral-900 font-bold">34</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Room Status</h3>
+            </div>
+            
+            <div class="flex items-center gap-4 flex-1 my-auto">
+                <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#b45309" stroke-width="4.5" stroke-dasharray="4 96" stroke-dashoffset="-96"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#ef4444" stroke-width="4.5" stroke-dasharray="6 94" stroke-dashoffset="-90"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#dc2626" stroke-width="4.5" stroke-dasharray="6 94" stroke-dashoffset="-84"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#10b981" stroke-width="4.5" stroke-dasharray="20 80" stroke-dashoffset="-64"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="4.5" stroke-dasharray="64 36" stroke-dashoffset="0"></circle>
+                    </svg>
+                    <div class="absolute text-center">
+                        <span class="text-sm font-bold text-neutral-900 font-mono block">250</span>
+                        <span class="text-[7px] text-neutral-400 uppercase tracking-wider font-bold block mt-0.5">Rooms</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-1 w-full text-[10px] font-semibold text-neutral-500">
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-blue-600 inline-block mr-1.5"></span>Occupied</span><span class="text-neutral-900 font-mono">160 (64%)</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-emerald-500 inline-block mr-1.5"></span>Vacant Clean</span><span class="text-neutral-900 font-mono">50 (20%)</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-600 inline-block mr-1.5"></span>Vacant Dirty</span><span class="text-neutral-900 font-mono">15 (6%)</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-400 inline-block mr-1.5"></span>Out of Order</span><span class="text-neutral-900 font-mono">15 (6%)</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-amber-700 inline-block mr-1.5"></span>Reserved</span><span class="text-neutral-900 font-mono">10 (4%)</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Revenue by Department <span class="text-neutral-400 font-sans font-normal text-[10px]">(This Week)</span></h3>
+            </div>
+            
+            <div class="flex items-center gap-4 flex-1 my-auto">
+                <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#9ca3af" stroke-width="4.5" stroke-dasharray="12.8 87.2" stroke-dashoffset="-87.2"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#ef4444" stroke-width="4.5" stroke-dasharray="18.8 81.2" stroke-dashoffset="-68.4"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="4.5" stroke-dasharray="68.4 31.6" stroke-dashoffset="0"></circle>
+                    </svg>
+                    <div class="absolute text-center">
+                        <span class="text-xs font-bold text-neutral-900 font-mono block">Rp 152.4M</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-1.5 w-full text-[10px] font-semibold text-neutral-500">
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-blue-600 inline-block mr-1.5"></span>Room Revenue</span><span class="text-neutral-900 font-mono">68.4%</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>F&B Revenue</span><span class="text-neutral-900 font-mono">18.8%</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-gray-400 inline-block mr-1.5"></span>Other Revenue</span><span class="text-neutral-900 font-mono">12.8%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Top 5 Room Types by Occupancy</h3>
+                <a href="#" class="text-[9px] font-bold text-amber-800 uppercase tracking-wider hover:underline">View Report</a>
+            </div>
+            
+            <table class="w-full text-left text-[11px] font-medium text-neutral-600 flex-1 whitespace-nowrap">
+                <thead>
+                    <tr class="text-neutral-400 uppercase tracking-wider font-bold text-[8px] border-b border-neutral-50 pb-1.5">
+                        <th class="pb-1 font-semibold">Room Type</th>
+                        <th class="pb-1 font-semibold text-center">Occupancy</th>
+                        <th class="pb-1 text-right font-semibold">ADR</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-50/50">
+                    <tr><td class="py-1.5 font-bold text-neutral-900">Deluxe Ocean View</td><td class="text-center font-mono">78.4%</td><td class="text-right font-mono text-neutral-900">Rp 1.450.000</td></tr>
+                    <tr><td class="py-1.5 font-bold text-neutral-900">Premier Suite</td><td class="text-center font-mono">72.1%</td><td class="text-right font-mono text-neutral-900">Rp 2.350.000</td></tr>
+                    <tr><td class="py-1.5 font-bold text-neutral-900">Executive Suite</td><td class="text-center font-mono">65.3%</td><td class="text-right font-mono text-neutral-900">Rp 1.950.000</td></tr>
+                    <tr><td class="py-1.5 font-bold text-neutral-900">Deluxe Room</td><td class="text-center font-mono">62.8%</td><td class="text-right font-mono text-neutral-900">Rp 1.150.000</td></tr>
+                    <tr><td class="py-1.5 font-bold text-neutral-900">Superior Room</td><td class="text-center font-mono">58.7%</td><td class="text-right font-mono text-neutral-900">Rp 950.000</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-2">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Guest Feedback <span class="text-neutral-400 font-sans font-normal text-[10px]">(This Week)</span></h3>
+                <a href="#" class="text-[9px] font-bold text-amber-800 uppercase tracking-wider hover:underline">View All</a>
+            </div>
+            
+            <div class="space-y-2 flex-1 flex flex-col justify-center">
+                <div class="flex items-center justify-between text-xs font-bold text-neutral-900">
+                    <span class="font-serif text-lg">4.7 <span class="text-xs text-neutral-400 font-sans font-normal">/ 5.0</span></span>
+                    <div class="text-amber-500 text-[10px] flex gap-0.5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                </div>
+                <div class="space-y-1 text-[10px] font-semibold text-neutral-500 font-mono">
+                    <div class="flex items-center justify-between gap-3"><span>Cleanliness</span><div class="flex-1 h-1 bg-neutral-100 rounded-none overflow-hidden"><div class="bg-blue-600 h-full" style="width: 96%"></div></div><span>4.8</span></div>
+                    <div class="flex items-center justify-between gap-3"><span>Service</span><div class="flex-1 h-1 bg-neutral-100 rounded-none overflow-hidden"><div class="bg-blue-600 h-full" style="width: 94%"></div></div><span>4.7</span></div>
+                    <div class="flex items-center justify-between gap-3"><span>Location</span><div class="flex-1 h-1 bg-neutral-100 rounded-none overflow-hidden"><div class="bg-blue-600 h-full" style="width: 92%"></div></div><span>4.6</span></div>
+                    <div class="flex items-center justify-between gap-3"><span>Amenities</span><div class="flex-1 h-1 bg-neutral-100 rounded-none overflow-hidden"><div class="bg-blue-600 h-full" style="width: 92%"></div></div><span>4.6</span></div>
+                    <div class="flex items-center justify-between gap-3"><span>Value for Money</span><div class="flex-1 h-1 bg-neutral-100 rounded-none overflow-hidden"><div class="bg-blue-600 h-full" style="width: 90%"></div></div><span>4.5</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Operational Summary</h3>
+            </div>
+            
+            <table class="w-full text-left text-[11px] font-medium text-neutral-600 flex-1 whitespace-nowrap">
+                <thead>
+                    <tr class="text-neutral-400 uppercase tracking-wider font-bold text-[8px] border-b border-neutral-50 pb-1.5">
+                        <th class="pb-1 font-semibold">Department</th>
+                        <th class="pb-1 font-semibold">Status</th>
+                        <th class="pb-1 text-right font-semibold">Performance</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-50/50">
+                    <tr><td class="py-2 text-neutral-900 font-bold">Front Desk</td><td><span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] px-1 py-0.2 uppercase font-bold tracking-wide">Good</span></td><td class="text-right font-mono text-neutral-500">92%</td></tr>
+                    <tr><td class="py-2 text-neutral-900 font-bold">Housekeeping</td><td><span class="bg-amber-50 text-amber-800 border border-amber-200 text-[8px] px-1 py-0.2 uppercase font-bold tracking-wide">Attention</span></td><td class="text-right font-mono text-neutral-500">78%</td></tr>
+                    <tr><td class="py-2 text-neutral-900 font-bold">Maintenance</td><td><span class="bg-amber-50 text-amber-800 border border-amber-200 text-[8px] px-1 py-0.2 uppercase font-bold tracking-wide">Attention</span></td><td class="text-right font-mono text-neutral-500">85%</td></tr>
+                    <tr><td class="py-2 text-neutral-900 font-bold">F&B / Restaurant</td><td><span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] px-1 py-0.2 uppercase font-bold tracking-wide">Good</span></td><td class="text-right font-mono text-neutral-500">90%</td></tr>
+                    <tr><td class="py-2 text-neutral-900 font-bold">Spa & Wellness</td><td><span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] px-1 py-0.2 uppercase font-bold tracking-wide">Good</span></td><td class="text-right font-mono text-neutral-500">88%</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-3">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Revenue Forecast <span class="text-neutral-400 font-sans font-normal text-[10px]">(This Month)</span></h3>
+                <a href="#" class="text-[9px] font-bold text-amber-800 uppercase tracking-wider hover:underline">View Forecast</a>
+            </div>
+            
+            <div class="relative w-full h-32 flex flex-col justify-between pt-1">
+                <svg viewBox="0 0 600 140" class="w-full h-full overflow-visible">
+                    <line x1="0" y1="20" x2="600" y2="20" stroke="#f4f4f5" stroke-width="1" />
+                    <line x1="0" y1="70" x2="600" y2="70" stroke="#f4f4f5" stroke-width="1" />
+                    <path d="M 0,110 L 150,95 L 300,105 L 450,75 L 600,45" fill="none" stroke="#2563eb" stroke-width="2.5" />
+                    <circle cx="600" cy="45" r="3.5" fill="#2563eb" />
+                </svg>
+                <div class="flex justify-between text-[8px] text-neutral-400 font-mono font-bold pt-1.5 border-t border-neutral-100">
+                    <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span><span>Week 5</span>
+                </div>
+            </div>
+            
+            <div class="mt-2 text-[10px] font-semibold text-neutral-500 flex justify-between items-center">
+                <span>Forecast: <span class="text-neutral-900 font-mono font-bold">Rp 2.650.000.000</span></span>
+                <span class="text-emerald-600 font-mono font-bold"><i class="fa-solid fa-arrow-up"></i> +12.5% vs last month</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-5 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-2 mb-2">
+                <h3 class="font-serif text-xs text-neutral-900 font-medium tracking-wide">Manager Alerts</h3>
+                <a href="#" class="text-[9px] font-bold text-amber-800 uppercase tracking-wider hover:underline">View All</a>
+            </div>
+            
+            <div class="space-y-2 flex-1 flex flex-col justify-between text-[11px] font-medium">
+                <div class="flex items-start gap-2.5 p-1.5 hover:bg-neutral-50 transition-colors">
+                    <i class="fa-solid fa-circle-exclamation text-amber-600 mt-0.5 text-xs"></i>
+                    <div class="flex-1"><span class="text-neutral-900 font-bold block">5 rooms are out of order</span><span class="text-[9px] text-neutral-400 block mt-0.5">Require immediate attention</span></div>
+                    <span class="text-[8px] text-neutral-400 font-mono">10 min ago</span>
+                </div>
+                <div class="flex items-start gap-2.5 p-1.5 hover:bg-neutral-50 transition-colors">
+                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-xs"></i>
+                    <div class="flex-1"><span class="text-neutral-900 font-bold block">High housekeeping workload</span><span class="text-[9px] text-neutral-400 block mt-0.5">34 rooms pending cleaning</span></div>
+                    <span class="text-[8px] text-neutral-400 font-mono">30 min ago</span>
+                </div>
+                <div class="flex items-start gap-2.5 p-1.5 hover:bg-neutral-50 transition-colors">
+                    <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 text-xs"></i>
+                    <div class="flex-1"><span class="text-neutral-900 font-bold block">Daily report available</span><span class="text-[9px] text-neutral-400 block mt-0.5">Hotel daily summary report is ready</span></div>
+                    <span class="text-[8px] text-neutral-400 font-mono">2 hours ago</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</x-manager-dashboard-layout>

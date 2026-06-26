@@ -22,6 +22,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
       User::observe(UserObserver::class);
-      Blade::component('layouts.guest-dashboard', 'guest-dashboard-layout');
+// 1. Registrasi Komponen Guest (Bawaan Kode Kamu)
+        Blade::component('layouts.guest-dashboard', 'guest-dashboard-layout');
+
+        // 2. REGISTRASI KOMPONEN ADMIN (Tambahkan Dua Baris Ini)
+        Blade::component('layouts.admin', 'admin-layout');
+        Blade::component('layouts.admin-dashboard', 'admin-dashboard-layout');
+        Blade::component('layouts.manager-dashboard', 'manager-dashboard-layout');
+           Blade::component('layouts.receptionist-dashboard', 'receptionist-dashboard-layout');
+        
     }
 }

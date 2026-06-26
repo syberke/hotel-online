@@ -54,9 +54,11 @@
         </div>
         @endif
 
-        <section id="booking-bar" class="max-w-6xl mx-auto px-6 relative -mt-16 z-20">
-            <form action="{{ route('rooms.check') }}" method="POST" class="bg-white border border-neutral-200/80 p-6 rounded-none shadow-xl grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+ <section id="booking-bar" class="max-w-6xl mx-auto px-6 relative -mt-16 z-20">
+            <form id="availability-search-form" action="{{ route('rooms.check') }}" method="POST" class="bg-white border border-neutral-200/80 p-6 rounded-none shadow-xl grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
                 @csrf
+                <input type="hidden" name="mode_check_only" value="1">
+
                 <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check In</label>
                     <input type="date" id="bar_check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
@@ -71,9 +73,9 @@
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Guests</label>
                     <select id="bar_guests" name="guests" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
                         <option value="1 Adult">1 Adult</option>
-                        <option value="2 Adults, 1 Room" selected>2 Adults</option>
-                        <option value="3 Adults, 1 Room">3 Adults</option>
-                        <option value="4 Guests, 2 Rooms">4 Adults</option>
+                        <option value="2 Adults" selected>2 Adults</option>
+                        <option value="3 Adults">3 Adults</option>
+                        <option value="4 Adults">4 Adults</option>
                     </select>
                 </div>
 
@@ -87,11 +89,13 @@
                 </div>
 
                 <div>
-                    <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none cursor-pointer">
+                    <button type="submit" id="search-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none cursor-pointer">
                         Search Availability
                     </button>
                 </div>
             </form>
+
+            <div id="availability-alert-box" class="hidden mt-4 p-4 text-xs font-bold uppercase tracking-wider rounded-none transition-all"></div>
         </section>
 
         <section class="max-w-7xl mx-auto px-6 pt-24 pb-12">
@@ -551,5 +555,60 @@
             // Eksekusi pemindahan halaman tanpa amnesia input tanggal!
             window.location.href = compiledUrl;
         }
+        // ASOSIASI ELEMEN OPERASIONAL PENCARIAN KAMAR
+        const searchForm = document.getElementById('availability-search-form');
+        const searchBtn = document.getElementById('search-submit-btn');
+        const alertBox = document.getElementById('availability-alert-box');
+
+        searchForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            
+            // Berikan feedback visual loading status
+            searchBtn.disabled = true;
+            searchBtn.innerText = "Checking Enclave Allocation...";
+            
+            alertBox.classList.add('hidden');
+            alertBox.classList.remove('bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200', 'border');
+
+            fetch(searchForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_Original_Token_ atau csrf-token"]')?.value || document.querySelector('input[name="_token"]').value
+                },
+                body: JSON.stringify({
+                    check_in: document.getElementById('bar_check_in').value,
+                    check_out: document.getElementById('bar_check_out').value,
+                    guests: document.getElementById('bar_guests').value,
+                    suite_type: document.querySelector('select[name="suite_type"]').value,
+                    mode_check_only: "1" // Memicu branch return JSON ketersediaan di controller Anda
+                })
+            })
+            .then(async response => {
+                const data = await response.json();
+                searchBtn.disabled = false;
+                searchBtn.innerText = "Search Availability";
+                alertBox.classList.remove('hidden');
+
+                if (response.ok && data.available) {
+                    // Jika alokasi kamar siap di database
+                    alertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                    alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ${data.message} <a href="#rooms" class="ml-4 underline tracking-widest text-[10px] text-neutral-900">Proceed to Selection Below ↓</a>`;
+                } else {
+                    // Jika kamar penuh atau melanggar kapasitas maksimum
+                    alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-2"></i> ${data.message || 'Validation Failure.'}`;
+                }
+            })
+            .catch(() => {
+                searchBtn.disabled = false;
+                searchBtn.innerText = "Search Availability";
+                alertBox.classList.remove('hidden');
+                alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-2"></i> Failed to communicate with internal reservation services.`;
+            });
+        });
     </script>
 </x-guest-layout>

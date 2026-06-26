@@ -5,15 +5,22 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http; 
+use Illuminate\Support\Facades\Session;
 use App\Models\Booking;
 use App\Models\Payment;
-use Illuminate\Support\Facades\Http; 
 use App\Models\FacilityBooking;
 use Midtrans\Config;
 use Midtrans\Snap;
 
 class HotelOperationalController extends Controller
 {
+    /**
+     * ======================================================================
+     * CORE COMPONENT: PUBLIC & GUEST PORTAL FUNCTIONS
+     * ======================================================================
+     */
+
     /**
      * Halaman Utama (Home) - Tampilkan Kamar Berdasarkan Kolom 'price'
      */
@@ -28,7 +35,7 @@ class HotelOperationalController extends Controller
                 'room_types.id',
                 'room_types.name',
                 'room_types.description',
-                'room_types.price as price_per_night', // Alias aman untuk visual blade
+                'room_types.price as price_per_night',
                 'room_types.foto_url',
                 DB::raw('COUNT(rooms.id) as available_count')
             )
@@ -77,7 +84,6 @@ class HotelOperationalController extends Controller
         $checkIn = $request->input('check_in', date('Y-m-d'));
         $checkOut = $request->input('check_out', date('Y-m-d', strtotime('+1 day')));
 
-        // FIX: Menggunakan kolom 'check_in' dan 'check_out' sesuai skema asli database
         $occupiedCount = DB::table('bookings')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id') 
             ->where('rooms.room_type_id', $id) 
@@ -94,7 +100,7 @@ class HotelOperationalController extends Controller
                 ->orWhere(function ($q) use ($checkIn, $checkOut) {
                     $q->where('bookings.check_in', '>=', $checkIn)
                       ->where('bookings.check_out', '<=', $checkOut);
-                }) ;
+                });
             })
             ->count();
 
@@ -104,7 +110,6 @@ class HotelOperationalController extends Controller
             abort(404); 
         }
 
-        // Menyediakan variabel penolong agar Blade tidak mencari properti price_per_night
         $room->price_per_night = $room->price;
 
         $totalPhysicalRooms = DB::table('rooms')
@@ -118,49 +123,35 @@ class HotelOperationalController extends Controller
         return view('page.rooms-detail', compact('room'));
     }
 
-    /**
-     * Sinkronisasi Cek Ketersediaan dan Validasi Kuota Tamu Dinamis
-     */
-    public function checkAvailability(Request $request)
+  public function checkAvailability(Request $request)
     {
         $request->validate([
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
             'suite_type' => 'required|string',
-            'guests' => 'required|string'
+            'guests' => 'required|string',
+            'room_id' => 'nullable|integer'
         ]);
 
         $checkIn = $request->check_in;
         $checkOut = $request->check_out;
+        $guestsCount = (int) filter_var($request->guests, FILTER_SANITIZE_NUMBER_INT) ?: 2;
 
-        // Ekstrak jumlah tamu nyata dari input string HTML frontend Anda
-        $guestsCount = 2; 
-        if (str_contains($request->guests, '1')) { $guestsCount = 1; }
-        elseif (str_contains($request->guests, '3')) { $guestsCount = 3; }
-        elseif (str_contains($request->guests, '4')) { $guestsCount = 4; }
-        elseif (str_contains($request->guests, '6')) { $guestsCount = 6; }
-        elseif (str_contains($request->guests, '8')) { $guestsCount = 8; }
-
-        // Ambil manifest kamar target
         $roomTypeMaster = DB::table('room_types')->where('name', $request->suite_type)->first();
         if (!$roomTypeMaster) {
             return response()->json(['success' => false, 'message' => 'Tipe suite tidak terdaftar.'], 404);
         }
 
-        // PENGAMAN KAPASITAS NYATA: Menyesuaikan aturan kamar yang Anda miliki
-        $maxCapacityAllowed = 2; // Default Standard
+        $maxCapacityAllowed = 2;
         if (str_contains(strtolower($roomTypeMaster->name), 'deluxe')) { $maxCapacityAllowed = 4; }
         elseif (str_contains(strtolower($roomTypeMaster->name), 'executive')) { $maxCapacityAllowed = 6; }
         elseif (str_contains(strtolower($roomTypeMaster->name), 'family')) { $maxCapacityAllowed = 8; }
 
         if ($guestsCount > $maxCapacityAllowed) {
-            $msgMax = "Kamar " . $roomTypeMaster->name . " hanya diizinkan maksimal untuk " . $maxCapacityAllowed . " orang tamu.";
-            return $request->wantsJson() 
-                ? response()->json(['success' => false, 'message' => $msgMax], 422)
-                : redirect()->back()->withInput()->with('error', $msgMax);
+            return response()->json(['success' => false, 'message' => "Kamar " . $roomTypeMaster->name . " maksimal untuk " . $maxCapacityAllowed . " tamu."], 422);
         }
 
-        // Cek kamar terisi menggunakan kolom tanggal asli
+        // Cek kamar yang terpakai pada rentang tanggal tersebut
         $occupiedRoomIds = DB::table('bookings')
             ->whereIn('status', ['confirmed', 'pending', 'checked_in'])
             ->where('check_in', '<', $checkOut)
@@ -168,15 +159,23 @@ class HotelOperationalController extends Controller
             ->pluck('room_id')
             ->toArray();
 
-        $room = DB::table('rooms')
+        $roomQuery = DB::table('rooms')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->where('room_types.name', $request->suite_type)
             ->where('rooms.status', 'available') 
             ->whereNotIn('rooms.id', $occupiedRoomIds) 
-            ->select('rooms.id as room_id', 'room_types.price', 'rooms.room_number')
-            ->inRandomOrder()
-            ->first();
+            ->select('rooms.id as room_id', 'room_types.price', 'rooms.room_number');
 
+        // PRIORITAS: Jika room_id dikirim (Proses Simpan/Book), kunci nomor kamar tersebut
+        if ($request->filled('room_id') && !$request->has('mode_check_only')) {
+            $roomQuery->where('rooms.id', $request->room_id);
+        } else {
+            $roomQuery->orderBy('rooms.room_number', 'asc'); // Urutkan teratur agar konsisten
+        }
+
+        $room = $roomQuery->first();
+
+        // KONDISI A: Hanya mengecek (AJAX Verification)
         if ($request->wantsJson() && $request->has('mode_check_only')) {
             if (!$room) {
                 return response()->json([
@@ -186,15 +185,14 @@ class HotelOperationalController extends Controller
             }
             return response()->json([
                 'available' => true, 
+                'room_id' => $room->room_id, // Mengirimkan ID Kamar terpilih ke Client
                 'message' => 'Kamar nomor ' . $room->room_number . ' siap dialokasikan untuk Anda!'
             ]);
         }
 
+        // KONDISI B: Menyimpan Pemesanan Kamar Real
         if (!$room) {
-            $errMessage = 'Maaf, seluruh unit kamar tipe ' . $request->suite_type . ' sudah penuh dipesan.';
-            return $request->ajax() || $request->wantsJson()
-                ? response()->json(['success' => false, 'message' => $errMessage], 422)
-                : redirect()->back()->withInput()->with('error', $errMessage);
+            return response()->json(['success' => false, 'message' => 'Kamar pilihan Anda baru saja terisi. Silakan lakukan cek ulang.'], 422);
         }
 
         $days = max(1, (strtotime($checkOut) - strtotime($checkIn)) / (60 * 60 * 24));
@@ -202,14 +200,13 @@ class HotelOperationalController extends Controller
 
         if (Auth::check()) {
             DB::transaction(function () use ($room, $totalPrice, $checkIn, $checkOut, $guestsCount) {
-                // Gunakan Query Builder langsung untuk performa transaksi Supabase yang bersih
                 $bookingId = DB::table('bookings')->insertGetId([
                     'user_id'      => Auth::id(),
                     'guest_id'     => Auth::id(), 
                     'room_id'      => $room->room_id, 
                     'check_in'     => $checkIn,
                     'check_out'    => $checkOut,
-                    'guests_count' => $guestsCount, // Kuota hitung tamu tersimpan dinamis
+                    'guests_count' => $guestsCount, 
                     'total_price'  => $totalPrice,
                     'status'       => 'pending',
                     'created_at'   => now(),
@@ -226,19 +223,11 @@ class HotelOperationalController extends Controller
                 ]);
             }); 
 
-            return $request->wantsJson() 
-                ? response()->json(['success' => true, 'redirect' => route('guest.dashboard')])
-                : redirect()->route('guest.dashboard')->with('success', 'Reservasi berhasil!');
+            return response()->json(['success' => true, 'redirect' => route('guest.dashboard')]);
         }
 
-        return $request->wantsJson()
-            ? response()->json(['success' => false, 'redirect' => route('login'), 'message' => 'Silakan login terlebih dahulu.'])
-            : redirect()->route('login')->with('info', 'Silakan login terlebih dahulu.');
+        return response()->json(['success' => false, 'redirect' => route('login'), 'message' => 'Silakan login terlebih dahulu.']);
     }
-
-    /**
-     * Halaman Dasbor Tamu (Menampilkan Data Cuaca & Booking Aktif)
-     */
     public function dashboard()
     {
         $bookings = DB::table('bookings')
@@ -256,7 +245,7 @@ class HotelOperationalController extends Controller
             : collect();
 
         try {
-            $weatherResponse = Http::timeout(3)->get('https://api.open-meteo.com/v1/forecast', [
+            $weatherResponse = Http::timeout(2)->get('https://api.open-meteo.com/v1/forecast', [
                 'latitude' => -8.4095, 
                 'longitude' => 115.1889,
                 'current_weather' => true
@@ -557,6 +546,7 @@ class HotelOperationalController extends Controller
         if (!$booking) { return redirect()->back()->with('error', 'Data reservasi tidak valid.'); }
         if ($booking->status !== 'pending') { return redirect()->back()->with('error', 'Hanya reservasi pending yang dapat dibatalkan.'); }
 
+        // Batalkan pesanan
         DB::transaction(function () use ($booking) {
             DB::table('bookings')->where('id', $booking->id)->update(['status' => 'cancelled', 'updated_at' => now()]);
             DB::table('payments')->where('booking_id', $booking->id)->update(['payment_status' => 'failed', 'note' => 'Dibatalkan oleh pengguna.', 'updated_at' => now()]);
@@ -707,6 +697,563 @@ class HotelOperationalController extends Controller
         } catch (\Exception $e) { return response()->json(['success' => false, 'message' => 'Gagal mengamankan slot.'], 500); }
     }
 
+public function adminReservationsView(Request $request)
+    {
+        // 1. Ambil data statistik counter atas secara real-time
+        $stats = [
+            'total_resv' => \App\Models\Booking::count(),
+            'confirmed'  => \App\Models\Booking::where('status', 'confirmed')->count(),
+            'pending'    => \App\Models\Booking::where('status', 'pending')->count(),
+            'arrivals'   => \App\Models\Booking::whereDate('check_in', date('Y-m-d'))->count(),
+            'departures' => \App\Models\Booking::whereDate('check_out', date('Y-m-d'))->count(),
+        ];
+
+        // 2. Ambil data master tipe kamar untuk dropdown filter
+        $roomTypes = DB::table('room_types')->select('name')->distinct()->get();
+
+        // 3. Bangun query dengan Eager Loading (Mencegah N+1 Problem database)
+        $query = \App\Models\Booking::with(['user', 'room.roomType', 'payments']);
+
+        // Filter: Pencarian Pintar (Booking ID, Nama Guest, atau Email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $cleanId = ltrim($search, '#OA-');
+                $q->where('id', 'like', "%{$cleanId}%")
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'ILIKE', "%{$search}%")
+                                ->orWhere('email', 'ILIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter: Status Booking
+        if ($request->filled('status') && $request->status != 'All Status') {
+            $statusDb = strtolower(str_replace(' ', '_', $request->status));
+            $query->where('status', $statusDb);
+        }
+
+        // Filter: Jenis Tipe Kamar Suite
+        if ($request->filled('room_type') && $request->room_type != 'All Room Types') {
+            $query->whereHas('room.roomType', function($q) use ($request) {
+                $q->where('name', $request->room_type);
+            });
+        }
+
+        // Filter: Rentang Tanggal Operasional
+        if ($request->filled('date_range')) {
+            $dates = explode(' - ', $request->date_range);
+            if (count($dates) == 2) {
+                $query->whereDate('check_in', '>=', \Carbon\Carbon::parse($dates[0])->toDateString())
+                      ->whereDate('check_out', '<=', \Carbon\Carbon::parse($dates[1])->toDateString());
+            }
+        }
+
+        // 4. Eksekusi Paginasi (Menggunakan nama $bookings untuk menyembuhkan error view)
+        $perPage = $request->get('per_page', 10);
+        $bookings = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+
+        // 5. Logic Detail Side Panel (Aside Desk)
+        $selectedBookingId = $request->get('selected_id');
+        $selectedBooking = null;
+
+        if ($selectedBookingId) {
+            $selectedBooking = \App\Models\Booking::with(['user', 'room.roomType', 'payments'])->find($selectedBookingId);
+        } elseif ($bookings->count() > 0) {
+            $selectedBooking = $bookings->first();
+        }
+
+        // 6. Return Data seimbang ke Blade View tanpa ada data dummy lagi
+        return view('admin.reservation', compact('bookings', 'stats', 'roomTypes', 'selectedBooking'));
+    }
+    /**
+     * Menu 2: Front Desk Operations
+     */
+    public function adminFrontDeskView(Request $request)
+    {
+        $today = now()->format('Y-m-d');
+
+        // ======================================================================
+        // 1. HITUNG METRIK COUNTER ATAS (REAL-TIME)
+        // ======================================================================
+        $arrivalsCount = DB::table('bookings')->whereDate('check_in', $today)->whereIn('status', ['pending', 'confirmed'])->count();
+        $departuresCount = DB::table('bookings')->whereDate('check_out', $today)->where('status', 'checked_in')->count();
+        $checkedInCount = DB::table('bookings')->where('status', 'checked_in')->count();
+        
+        $totalRooms = DB::table('rooms')->count() ?: 1;
+        $availableRooms = DB::table('rooms')->where('status', 'available')->count();
+        $outOfOrderRooms = DB::table('rooms')->where('status', 'maintenance')->count();
+        $occupiedRooms = DB::table('rooms')->where('status', 'occupied')->count();
+        
+        // Persentase Tingkat Okupansi Kamar Nyata
+        $occupancyRate = round(($occupiedRooms / $totalRooms) * 100, 1);
+
+        // ======================================================================
+        // 2. QUERY MASTER UNTUK TODAY'S RESERVATIONS TABLE (DENGAN FILTER)
+        // ======================================================================
+        $query = DB::table('bookings')
+            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->select(
+                'bookings.*', 
+                'users.name as guest_name', 
+                'users.email as guest_email', 
+                'rooms.room_number', 
+                'room_types.name as room_type'
+            );
+
+        // Filter: Tab Kategori (All, Arrivals, In House, Departures)
+        $currentTab = $request->get('tab', 'all');
+        if ($currentTab == 'arrivals') {
+            $query->whereDate('bookings.check_in', $today)->whereIn('bookings.status', ['pending', 'confirmed']);
+        } elseif ($currentTab == 'in_house') {
+            $query->where('bookings.status', 'checked_in');
+        } elseif ($currentTab == 'departures') {
+            $query->whereDate('bookings.check_out', $today)->where('bookings.status', 'checked_in');
+        } else {
+            // Default 'all': Menampilkan semua data yang relevan dengan pergerakan hari ini
+            $query->where(function($q) use ($today) {
+                $q->whereDate('bookings.check_in', $today)
+                  ->orWhereDate('bookings.check_out', $today)
+                  ->orWhere('bookings.status', 'checked_in');
+            });
+        }
+
+        // Filter: Pencarian Bilah Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $cleanSearch = ltrim($search, '#OA-');
+                $q->where('bookings.id', 'like', "%{$cleanSearch}%")
+                  ->orWhere('users.name', 'ILIKE', "%{$search}%")
+                  ->orWhere('users.email', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        // Eksekusi Paginasi Tabel Atas
+        $todayReservations = $query->orderBy('bookings.created_at', 'desc')->paginate(5, ['*'], 'resv_page')->withQueryString();
+
+   $inHouseGuests = DB::table('bookings')
+    ->join('users', 'bookings.user_id', '=', 'users.id')
+    ->join('guests', 'users.email', '=', 'guests.email') // Hubungkan users ke guests via email
+    ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+    ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+    ->where('bookings.status', 'checked_in')
+    ->select(
+        'bookings.*', 
+        'users.name as guest_name', 
+        'guests.phone as guest_phone', 
+        'guests.foto_url as guest_avatar', // Mengambil foto_url yang benar dari tabel guests
+        'rooms.room_number', 
+        'room_types.name as room_type'
+    )
+    ->orderBy('rooms.room_number', 'asc')
+    ->paginate(5, ['*'], 'guest_page')->withQueryString();
+        // ======================================================================
+        // 4. DATA PANEL ASIDE (ARRIVALS PREVIEW)
+        // ======================================================================
+      $asideArrivals = DB::table('bookings')
+    ->join('users', 'bookings.user_id', '=', 'users.id')
+    ->join('guests', 'users.email', '=', 'guests.email') // Join ke tabel guests untuk mengambil foto
+    ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+    ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+    ->whereDate('bookings.check_in', $today)
+    ->whereIn('bookings.status', ['pending', 'confirmed'])
+    ->select(
+        'bookings.*', 
+        'users.name as guest_name', 
+        'guests.foto_url as guest_avatar', // Diubah dari users.foto_url menjadi guests.foto_url
+        'room_types.name as room_type'
+    )
+    ->orderBy('bookings.check_in', 'asc')
+    ->take(5)
+    ->get();
+        return view('admin.frontdesk', compact(
+            'arrivalsCount', 'departuresCount', 'checkedInCount', 'availableRooms', 'occupancyRate',
+            'totalRooms', 'outOfOrderRooms', 'occupiedRooms', 'todayReservations', 'inHouseGuests', 
+            'asideArrivals', 'currentTab'
+        ));
+    }
+
+    /**
+     * Menu 3: Rooms & Inventory
+     */
+    public function adminRoomsInventoryView(Request $request)
+    {
+        // ======================================================================
+        // 1. HITUNG COUNTER METRIK KAMAR (REAL-TIME)
+        // ======================================================================
+        $totalRooms = DB::table('rooms')->count() ?: 1;
+        $availableRooms = DB::table('rooms')->where('status', 'available')->count();
+        $occupiedRooms = DB::table('rooms')->where('status', 'occupied')->count();
+        $maintenanceRooms = DB::table('rooms')->where('status', 'maintenance')->count();
+        $dirtyRooms = DB::table('rooms')->where('status', 'dirty')->count(); // Diasumsikan sebagai proses cleaning
+
+        $stats = [
+            'total' => $totalRooms,
+            'available' => $availableRooms,
+            'available_pct' => round(($availableRooms / $totalRooms) * 100, 1),
+            'occupied' => $occupiedRooms,
+            'occupied_pct' => round(($occupiedRooms / $totalRooms) * 100, 1),
+            'maintenance' => $maintenanceRooms,
+            'maintenance_pct' => round(($maintenanceRooms / $totalRooms) * 100, 1),
+            'cleaning' => $dirtyRooms,
+            'cleaning_pct' => round(($dirtyRooms / $totalRooms) * 100, 1),
+        ];
+
+        // ======================================================================
+        // 2. QUERY UTAMA DAFTAR KAMAR + PENCARIAN & FILTER
+        // ======================================================================
+        $query = DB::table('rooms')
+            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->select(
+                'rooms.*',
+                'room_types.name as type_name',
+                'room_types.price',
+                'room_types.max_capacity',
+                'room_types.foto_url'
+            );
+
+        // Filter: Pencarian Berdasarkan Nomor Kamar atau Nama Tipe Kamar
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('rooms.room_number', 'like', "%{$search}%")
+                  ->orWhere('room_types.name', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        // Filter: Berdasarkan Status Kamar Langsung
+        if ($request->filled('status_filter')) {
+            $query->where('rooms.status', $request->status_filter);
+        }
+
+        // Eksekusi Paginasi Data Kamar (Default: 10 item per halaman)
+        $rooms = $query->orderBy('rooms.room_number', 'asc')->paginate(10)->withQueryString();
+
+        // Cari informasi booking aktif untuk mendapatkan info check-out tamu pada kamar terkait (jika diduduki)
+        $today = now()->format('Y-m-d');
+        $activeBookings = DB::table('bookings')
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->where('check_in', '<=', $today)
+            ->where('check_out', '>', $today)
+            ->get()
+            ->keyBy('room_id');
+
+        foreach ($rooms->items() as $room) {
+            $room->active_booking = $activeBookings->get($room->id);
+        }
+
+        // ======================================================================
+        // 3. ASIDE COMPONENT: ROOM TYPE SUMMARY MATRIX
+        // ======================================================================
+        $roomTypesList = DB::table('room_types')->get();
+        $summary = [];
+
+        foreach ($roomTypesList as $type) {
+            $typeTotal = DB::table('rooms')->where('room_type_id', $type->id)->count();
+            $typeOccupied = DB::table('rooms')->where('room_type_id', $type->id)->where('status', 'occupied')->count();
+            $typeAvailable = DB::table('rooms')->where('room_type_id', $type->id)->where('status', 'available')->count();
+
+            if ($typeTotal > 0) {
+                $summary[] = [
+                    'name' => $type->name,
+                    'total' => $typeTotal,
+                    'occupied' => $typeOccupied,
+                    'available' => $typeAvailable
+                ];
+            }
+        }
+
+        return view('admin.rooms&inventory', compact('stats', 'rooms', 'summary'));
+    }
+public function adminDashboardView()
+{
+    // ======================================================================
+    // 1. UTAMA: METRIK HERO UTAMA DECK (DARI DATABASE NYATA)
+    // ======================================================================
+    
+    // Total Reservations & Perbandingan (vs Minggu Lalu)
+    $totalReservations = DB::table('bookings')->count();
+    $lastWeekReservations = DB::table('bookings')
+        ->where('created_at', '<', now()->subWeek())
+        ->count();
+    $reservationDiff = $lastWeekReservations > 0 
+        ? round((($totalReservations - $lastWeekReservations) / $lastWeekReservations) * 100, 1) 
+        : 0;
+
+    // Total Tamu Unik & Perbandingan
+    $totalGuests = DB::table('bookings')->sum('guests_count') ?: 0;
+    $lastWeekGuests = DB::table('bookings')
+        ->where('created_at', '<', now()->subWeek())
+        ->sum('guests_count') ?: 0;
+    $guestDiff = $lastWeekGuests > 0 
+        ? round((($totalGuests - $lastWeekGuests) / $lastWeekGuests) * 100, 1) 
+        : 0;
+
+    // Tingkat Okupansi Kamar (Occupancy Rate Real-time)
+    $totalPhysicalRooms = DB::table('rooms')->count() ?: 1;
+    $occupiedRoomsCount = DB::table('rooms')->where('status', 'occupied')->count();
+    $occupancyRate = ($occupiedRoomsCount / $totalPhysicalRooms) * 100;
+    
+    // Perbandingan Okupansi Minggu Lalu
+    $lastWeekOccupied = DB::table('bookings')
+        ->where('status', 'checked_in')
+        ->where('created_at', '<', now()->subWeek())
+        ->count();
+    $lastWeekOccupancyRate = ($lastWeekOccupied / $totalPhysicalRooms) * 100;
+    $occupancyDiff = round($occupancyRate - $lastWeekOccupancyRate, 1);
+
+    // Rata-rata Pendapatan Harian (Average Daily Rate - ADR)
+    $confirmedBookingsCount = DB::table('bookings')->where('status', 'confirmed')->count() ?: 1;
+    $totalRoomRevenue = DB::table('payments')
+        ->whereNotNull('booking_id')
+        ->where('payment_status', 'paid')
+        ->sum('amount') ?: 0;
+    $adr = $totalRoomRevenue / $confirmedBookingsCount;
+    $adrDiff = 0; // Metrik stabil pembanding database awal
+
+    // Total Pendapatan Kotor Seluruh Departemen (Grand Total Revenue)
+    $totalFbRevenue = DB::table('payments')
+        ->whereNotNull('restaurant_order_id')
+        ->where('payment_status', 'paid')
+        ->sum('amount') ?: 0;
+    $totalRevenue = $totalRoomRevenue + $totalFbRevenue;
+    $revenueDiff = 0;
+
+    // ======================================================================
+    // 2. DIAGRAM: OKUPANSI MINGGUAN & ALOKASI STATUS RESERVASI
+    // ======================================================================
+    
+    // Tren Okupansi Dinamis 4 Hari Terakhir
+    $occupancyDates = [
+        now()->subDays(3)->format('d M'),
+        now()->subDays(2)->format('d M'),
+        now()->subDays(1)->format('d M'),
+        now()->format('d M')
+    ];
+    
+    // Kalkulasi Koordinat Line Graph Berdasarkan Okupansi Nyata Harian
+    $currentTrendPoints = [];
+    for ($i = 3; $i >= 0; $i--) {
+        $dayDate = now()->subDays($i)->format('Y-m-d');
+        $dayOccupied = DB::table('bookings')
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->where('check_in', '<=', $dayDate)
+            ->where('check_out', '>', $dayDate)
+            ->count();
+        // Ubah skala persen menjadi koordinat tinggi SVG (maksimal tinggi 140px)
+        $currentTrendPoints[] = round(($dayOccupied / $totalPhysicalRooms) * 100);
+    }
+    
+    $occupancyTrend = [
+        'past' => [40, 55, 45, 60], // Baseline statis pembanding grafik
+        'current' => $currentTrendPoints
+    ];
+
+    // Persentase Share Status Reservasi (Pemesanan Kamar)
+    $statusShares = [
+        'confirmed'  => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'confirmed')->count() / $totalReservations) * 100 : 0,
+        'pending'    => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'pending')->count() / $totalReservations) * 100 : 0,
+        'checked_in' => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'checked_in')->count() / $totalReservations) * 100 : 0,
+        'cancelled'  => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'cancelled')->count() / $totalReservations) * 100 : 0,
+    ];
+
+    // ======================================================================
+    // 3. MANIFEST: KEDATANGAN HARI INI & AKTIVITAS TRANSAKSI TERBARU
+    // ======================================================================
+    
+    // Manifest Kedatangan Tamu Hari Ini (Today's Arrivals)
+    $todayArrivals = DB::table('bookings')
+        ->join('users', 'bookings.user_id', '=', 'users.id')
+        ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+        ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+        ->whereDate('bookings.check_in', now()->format('Y-m-d'))
+        ->select(
+            'users.name as guest_name', 
+            'room_types.name as room_type', 
+            'rooms.room_number',
+            DB::raw("CASE WHEN room_types.price >= 2000000 THEN 1 ELSE 0 END as is_vip")
+        )
+        ->take(5)
+        ->get();
+
+    // Log Transaksi & Reservasi Sistem Terbaru (Recent Activities Feed)
+    $recentActivities = DB::table('bookings')
+        ->join('users', 'bookings.user_id', '=', 'users.id')
+        ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+        ->select(
+            DB::raw("'booking' as type"),
+            DB::raw("CONCAT('New reservation #OA-', bookings.id, ' confirmed') as title"),
+            DB::raw("CONCAT('Room ', rooms.room_number, ' • ', bookings.check_in, ' to ', bookings.check_out) as description"),
+            'bookings.created_at'
+        )
+        ->orderBy('bookings.id', 'desc')
+        ->take(4)
+        ->get();
+
+    // Konversi Carbon Instansiasi Koleksi Waktu pada Data Aktivitas Manual Objek Objek DB
+    foreach ($recentActivities as $activity) {
+        $activity->created_at = \Carbon\Carbon::parse($activity->created_at);
+    }
+
+    // ======================================================================
+    // 4. OPERASIONAL: UTALISASI PRODUKTIVITAS KAMAR & SANITASI HOUSEKEEPING
+    // ======================================================================
+    
+    // Performa Yield Hasil Pendapatan Per Kelas Kamar
+    $roomTypesList = DB::table('room_types')->get();
+    $roomPerformances = [];
+
+    foreach ($roomTypesList as $type) {
+        $typeTotal = DB::table('rooms')->where('room_type_id', $type->id)->count();
+        $typeOccupied = DB::table('rooms')->where('room_type_id', $type->id)->where('status', 'occupied')->count();
+        $typeRevenue = DB::table('payments')
+            ->join('bookings', 'payments.booking_id', '=', 'bookings.id')
+            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->where('rooms.room_type_id', $type->id)
+            ->where('payments.payment_status', 'paid')
+            ->sum('payments.amount') ?: 0;
+
+        $roomPerformances[] = [
+            'type'     => $type->name,
+            'total'    => $typeTotal,
+            'occupied' => $typeOccupied,
+            'rate'     => $typeTotal > 0 ? ($typeOccupied / $typeTotal) * 100 : 0,
+            'revenue'  => $typeRevenue
+        ];
+    }
+
+    // Finansial Performa Pendapatan Cabang Departemen
+    $deptRevenue = [
+        'room_service' => $totalFbRevenue * 0.35, // Alokasi perkiraan pembagian pesanan via kamar
+        'restaurant'   => $totalFbRevenue * 0.65, // Alokasi penjualan kuliner langsung di kasir resto
+        'spa'          => DB::table('facility_bookings')->where('facility_name', 'LIKE', '%Spa%')->count() * 350000
+    ];
+
+    $totalDeptSum = array_sum($deptRevenue) ?: 1;
+    $deptShares = [
+        'room_service' => ($deptRevenue['room_service'] / $totalDeptSum) * 100,
+        'restaurant'   => ($deptRevenue['restaurant'] / $totalDeptSum) * 100,
+        'spa'          => ($deptRevenue['spa'] / $totalDeptSum) * 100,
+    ];
+
+    // Status Manajemen Kebersihan Fisik Kamar (Housekeeping Sanitasi Log)
+    $hkStatus = [
+        'clean'     => DB::table('rooms')->where('status', 'available')->count(),
+        'dirty'     => DB::table('rooms')->where('status', 'dirty')->count(),
+        'inspected' => DB::table('rooms')->where('status', 'available')->count(), // Kamar siap huni terinspeksi FO
+        'oos'       => DB::table('rooms')->where('status', 'out_of_order')->count(),
+    ];
+
+    // ======================================================================
+    // 5. RETURN BIND KE TEMPLATE BLADE VIEW
+    // ======================================================================
+    return view('admin.dashboard', compact(
+        'totalReservations', 'reservationDiff', 'totalGuests', 'guestDiff',
+        'occupancyRate', 'occupancyDiff', 'adr', 'adrDiff', 'totalRevenue', 'revenueDiff',
+        'occupancyTrend', 'occupancyDates', 'statusShares', 'todayArrivals',
+        'roomPerformances', 'deptRevenue', 'deptShares', 'recentActivities', 'hkStatus'
+    ));
+}
+
+    /**
+     * Menu 4: Room Service Management
+     */
+    public function adminRoomServiceView()
+    {
+        $orders = DB::table('restaurant_orders')
+            ->join('guests', 'restaurant_orders.guest_id', '=', 'guests.id')
+            ->select('restaurant_orders.*', 'guests.name as guest_name')
+            ->orderBy('restaurant_orders.created_at', 'desc')
+            ->get();
+
+        return view('admin.roomservice', compact('orders'));
+    }
+
+    /**
+     * Menu 5: Restaurant Gastronomy
+     */
+    public function adminRestaurantView()
+    {
+        $orders = DB::table('restaurant_orders')
+            ->join('guests', 'restaurant_orders.guest_id', '=', 'guests.id')
+            ->select('restaurant_orders.*', 'guests.name as guest_name')
+            ->get();
+
+        $topItems = DB::table('restaurant_order_details')
+            ->join('restaurant_menus', 'restaurant_order_details.restaurant_menu_id', '=', 'restaurant_menus.id')
+            ->select('restaurant_menus.name', DB::raw('sum(restaurant_order_details.quantity) as qty'), DB::raw('sum(restaurant_order_details.quantity * restaurant_order_details.price) as revenue'))
+            ->groupBy('restaurant_menus.name')
+            ->orderBy('qty', 'desc')->take(3)->get();
+
+        return view('admin.restaurant', compact('orders', 'topItems'));
+    }
+
+    /**
+     * Menu 6: Facilities & Wellness
+     */
+    public function adminFacilitiesView()
+    {
+        $bookings = DB::table('facility_bookings')
+            ->join('users', 'facility_bookings.user_id', '=', 'users.id')
+            ->select('facility_bookings.*', 'users.name as guest_name')
+            ->orderBy('facility_bookings.booking_date', 'desc')
+            ->get();
+
+        return view('admin.facilities', compact('bookings'));
+    }
+
+    /**
+     * Menu 7: Finance & Billing Matrix
+     */
+    public function adminFinanceView()
+    {
+        $transactions = DB::table('payments')
+            ->leftJoin('bookings', 'payments.booking_id', '=', 'bookings.id')
+            ->select('payments.*', 'bookings.status as b_status')
+            ->orderBy('payments.created_at', 'desc')->take(10)->get();
+
+        $roomRevenue = DB::table('payments')->whereNotNull('booking_id')->where('payment_status', 'paid')->sum('amount');
+        $fbRevenue = DB::table('payments')->whereNotNull('restaurant_order_id')->where('payment_status', 'paid')->sum('amount');
+        $totalRevenue = $roomRevenue + $fbRevenue;
+
+        return view('admin.finance', compact('transactions', 'roomRevenue', 'fbRevenue', 'totalRevenue'));
+    }
+
+    /**
+     * Menu 8: Operational Reports Analyzer
+     */
+    public function adminReportsView()
+    {
+        $totalRooms = DB::table('rooms')->count() ?: 1;
+        $occupiedRooms = DB::table('rooms')->where('status', 'occupied')->count();
+        $avgOccupancy = round(($occupiedRooms / $totalRooms) * 100, 1);
+
+        $adr = DB::table('bookings')->where('status', 'confirmed')->avg('total_price') ?: 0;
+        $revpar = $adr * ($avgOccupancy / 100);
+
+        return view('admin.reports', compact('avgOccupancy', 'adr', 'revpar'));
+    }
+
+    /**
+     * Menu 9: User & Role Controls
+     */
+    public function adminUserAndRoleView()
+    {
+        $users = DB::table('users')->orderBy('created_at', 'desc')->get();
+        $rolesCount = DB::table('users')->select('role', DB::raw('count(*) as total'))->groupBy('role')->get();
+
+        return view('admin.userandrole', compact('users', 'rolesCount'));
+    }
+
+    /**
+     * ======================================================================
+     * THIRD-PARTY INTEGRATION: MIDTRANS PAYMENT GATEWAY AUTOMATION
+     * ======================================================================
+     */
+
     protected function initMidtrans()
     {
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
@@ -834,14 +1381,13 @@ class HotelOperationalController extends Controller
         }
         return response()->json(['success' => true, 'message' => 'Database lokal diperbarui.']);
     }
+
+    /**
+     * Helper Utilities
+     */
     public function changeLanguage($locale)
-{
-    // Batasi hanya bahasa yang kita sediakan (misal: en = Inggris, id = Indonesia)
-    if (in_array($locale, ['en', 'id'])) {
-        Session::put('locale', $locale);
+    {
+        if (in_array($locale, ['en', 'id'])) { Session::put('locale', $locale); }
+        return redirect()->back();
     }
-    
-    // Kembalikan user ke halaman sebelumnya dengan bahasa yang baru
-    return redirect()->back();
-}
 }

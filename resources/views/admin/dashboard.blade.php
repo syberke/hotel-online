@@ -1,296 +1,316 @@
-<x-guest-layout>
-    <div class="min-h-screen bg-[#f8f7f5] text-neutral-900 font-sans antialiased flex">
-
-        <aside class="w-64 bg-[#141414] text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-800 z-30 select-none">
-            <div class="overflow-y-auto flex-1 custom-scrollbar">
-                <div class="p-6 border-b border-neutral-800 bg-[#0d0d0d]">
-                    <h2 class="text-xl font-serif italic tracking-widest text-white">Oasis Hotel</h2>
-                    <p class="text-[9px] uppercase tracking-[0.3em] text-amber-500 font-bold mt-1">Management Cloud</p>
-                </div>
-
-                <div class="p-3 space-y-6">
-                    <div>
-                        <span class="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-600 block mb-2">Operational Core</span>
-                        <nav class="space-y-0.5">
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold bg-neutral-900 text-amber-400 border-l-2 border-amber-500 rounded-none transition-all">
-                                <i class="fa-solid fa-chart-line w-4"></i> Dashboard
-                            </a>
-                            <a href="#" class="flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-calendar-days w-4"></i> Bookings</span>
-                                <i class="fa-solid fa-chevron-down text-[9px] text-neutral-600"></i>
-                            </a>
-                            <a href="#" class="flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-door-open w-4"></i> Rooms & Inventory</span>
-                                <i class="fa-solid fa-chevron-down text-[9px] text-neutral-600"></i>
-                            </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-user-shield w-4"></i> Guest Directory
-                            </a>
-                        </nav>
-                    </div>
-
-                    <div>
-                        <span class="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-600 block mb-2">Hospitality Services</span>
-                        <nav class="space-y-0.5">
-                            <a href="#" class="flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-utensils w-4"></i> Restaurant POS</span>
-                                <span class="bg-amber-600 text-white text-[8px] px-1 py-0.2 font-bold">4 Act</span>
-                            </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-spa w-4"></i> Facilities & Spa
-                            </a>
-                        </nav>
-                    </div>
-
-                    <div>
-                        <span class="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-600 block mb-2">Financials & Ledger</span>
-                        <nav class="space-y-0.5">
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-file-invoice-dollar w-4"></i> Transactions
-                            </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-square-poll-vertical w-4"></i> Yield Reports
-                            </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold hover:bg-neutral-900 hover:text-white border-l-2 border-transparent transition-all">
-                                <i class="fa-solid fa-users-gear w-4"></i> Staff Control
-                            </a>
-                        </nav>
-                    </div>
-                </div>
+<x-admin-dashboard-layout>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div class="bg-white p-6 border border-neutral-200/60 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Total Reservations</span>
+                <span class="text-3xl font-light font-serif text-neutral-900 block mt-1">{{ number_format($totalReservations) }}</span>
+                <span class="text-[10px] font-bold {{ $reservationDiff >= 0 ? 'text-emerald-600' : 'text-rose-600' }} flex items-center gap-1 mt-1">
+                    <i class="fa-solid {{ $reservationDiff >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[9px]"></i> 
+                    {{ abs($reservationDiff) }}% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
             </div>
-
-            <div class="p-4 bg-[#0d0d0d] border-t border-neutral-800 space-y-3">
-                <div class="flex items-center justify-between text-[10px] text-neutral-500 font-mono">
-                    <span>SYS STATUS:</span>
-                    <span class="text-emerald-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span> SECURE</span>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 text-xs uppercase tracking-wider font-bold text-red-400 hover:bg-red-950/20 transition-all text-left">
-                        <i class="fa-solid fa-power-off w-4"></i> Terminate Session
-                    </button>
-                </form>
+            <div class="w-12 h-12 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-400 text-lg">
+                <i class="fa-regular fa-calendar-check text-amber-600/80"></i>
             </div>
-        </aside>
+        </div>
 
-        <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-            
-            <header class="bg-white border-b border-neutral-200 px-8 py-4 sticky top-0 z-20 flex justify-between items-center h-20 shadow-sm">
-                <div class="w-96 relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-xs"></i>
-                    <input type="text" placeholder="Search guests, room allocations, folios or invoices..." 
-                           class="w-full bg-neutral-50 border border-neutral-200 pl-9 pr-4 py-2 text-xs tracking-wide rounded-none focus:outline-none focus:border-neutral-400 transition-colors">
-                </div>
-
-                <div class="flex items-center space-x-6">
-                    <div class="text-right hidden md:block">
-                        <span class="text-[9px] font-mono uppercase tracking-widest text-neutral-400">Hotel Date</span>
-                        <p class="text-xs font-bold text-neutral-800">{{ date('d M Y') }} &bull; 10:35 AM</p>
-                    </div>
-                    <div class="h-8 w-px bg-neutral-200"></div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-right">
-                            <span class="text-xs font-bold text-neutral-900 block leading-tight">{{ auth()->user()->name }}</span>
-                            <span class="text-[9px] uppercase tracking-widest font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 border border-amber-200/50 block mt-0.5">{{ auth()->user()->role }}</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <div class="p-8 space-y-8 flex-1">
-                
-                <div>
-                    <h1 class="text-2xl font-serif text-neutral-900 tracking-wide">Hotel Operations Overview</h1>
-                    <p class="text-neutral-400 text-xs mt-0.5">Monitor property performance metrics, guest lifecycles, global room allocation matrix, and transactional audits in real-time.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    
-                    <div class="bg-white border border-neutral-200 p-5 rounded-none flex flex-col justify-between shadow-xs">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Total Revenue Folio</span>
-                            <span class="text-emerald-600 text-xs font-bold"><i class="fa-solid fa-arrow-up-right"></i> +12.4%</span>
-                        </div>
-                        <div class="mt-4">
-                            <span class="text-2xl font-mono font-bold tracking-tight text-neutral-900">Rp 125.400.000</span>
-                            <p class="text-[9px] text-neutral-400 uppercase tracking-wider font-medium mt-1">Audit scope: rolling 24h cycle</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-5 rounded-none flex flex-col justify-between shadow-xs">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Today's Check-ins</span>
-                            <span class="text-neutral-400 text-[10px] font-mono">18 Remaining</span>
-                        </div>
-                        <div class="mt-4">
-                            <span class="text-2xl font-mono font-bold tracking-tight text-neutral-900">18 <span class="text-xs text-neutral-400 font-sans font-medium">/ 36 Guests</span></span>
-                            <div class="w-full bg-neutral-100 h-1 mt-2 rounded-none overflow-hidden">
-                                <div class="bg-amber-600 h-1" style="width: 50%"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-5 rounded-none flex flex-col justify-between shadow-xs">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Occupancy Rate</span>
-                            <span class="bg-neutral-900 text-white text-[9px] font-bold px-1.5 py-0.2 uppercase tracking-wide">Target 90%</span>
-                        </div>
-                        <div class="mt-4">
-                            <span class="text-2xl font-mono font-bold tracking-tight text-neutral-900">87%</span>
-                            <p class="text-[9px] text-neutral-400 uppercase tracking-wider font-medium mt-1">112 rooms occupied globally</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-5 rounded-none flex flex-col justify-between shadow-xs">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Available Rooms</span>
-                            <span class="text-amber-700 text-xs font-bold"><i class="fa-solid fa-door-closed"></i> 24 Housekeeping</span>
-                        </div>
-                        <div class="mt-4">
-                            <span class="text-2xl font-mono font-bold tracking-tight text-neutral-900">24 <span class="text-xs text-neutral-400 font-sans font-medium">Vacant Ready</span></span>
-                            <p class="text-[9px] text-neutral-400 uppercase tracking-wider font-medium mt-1">6 Suites on maintenance log</p>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-                    
-                    <div class="xl:col-span-2 bg-white border border-neutral-200 rounded-none shadow-xs">
-                        <div class="p-5 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Today's Live Reservations Queue</h3>
-                            <div class="flex gap-2">
-                                <button class="border border-neutral-200 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold bg-white text-neutral-800 hover:bg-neutral-50">Export PDF</button>
-                                <button class="border border-neutral-200 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold bg-white text-neutral-800 hover:bg-neutral-50">Filter Options</button>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs tracking-wide border-collapse">
-                                <thead class="bg-neutral-50 text-neutral-400 text-[10px] font-bold uppercase tracking-wider border-b border-neutral-200">
-                                    <tr>
-                                        <th class="p-4 font-bold">Booking ID</th>
-                                        <th class="p-4 font-bold">Guest Name</th>
-                                        <th class="p-4 font-bold">Room Category</th>
-                                        <th class="p-4 font-bold">Period Summary</th>
-                                        <th class="p-4 font-bold">Folio Status</th>
-                                        <th class="p-4 font-bold text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-neutral-100 font-medium text-neutral-700">
-                                    <tr class="hover:bg-neutral-50/50 transition-colors">
-                                        <td class="p-4 font-mono font-bold text-neutral-900">#B26091</td>
-                                        <td class="p-4 font-bold text-neutral-900">Christopher Vance <span class="block text-[8px] uppercase tracking-wider font-bold text-amber-600">VIP Tier 1</span></td>
-                                        <td class="p-4">Presidential Ocean View</td>
-                                        <td class="p-4 text-neutral-400">24 May &rarr; 28 May</td>
-                                        <td class="p-4"><span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Approved</span></td>
-                                        <td class="p-4 text-right space-x-1">
-                                            <button class="text-[10px] font-bold uppercase tracking-wider text-neutral-400 hover:text-neutral-900">Audit</button>
-                                            <span class="text-neutral-200">|</span>
-                                            <button class="text-[10px] font-bold uppercase tracking-wider text-amber-700 hover:text-amber-900">Check-In</button>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-neutral-50/50 transition-colors">
-                                        <td class="p-4 font-mono font-bold text-neutral-900">#B26095</td>
-                                        <td class="p-4 font-bold text-neutral-900">Eleanor Thorne</td>
-                                        <td class="p-4">Deluxe Horizon Suite</td>
-                                        <td class="p-4 text-neutral-400">24 May &rarr; 26 May</td>
-                                        <td class="p-4"><span class="bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5">Pending Payment</span></td>
-                                        <td class="p-4 text-right space-x-1">
-                                            <button class="text-[10px] font-bold uppercase tracking-wider text-neutral-400 hover:text-neutral-900">Audit</button>
-                                            <span class="text-neutral-200">|</span>
-                                            <button class="text-[10px] font-bold uppercase tracking-wider text-neutral-400 hover:text-neutral-900">Approve</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none shadow-xs space-y-4">
-                        <div class="border-b border-neutral-100 pb-3 flex justify-between items-baseline">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Room Status Console Matrix</h3>
-                            <span class="text-[9px] font-mono text-neutral-400">Floor 12 Inventory</span>
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-x-4 gap-y-2 text-[9px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-50 pb-2">
-                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-600 block"></span> Available</span>
-                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-red-600 block"></span> Occupied</span>
-                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-amber-500 block"></span> Maintenance</span>
-                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-blue-500 block"></span> Reserved</span>
-                        </div>
-
-                        <div class="grid grid-cols-5 gap-2 pt-2">
-                            <div class="bg-red-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1201</div>
-                            <div class="bg-red-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1202</div>
-                            <div class="bg-emerald-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1203</div>
-                            <div class="bg-blue-500 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1204</div>
-                            <div class="bg-amber-500 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1205</div>
-                            <div class="bg-emerald-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1206</div>
-                            <div class="bg-emerald-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1207</div>
-                            <div class="bg-red-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1208</div>
-                            <div class="bg-red-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1209</div>
-                            <div class="bg-emerald-600 text-white font-mono font-bold text-[10px] p-2 text-center select-none cursor-pointer hover:opacity-80">1210</div>
-                        </div>
-
-                        <div class="bg-neutral-50 p-3 border border-neutral-200 mt-4 text-left">
-                            <p class="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Selected Node Data</p>
-                            <h4 class="text-xs font-serif font-bold text-neutral-900 mt-0.5">Suite 1205 &bull; Deep Structural Maintenance</h4>
-                            <p class="text-[10px] text-neutral-500 mt-0.5">Scope: Central HVAC duct replacements. Projected release date: tomorrow, EOD cycle.</p>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none shadow-xs space-y-4">
-                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Restaurant Outlets Active Ledger</h3>
-                            <span class="text-emerald-600 font-mono text-[10px] font-bold">Rp 18.700.000 today</span>
-                        </div>
-                        <div class="space-y-2 text-xs">
-                            <div class="flex justify-between items-center py-2 border-b border-neutral-50">
-                                <span class="font-bold text-neutral-800">Dining Cover Reservations</span>
-                                <span class="font-mono text-neutral-600">32 Tables booked</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 border-b border-neutral-50">
-                                <span class="font-bold text-neutral-800">Pending Kitchen Orders</span>
-                                <span class="bg-amber-600 text-white text-[9px] font-mono font-bold px-1.5 py-0.2">4 Active</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2">
-                                <span class="font-bold text-neutral-800">Top Yielding Culinary Item</span>
-                                <span class="text-neutral-500 italic">Wagyu Ribeye Tomahawk</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-neutral-200 p-6 rounded-none shadow-xs space-y-4">
-                        <div class="flex justify-between items-baseline border-b border-neutral-100 pb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Amenities Booking Capacity</h3>
-                            <span class="text-neutral-400 font-mono text-[10px]">Real-time allocations</span>
-                        </div>
-                        <div class="space-y-2 text-xs">
-                            <div class="flex justify-between items-center py-2 border-b border-neutral-50">
-                                <span class="font-bold text-neutral-800">Oasis Spa & Wellness Rituals</span>
-                                <span class="font-mono text-neutral-900 font-bold">85% Session Load</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 border-b border-neutral-50">
-                                <span class="font-bold text-neutral-800">Helipad Private Yacht Charters</span>
-                                <span class="text-emerald-700 font-bold font-mono">2 Scheduled Today</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2">
-                                <span class="font-bold text-neutral-800">Executive Business Boardrooms</span>
-                                <span class="text-neutral-400 font-mono">Available from 02:00 PM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
+        <div class="bg-white p-6 border border-neutral-200/60 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Total Guests</span>
+                <span class="text-3xl font-light font-serif text-neutral-900 block mt-1">{{ number_format($totalGuests) }}</span>
+                <span class="text-[10px] font-bold {{ $guestDiff >= 0 ? 'text-emerald-600' : 'text-rose-600' }} flex items-center gap-1 mt-1">
+                    <i class="fa-solid {{ $guestDiff >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[9px]"></i> 
+                    {{ abs($guestDiff) }}% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
             </div>
+            <div class="w-12 h-12 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-400 text-lg">
+                <i class="fa-regular fa-user text-amber-600/80"></i>
+            </div>
+        </div>
 
-            @include('layouts.footer')
-        </main>
+        <div class="bg-white p-6 border border-neutral-200/60 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Occupancy Rate</span>
+                <span class="text-3xl font-light font-serif text-neutral-900 block mt-1">{{ number_format($occupancyRate, 1) }}%</span>
+                <span class="text-[10px] font-bold {{ $occupancyDiff >= 0 ? 'text-emerald-600' : 'text-rose-600' }} flex items-center gap-1 mt-1">
+                    <i class="fa-solid {{ $occupancyDiff >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[9px]"></i> 
+                    {{ abs($occupancyDiff) }}% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
+            </div>
+            <div class="w-12 h-12 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-400 text-lg">
+                <i class="fa-solid fa-bed text-amber-600/80"></i>
+            </div>
+        </div>
 
+        <div class="bg-white p-6 border border-neutral-200/60 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Average Daily Rate</span>
+                <span class="text-xl font-medium text-neutral-900 block mt-2">Rp {{ number_format($adr) }}</span>
+                <span class="text-[10px] font-bold {{ $adrDiff >= 0 ? 'text-emerald-600' : 'text-rose-600' }} flex items-center gap-1 mt-1">
+                    <i class="fa-solid {{ $adrDiff >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[9px]"></i> 
+                    {{ abs($adrDiff) }}% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
+            </div>
+            <div class="w-12 h-12 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-400 text-lg">
+                <i class="fa-solid fa-calculator text-amber-600/80"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 border border-neutral-200/60 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Total Revenue</span>
+                <span class="text-xl font-medium text-neutral-900 block mt-2">Rp {{ number_format($totalRevenue) }}</span>
+                <span class="text-[10px] font-bold {{ $revenueDiff >= 0 ? 'text-emerald-600' : 'text-rose-600' }} flex items-center gap-1 mt-1">
+                    <i class="fa-solid {{ $revenueDiff >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[9px]"></i> 
+                    {{ abs($revenueDiff) }}% <span class="text-neutral-400 font-normal">vs last week</span>
+                </span>
+            </div>
+            <div class="w-12 h-12 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-400 text-lg">
+                <i class="fa-solid fa-arrow-trend-up text-amber-600/80"></i>
+            </div>
+        </div>
     </div>
-</x-guest-layout>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Occupancy Overview</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Weekly comparative charting</span>
+                </div>
+                <span class="text-[9px] bg-neutral-50 border border-neutral-200 px-2.5 py-1 text-neutral-500 font-mono font-bold uppercase tracking-wider">This Week</span>
+            </div>
+            
+            <div class="relative w-full h-44 flex flex-col justify-between pt-2">
+                <svg viewBox="0 0 600 140" class="w-full h-full overflow-visible">
+                    <line x1="0" y1="20" x2="600" y2="20" stroke="#f1f1f1" stroke-width="1" />
+                    <line x1="0" y1="60" x2="600" y2="60" stroke="#f1f1f1" stroke-width="1" />
+                    <line x1="0" y1="100" x2="600" y2="100" stroke="#f1f1f1" stroke-width="1" />
+                    
+                    <path d="M 0,{{ 140 - ($occupancyTrend['past'][0] ?? 0) }} Q 150,{{ 140 - ($occupancyTrend['past text'][1] ?? 40) }} 300,{{ 140 - ($occupancyTrend['past'][2] ?? 50) }} T 600,{{ 140 - ($occupancyTrend['past'][3] ?? 80) }}" fill="none" stroke="#d4d4d4" stroke-width="1.5" stroke-dasharray="4" />
+                    
+                    <path d="M 0,{{ 140 - ($occupancyTrend['current'][0] ?? 20) }} Q 150,{{ 140 - ($occupancyTrend['current'][1] ?? 70) }} 300,{{ 140 - ($occupancyTrend['current'][2] ?? 45) }} T 600,{{ 140 - ($occupancyTrend['current'][3] ?? 90) }}" fill="none" stroke="#b45309" stroke-width="2" />
+                    
+                    <circle cx="300" cy="{{ 140 - ($occupancyTrend['current'][2] ?? 45) }}" r="4" fill="#b45309" />
+                    <circle cx="600" cy="{{ 140 - ($occupancyTrend['current'][3] ?? 90) }}" r="4" fill="#b45309" />
+                </svg>
+                <div class="flex justify-between text-[9px] text-neutral-400 font-mono font-medium pt-2 border-t border-neutral-100">
+                    @foreach($occupancyDates as $date)
+                        <span>{{ $date }}</span>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Reservation Status</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Live allocation share</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-6 my-auto">
+                <div class="relative w-32 h-32 shrink-0 flex items-center justify-center">
+                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#e11d48" stroke-width="3" stroke-dasharray="{{ $statusShares['cancelled'] ?? 0 }} {{ 100 - ($statusShares['cancelled'] ?? 0) }}" stroke-dashoffset="0"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="3" stroke-dasharray="{{ $statusShares['checked_in'] ?? 0 }} {{ 100 - ($statusShares['checked_in'] ?? 0) }}" stroke-dashoffset="-{{ $statusShares['cancelled'] ?? 0 }}"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#d97706" stroke-width="3" stroke-dasharray="{{ $statusShares['pending'] ?? 0 }} {{ 100 - ($statusShares['pending'] ?? 0) }}" stroke-dashoffset="-{{ ($statusShares['cancelled'] ?? 0) + ($statusShares['checked_in'] ?? 0) }}"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#10b981" stroke-width="3" stroke-dasharray="{{ $statusShares['confirmed'] ?? 0 }} {{ 100 - ($statusShares['confirmed'] ?? 0) }}" stroke-dashoffset="-{{ ($statusShares['cancelled'] ?? 0) + ($statusShares['checked_in'] ?? 0) + ($statusShares['pending'] ?? 0) }}"></circle>
+                    </svg>
+                    <div class="absolute text-center">
+                        <span class="text-xl font-light font-serif text-neutral-900 block leading-none">{{ number_format($totalReservations) }}</span>
+                        <span class="text-[8px] text-neutral-400 uppercase tracking-widest font-bold mt-1 block">Total</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 w-full text-[10px] font-medium text-neutral-600">
+                    <div class="flex justify-between items-center"><span class="flex items-center gap-2"><span class="w-2 h-2 bg-emerald-500"></span> Confirmed</span><span class="font-mono text-neutral-900 font-bold">{{ number_format($statusShares['confirmed'] ?? 0, 1) }}%</span></div>
+                    <div class="flex justify-between items-center"><span class="flex items-center gap-2"><span class="w-2 h-2 bg-amber-500"></span> Pending</span><span class="font-mono text-neutral-900 font-bold">{{ number_format($statusShares['pending'] ?? 0, 1) }}%</span></div>
+                    <div class="flex justify-between items-center"><span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500"></span> Checked In</span><span class="font-mono text-neutral-900 font-bold">{{ number_format($statusShares['checked_in'] ?? 0, 1) }}%</span></div>
+                    <div class="flex justify-between items-center"><span class="flex items-center gap-2"><span class="w-2 h-2 bg-rose-500"></span> Cancelled</span><span class="font-mono text-neutral-900 font-bold">{{ number_format($statusShares['cancelled'] ?? 0, 1) }}%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between row-span-1">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-3.5 mb-3.5">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Today's Arrivals</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Expected VIP & patron manifestations</span>
+                </div>
+                <a href="#" class="text-[9px] font-bold text-amber-800 uppercase tracking-widest hover:underline">View All</a>
+            </div>
+            
+            <div class="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1 max-h-[180px]">
+                @forelse($todayArrivals as $arrival)
+                    <div class="flex items-center justify-between p-2.5 bg-neutral-50/60 border border-neutral-100 group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-neutral-200 flex items-center justify-center text-neutral-600 font-mono font-bold text-xs">
+                                {{ strtoupper(substr($arrival->guest_name, 0, 2)) }}
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-neutral-900 block">{{ $arrival->guest_name }}</span>
+                                <span class="text-[9px] font-medium text-neutral-400 block mt-0.5">{{ $arrival->room_type }} &bull; Room {{ $arrival->room_number ?? 'Unassigned' }}</span>
+                            </div>
+                        </div>
+                        <span class="font-mono font-bold text-[8px] px-1.5 py-0.2 uppercase {{ $arrival->is_vip ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-neutral-950 text-white' }}">
+                            {{ $arrival->is_vip ? 'VIP' : 'Patron' }}
+                        </span>
+                    </div>
+                @empty
+                    <div class="text-center py-8 text-neutral-400 text-[11px]">No expected arrivals recorded for today.</div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div class="lg:col-span-2 bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Room Performance</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Operational yield matrix mapping</span>
+                </div>
+            </div>
+            
+            <table class="w-full text-left text-xs flex-1">
+                <thead>
+                    <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] pb-2">
+                        <th class="pb-3 font-semibold">Room Type</th>
+                        <th class="pb-3 font-semibold text-center">Total Rooms</th>
+                        <th class="pb-3 font-semibold text-center">Occupied</th>
+                        <th class="pb-3 font-semibold text-center">Occupancy Rate</th>
+                        <th class="pb-3 text-right font-semibold">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
+                    @php $totalInventory = 0; $totalOccupied = 0; $accumulatedRevenue = 0; @endphp
+                    @foreach($roomPerformances as $performance)
+                        @php 
+                            $totalInventory += $performance['total'];
+                            $totalOccupied += $performance['occupied'];
+                            $accumulatedRevenue += $performance['revenue'];
+                        @endphp
+                        <tr class="hover:bg-neutral-50/40 transition-colors">
+                            <td class="py-3 text-neutral-900 font-bold">{{ $performance['type'] }}</td>
+                            <td class="text-center">{{ $performance['total'] }}</td>
+                            <td class="text-center">{{ $performance['occupied'] }}</td>
+                            <td class="text-center font-mono">{{ number_format($performance['rate'], 1) }}%</td>
+                            <td class="text-right font-mono text-amber-900 font-bold">Rp {{ number_format($performance['revenue']) }}</td>
+                        </tr>
+                    @endforeach
+                    <tr class="font-bold text-neutral-900 bg-neutral-50/60 border-t border-neutral-200">
+                        <td class="py-3.5 px-2">Total</td>
+                        <td class="text-center">{{ $totalInventory }}</td>
+                        <td class="text-center">{{ $totalOccupied }}</td>
+                        <td class="text-center font-mono">{{ $totalInventory > 0 ? number_format(($totalOccupied / $totalInventory) * 100, 1) : 0 }}%</td>
+                        <td class="text-right px-2 font-mono text-amber-950">Rp {{ number_format($accumulatedRevenue) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Department Performance</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Subsidiary operations audit</span>
+                </div>
+            </div>
+            
+            <div class="space-y-4 my-auto">
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs font-medium text-neutral-700">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-bell-concierge text-neutral-400 text-[10px]"></i> Room Service</span>
+                        <span class="font-bold font-mono text-neutral-900">Rp {{ number_format($deptRevenue['room_service'] ?? 0) }} <span class="text-[9px] text-emerald-600 ml-1">+15.2%</span></span>
+                    </div>
+                    <div class="w-full h-1.5 bg-neutral-100 rounded-none overflow-hidden">
+                        <div class="h-full bg-amber-700" style="width: {{ $deptShares['room_service'] ?? 40 }}%"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs font-medium text-neutral-700">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-utensils text-neutral-400 text-[10px]"></i> Restaurant Gastronomy</span>
+                        <span class="font-bold font-mono text-neutral-900">Rp {{ number_format($deptRevenue['restaurant'] ?? 0) }} <span class="text-[9px] text-emerald-600 ml-1">+10.7%</span></span>
+                    </div>
+                    <div class="w-full h-1.5 bg-neutral-100 rounded-none overflow-hidden">
+                        <div class="h-full bg-amber-700" style="width: {{ $deptShares['restaurant'] ?? 70 }}%"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs font-medium text-neutral-700">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-spa text-neutral-400 text-[10px]"></i> Spa & Wellness Sanctuary</span>
+                        <span class="font-bold font-mono text-neutral-900">Rp {{ number_format($deptRevenue['spa'] ?? 0) }} <span class="text-[9px] text-emerald-600 ml-1">+8.3%</span></span>
+                    </div>
+                    <div class="w-full h-1.5 bg-neutral-100 rounded-none overflow-hidden">
+                        <div class="h-full bg-amber-700" style="width: {{ $deptShares['spa'] ?? 30 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div class="lg:col-span-2 bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Recent Activities</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Real-time system transaction logs</span>
+                </div>
+            </div>
+            
+            <div class="space-y-4 flex-1 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                @forelse($recentActivities as $activity)
+                    <div class="flex items-start justify-between text-xs border-b border-neutral-50 pb-3 last:border-0 last:pb-0">
+                        <div class="flex gap-3">
+                            <div class="w-7 h-7 {{ $activity->type === 'booking' ? 'bg-amber-50 text-amber-800 border border-amber-100' : 'bg-blue-50 text-blue-800 border border-blue-100' }} flex items-center justify-center text-[11px] shrink-0">
+                                <i class="fa-solid {{ $activity->type === 'booking' ? 'fa-calendar-plus' : 'fa-key' }}"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-neutral-900 block">{{ $activity->title }}</span>
+                                <span class="text-[10px] text-neutral-400 block mt-0.5">{{ $activity->description }}</span>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-mono font-medium text-neutral-400 shrink-0">{{ $activity->created_at->diffForHumans() }}</span>
+                    </div>
+                @empty
+                    <div class="text-center py-8 text-neutral-400 text-[11px]">No transaction activities logs recorded for today.</div>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
+                <div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Housekeeping Status</h3>
+                    <span class="text-[9px] text-neutral-400 font-medium block mt-0.5">Live facility sanitation checklist</span>
+                </div>
+                <a href="#" class="text-[9px] font-bold text-amber-800 uppercase tracking-widest hover:underline">View All</a>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="p-4 bg-emerald-50/40 border border-emerald-100/70 flex flex-col justify-center items-center">
+                    <span class="text-3xl font-light font-mono text-emerald-800">{{ number_format($hkStatus['clean'] ?? 0) }}</span>
+                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wide block mt-1.5">Clean Rooms</span>
+                </div>
+                <div class="p-4 bg-rose-50/40 border border-rose-100/70 flex flex-col justify-center items-center">
+                    <span class="text-3xl font-light font-mono text-rose-800">{{ number_format($hkStatus['dirty'] ?? 0) }}</span>
+                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wide block mt-1.5">Dirty Rooms</span>
+                </div>
+                <div class="p-4 bg-blue-50/40 border border-blue-100/70 flex flex-col justify-center items-center">
+                    <span class="text-3xl font-light font-mono text-blue-800">{{ number_format($hkStatus['inspected'] ?? 0) }}</span>
+                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wide block mt-1.5">Inspected</span>
+                </div>
+                <div class="p-4 bg-neutral-50 border border-neutral-200 flex flex-col justify-center items-center">
+                    <span class="text-3xl font-light font-mono text-neutral-600">{{ number_format($hkStatus['oos'] ?? 0) }}</span>
+                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wide block mt-1.5">Out of Service</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</x-admin-dashboard-layout>

@@ -18,6 +18,7 @@ class ManagerUserSeeder extends Seeder
                 'name' => 'Hotel Manager',
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
+                   'role' => 'manager', 
             ]
         );
 
