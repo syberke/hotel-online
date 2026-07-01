@@ -5,40 +5,43 @@
             <div class="w-12 h-12 bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-bed"></i></div>
             <div>
                 <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Room Occupancy</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">64.3%</span>
-                <span class="text-[9px] text-neutral-400 font-mono block">160 / 249 Rooms</span>
+                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $occupancyRate }}%</span>
+                <span class="text-[9px] text-neutral-400 font-mono block">{{ $occupiedRooms }} / {{ $totalRooms }} Rooms</span>
             </div>
         </div>
         <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i class="fa-solid fa-right-to-bracket"></i></div>
             <div>
                 <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Check-ins Today</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">18</span>
-                <span class="text-[9px] text-emerald-600 font-mono block"><i class="fa-solid fa-arrow-up text-[8px]"></i> 12.5% <span class="text-neutral-400 font-sans">Expected: 22</span></span>
+                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $checkinsToday }}</span>
+                <span class="text-[9px] text-neutral-400 font-mono block">Expected Base: <span class="text-neutral-700 font-bold">{{ $expectedCheckins }}</span></span>
             </div>
         </div>
         <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 bg-amber-50 flex items-center justify-center text-amber-600 text-lg"><i class="fa-solid fa-right-from-bracket"></i></div>
             <div>
                 <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Check-outs Today</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">22</span>
-                <span class="text-[9px] text-emerald-600 font-mono block"><i class="fa-solid fa-arrow-up text-[8px]"></i> 4.8% <span class="text-neutral-400 font-sans">Expected: 24</span></span>
+                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $checkoutsToday }}</span>
+                <span class="text-[9px] text-neutral-400 font-mono block">Expected Base: <span class="text-neutral-700 font-bold">{{ $expectedCheckouts }}</span></span>
             </div>
         </div>
         <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 bg-purple-50 flex items-center justify-center text-purple-600 text-lg"><i class="fa-solid fa-users"></i></div>
             <div>
                 <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">In-house Guests</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">186</span>
-                <span class="text-[9px] text-neutral-400 font-mono block">73 Reservations</span>
+                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $inhouseGuests }}</span>
+                <span class="text-[9px] text-neutral-400 font-mono block">{{ $inhouseReservations }} Active Folios</span>
             </div>
         </div>
         <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 bg-cyan-50 flex items-center justify-center text-cyan-600 text-lg"><i class="fa-solid fa-wallet"></i></div>
             <div>
                 <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Revenue Today</span>
-                <span class="text-sm font-bold text-neutral-900 block font-mono mt-1">Rp 24.350.000</span>
-                <span class="text-[9px] text-emerald-600 font-mono block"><i class="fa-solid fa-arrow-up text-[8px]"></i> 15.6% <span class="text-neutral-400 font-sans">vs yesterday</span></span>
+                <span class="text-sm font-bold text-neutral-900 block font-mono mt-1">Rp {{ number_format($revenueToday, 0, ',', '.') }}</span>
+                <span class="text-[9px] {{ $revenueDiffPct >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-mono block">
+                    <i class="fa-solid {{ $revenueDiffPct >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[8px]"></i> 
+                    {{ abs($revenueDiffPct) }}% <span class="text-neutral-400 font-sans">vs yesterday</span>
+                </span>
             </div>
         </div>
     </div>
@@ -47,159 +50,178 @@
         
         <div class="xl:col-span-2 space-y-6">
             <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-3">
-                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Today's Arrivals</h3>
+                <form action="{{ url()->current() }}" method="GET" class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-3">
+                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Front Desk Monitor</h3>
                     <div class="relative min-w-[240px]">
                         <i class="fa-solid fa-magnifying-glass text-neutral-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" placeholder="Search guest, reservation, room..." class="w-full pl-9 pr-4 py-1.5 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search guest name, room..." class="w-full pl-9 pr-4 py-1.5 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
                     </div>
-                </div>
+                </form>
 
                 <div class="flex text-[11px] font-bold uppercase tracking-wider text-neutral-400 gap-5 border-b border-neutral-100 pb-1">
-                    <button class="text-blue-600 border-b-2 border-blue-600 pb-2 px-0.5">Arrivals (24)</button>
-                    <button class="hover:text-neutral-900 pb-2 px-0.5">In House (186)</button>
-                    <button class="hover:text-neutral-900 pb-2 px-0.5">Departures (22)</button>
-                    <button class="hover:text-neutral-900 pb-2 px-0.5">No Show (1)</button>
+                    <button class="text-blue-600 border-b-2 border-blue-600 pb-2 px-0.5">Arrivals ({{ $arrivalsCount }})</button>
+                    <button class="pb-2 px-0.5 opacity-60 cursor-not-allowed">In House ({{ $inHouseTabCount }})</button>
+                    <button class="pb-2 px-0.5 opacity-60 cursor-not-allowed">Departures ({{ $departuresTabCount }})</button>
+                    <button class="pb-2 px-0.5 opacity-60 cursor-not-allowed">No Show ({{ $noShowTabCount }})</button>
                 </div>
 
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left text-xs whitespace-nowrap">
                         <thead>
                             <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
-                                <th class="py-3 px-3 font-semibold">Time</th>
-                                <th class="py-3 px-3 font-semibold">Guest Name</th>
-                                <th class="py-3 px-3 font-semibold">Reservation ID</th>
-                                <th class="py-3 px-3 font-semibold">Room</th>
-                                <th class="py-3 px-3 font-semibold">Room Type</th>
+                                <th class="py-3 px-3 font-semibold">Arrival Date</th>
+                                <th class="py-3 px-3 font-semibold">Guest Enclave Profile</th>
+                                <th class="py-3 px-3 font-semibold">Reservation Code</th>
+                                <th class="py-3 px-3 font-semibold">Room Mapping</th>
+                                <th class="py-3 px-4 font-semibold">Room Class Type</th>
                                 <th class="py-3 px-3 font-semibold">Nights</th>
                                 <th class="py-3 px-3 font-semibold">Status</th>
                                 <th class="py-3 px-3 text-center font-semibold">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
-                            <tr class="hover:bg-neutral-50/30 transition-colors">
-                                <td class="py-3.5 px-3 font-mono text-neutral-900 font-bold">10:00 AM</td>
-                                <td class="py-3.5 px-3 flex items-center gap-2.5">
-                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100" class="w-6 h-6 border object-cover">
-                                    <div>
-                                        <span class="text-neutral-900 font-bold block">Mr. John Anderson</span>
-                                        <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">+62 812 3456 7890</span>
-                                    </div>
-                                </td>
-                                <td class="py-3.5 px-3 font-mono text-neutral-500">RES-250617-0012</td>
-                                <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">1205</td>
-                                <td class="py-3.5 px-3">Deluxe Ocean View</td>
-                                <td class="py-3.5 px-3 font-mono">3</td>
-                                <td class="py-3.5 px-3"><span class="bg-blue-50 text-blue-800 border border-blue-100 text-[8px] px-2 py-0.5 font-bold uppercase">Expected</span></td>
-                                <td class="py-3.5 px-3 text-center"><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors">Check-In</button></td>
-                            </tr>
-                            <tr class="hover:bg-neutral-50/30 transition-colors">
-                                <td class="py-3.5 px-3 font-mono text-neutral-900 font-bold">11:30 AM</td>
-                                <td class="py-3.5 px-3 flex items-center gap-2.5">
-                                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100" class="w-6 h-6 border object-cover">
-                                    <div>
-                                        <span class="text-neutral-900 font-bold block">Ms. Sarah Johnson</span>
-                                        <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">+62 813 9876 5432</span>
-                                    </div>
-                                </td>
-                                <td class="py-3.5 px-3 font-mono text-neutral-500">RES-250617-0013</td>
-                                <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">1502</td>
-                                <td class="py-3.5 px-3">Premier Suite</td>
-                                <td class="py-3.5 px-3 font-mono">2</td>
-                                <td class="py-3.5 px-3"><span class="bg-blue-50 text-blue-800 border border-blue-100 text-[8px] px-2 py-0.5 font-bold uppercase">Expected</span></td>
-                                <td class="py-3.5 px-3 text-center"><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors">Check-In</button></td>
-                            </tr>
+                            @forelse($arrivals as $booking)
+                                <tr class="hover:bg-neutral-50/30 transition-colors">
+                                    <td class="py-3.5 px-3 font-mono text-neutral-900 font-bold">{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y') }}</td>
+                                    <td class="py-3.5 px-3 flex items-center gap-2.5">
+                                        <img src="{{ $booking->guest_avatar ?? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100' }}" class="w-6 h-6 border object-cover rounded-sm">
+                                        <div>
+                                            <span class="text-neutral-900 font-bold block">{{ $booking->guest_name }}</span>
+                                            <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">{{ $booking->guest_phone ?? 'No phone logged' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3.5 px-3 font-mono text-neutral-500">#RES-OA-{{ $booking->booking_id }}</td>
+                                    <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">{{ $booking->room_number }}</td>
+                                    <td class="py-3.5 px-4 text-neutral-500">{{ $booking->room_type }}</td>
+                                    <td class="py-3.5 px-3 font-mono">
+                                        {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) }}
+                                    </td>
+                                    <td class="py-3.5 px-3">
+                                        @if($booking->booking_status == 'checked_in')
+                                            <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[8px] px-2 py-0.5 font-bold uppercase">Checked In</span>
+                                        @elseif($booking->booking_status == 'confirmed')
+                                            <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] px-2 py-0.5 font-bold uppercase">Confirmed</span>
+                                        @else
+                                            <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[8px] px-2 py-0.5 font-bold uppercase">{{ str_replace('_', ' ', $booking->booking_status) }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3.5 px-3 text-center">
+                                        @if($booking->booking_status !== 'checked_in' && auth()->user()->role !== 'manager')
+                                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors">Check-In</button>
+                                        @else
+                                            <button class="border border-neutral-200 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none cursor-not-allowed" disabled>In House</button>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="py-6 text-center text-neutral-400">No expected front-desk arrivals logged for today.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
-                <a href="#" class="text-[10px] font-bold text-blue-600 uppercase tracking-wider block hover:underline">View all arrivals &rarr;</a>
             </div>
 
             <div class="bg-white border border-neutral-200 p-6 shadow-sm">
                 <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
-                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Today's Occupancy Trend</h3>
-                    <span class="text-[9px] bg-neutral-50 border px-2 py-1 text-neutral-500 font-bold uppercase font-mono">Daily <i class="fa-solid fa-chevron-down ml-0.5"></i></span>
+                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Live Occupancy Metrics Matrix</h3>
+                    <span class="text-[9px] bg-neutral-50 border px-2 py-1 text-neutral-500 font-bold uppercase font-mono">Dynamic Enclave 5-Day Analytics</span>
                 </div>
                 <div class="h-36 w-full flex items-end gap-1 relative pt-4 font-mono font-bold text-[9px] text-neutral-400 text-center">
-                    <div class="w-full flex justify-between absolute h-full bottom-6 left-0 border-b border-neutral-100"><span>50%</span></div>
-                    <div class="w-full flex justify-between absolute h-full top-2 left-0 border-b border-neutral-100"><span>100%</span></div>
+                    <div class="w-full flex justify-between absolute h-full bottom-6 left-0 border-b border-neutral-100/70"><span>50%</span></div>
+                    <div class="w-full flex justify-between absolute h-full top-2 left-0 border-b border-neutral-100/70"><span>100%</span></div>
+                    
                     <svg viewBox="0 0 500 100" class="w-full h-24 overflow-visible stroke-blue-500 stroke-2 fill-none">
-                        <path d="M 0,60 L 120,45 L 240,55 L 360,62 L 500,30" stroke-width="2" />
+                        <path d="{{ $svgPathD }}" stroke-width="2" />
                     </svg>
                 </div>
                 <div class="flex justify-between text-[9px] font-bold text-neutral-400 font-mono mt-3 border-t pt-2">
-                    <span>13 Jun</span><span>14 Jun</span><span>15 Jun</span><span>16 Jun</span><span>17 Jun</span>
+                    @foreach($trendDates as $dateLabel)
+                        <span>{{ $dateLabel }}</span>
+                    @endforeach
                 </div>
             </div>
         </div>
 
         <div class="space-y-6">
+            
             <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
-                <h3 class="font-serif text-sm text-neutral-900 font-bold border-b pb-3 mb-4">Room Status Overview</h3>
+                <h3 class="font-serif text-sm text-neutral-900 font-bold border-b pb-3 mb-4">Room Status Allocation</h3>
+                
+                @php
+                    $vacantCleanPct = $totalRooms > 0 ? ($vacantClean / $totalRooms) * 100 : 0;
+                    $vacantDirtyPct = $totalRooms > 0 ? ($vacantDirty / $totalRooms) * 100 : 0;
+                    $outOfOrderPct = $totalRooms > 0 ? ($outOfOrder / $totalRooms) * 100 : 0;
+                    $occupiedPct = $totalRooms > 0 ? ($occupiedRooms / $totalRooms) * 100 : 0;
+                @endphp
                 <div class="flex items-center gap-4">
                     <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
                         <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="4.5" stroke-dasharray="64 36" stroke-dashoffset="0"></circle>
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#10b981" stroke-width="4.5" stroke-dasharray="20 80" stroke-dashoffset="-64"></circle>
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f59e0b" stroke-width="4.5" stroke-dasharray="6 94" stroke-dashoffset="-84"></circle>
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#ef4444" stroke-width="4.5" stroke-dasharray="6 94" stroke-dashoffset="-90"></circle>
+                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="4.5" stroke-dasharray="{{ $occupiedPct }} {{ 100 - $occupiedPct }}" stroke-dashoffset="0"></circle>
+                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#10b981" stroke-width="4.5" stroke-dasharray="{{ $vacantCleanPct }} {{ 100 - $vacantCleanPct }}" stroke-dashoffset="-{{ $occupiedPct }}"></circle>
+                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f59e0b" stroke-width="4.5" stroke-dasharray="{{ $vacantDirtyPct }} {{ 100 - $vacantDirtyPct }}" stroke-dashoffset="-{{ $occupiedPct + $vacantCleanPct }}"></circle>
+                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#ef4444" stroke-width="4.5" stroke-dasharray="{{ $outOfOrderPct }} {{ 100 - $outOfOrderPct }}" stroke-dashoffset="-{{ $occupiedPct + $vacantCleanPct + $vacantDirtyPct }}"></circle>
                         </svg>
                         <div class="absolute text-center">
-                            <span class="text-lg font-bold font-mono text-neutral-900 block leading-none">249</span>
+                            <span class="text-lg font-bold font-mono text-neutral-900 block leading-none">{{ $totalRooms }}</span>
                             <span class="text-[8px] text-neutral-400 uppercase font-bold mt-0.5 block">Rooms</span>
                         </div>
                     </div>
                     <div class="space-y-1 w-full text-[10px] font-bold text-neutral-500">
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-blue-600 inline-block mr-1.5"></span>Occupied</span><span class="text-neutral-900 font-mono">160 (64%)</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-emerald-500 inline-block mr-1.5"></span>Vacant Clean</span><span class="text-neutral-900 font-mono">50 (20%)</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-amber-500 inline-block mr-1.5"></span>Vacant Dirty</span><span class="text-neutral-900 font-mono">15 (6%)</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>Out of Order</span><span class="text-neutral-900 font-mono">14 (5%)</span></div>
+                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-blue-600 inline-block mr-1.5"></span>Occupied</span><span class="text-neutral-900 font-mono">{{ $occupiedRooms }} ({{ round($occupiedPct) }}%)</span></div>
+                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-emerald-500 inline-block mr-1.5"></span>Vacant Clean</span><span class="text-neutral-900 font-mono">{{ $vacantClean }} ({{ round($vacantCleanPct) }}%)</span></div>
+                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-amber-500 inline-block mr-1.5"></span>Vacant Dirty</span><span class="text-neutral-900 font-mono">{{ $vacantDirty }} ({{ round($vacantDirtyPct) }}%)</span></div>
+                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>Out of Order</span><span class="text-neutral-900 font-mono">{{ $outOfOrder }} ({{ round($outOfOrderPct) }}%)</span></div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white border border-neutral-200 p-6 shadow-sm space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Tasks & Alerts</h3>
-                    <a href="#" class="text-[9px] font-bold text-blue-600 uppercase tracking-widest hover:underline">View All</a>
+                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Tasks & System Alerts</h3>
                 </div>
                 <div class="space-y-3">
-                    <div class="p-3 bg-red-50 border border-red-100 flex items-start gap-3">
-                        <i class="fa-solid fa-triangle-exclamation text-red-600 text-xs mt-0.5"></i>
-                        <div class="text-[11px] font-medium text-red-900">
-                            <span class="font-bold block">5 rooms are out of order</span>
-                            <span class="text-[10px] text-red-700/80 mt-0.5 block">Requires immediate technical dispatch log review.</span>
+                    @if($outOfOrder > 0)
+                        <div class="p-3 bg-red-50 border border-red-100 flex items-start gap-3">
+                            <i class="fa-solid fa-triangle-exclamation text-red-600 text-xs mt-0.5"></i>
+                            <div class="text-[11px] font-medium text-red-900">
+                                <span class="font-bold block">{{ $outOfOrder }} units are flagged Out-of-Order</span>
+                                <span class="text-[10px] text-red-700/80 mt-0.5 block">Requires routine technical block validation log reviews.</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-3 bg-amber-50 border border-amber-100 flex items-start gap-3">
-                        <i class="fa-solid fa-circle-exclamation text-amber-600 text-xs mt-0.5"></i>
-                        <div class="text-[11px] font-medium text-amber-900">
-                            <span class="font-bold block">High Housekeeping Workload</span>
-                            <span class="text-[10px] text-amber-700/80 mt-0.5 block">34 rooms pending deep check-out cleansing.</span>
+                    @endif
+                    @if($vacantDirty > 0)
+                        <div class="p-3 bg-amber-50 border border-amber-100 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-exclamation text-amber-600 text-xs mt-0.5"></i>
+                            <div class="text-[11px] font-medium text-amber-900">
+                                <span class="font-bold block">Housekeeping Queue Warning</span>
+                                <span class="text-[10px] text-amber-700/80 mt-0.5 block">{{ $vacantDirty }} rooms are currently pending cleaning deployment.</span>
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
 
             <div class="bg-white border border-neutral-200 p-6 shadow-sm space-y-4">
-                <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide border-b border-neutral-100 pb-2">Quick Actions</h3>
+                <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide border-b border-neutral-100 pb-2">Operational Action Hub</h3>
                 <div class="grid grid-cols-2 gap-3 text-center">
-                    <button class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group cursor-pointer transition-all">
+                    <a href="{{ route('receptionist.walkin') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
                         <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-solid fa-user-plus"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Walk-in</span>
-                    </button>
-                    <button class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group cursor-pointer transition-all">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Walk-in Reg</span>
+                    </a>
+                    <a href="{{ route('receptionist.reservations') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
                         <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-regular fa-calendar-check"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">New Reservation</span>
-                    </button>
-                    <button class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group cursor-pointer transition-all">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Ledger Stream</span>
+                    </a>
+                    <a href="{{ route('receptionist.roomavailability') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
                         <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-solid fa-key"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Room Availability</span>
-                    </button>
-                    <button class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group cursor-pointer transition-all">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Room Stock</span>
+                    </a>
+                    <a href="{{ route('receptionist.guests') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
                         <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-solid fa-magnifying-glass"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Guest Search</span>
-                    </button>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Guest Dossier</span>
+                    </a>
                 </div>
             </div>
         </div>

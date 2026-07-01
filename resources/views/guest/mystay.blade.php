@@ -20,18 +20,15 @@
        PENGATURAN KHUSUS CETAK/PRINT KWITANSI (CLEAN & CENTERED)
        ========================================================================== */
     @media print {
-        /* Hilangkan header/footer bawaan browser seperti URL, tanggal, dan halaman */
         @page {
             size: auto;
             margin: 0mm;
         }
         
-        /* Sembunyikan seluruh elemen dashboard di latar belakang */
         body * {
             visibility: hidden;
         }
 
-        /* Tampilkan area modal invoice dan paksa berada di tengah halaman kertas */
         #invoice-modal-container, #invoice-modal-container * {
             visibility: visible;
         }
@@ -49,14 +46,12 @@
             padding: 0 !important;
         }
 
-        /* Hilangkan backdrop gelap dan tombol aksi penutup saat dicetak */
         #invoice-modal-container .absolute,
         #invoice-modal-container button,
         #invoice-print-actions {
             display: none !important;
         }
 
-        /* Desain kotak kwitansi resmi yang presisi saat keluar dari printer */
         #invoice-paper {
             box-shadow: none !important;
             border: 1px solid #d4d4d4 !important;
@@ -69,7 +64,6 @@
             border-radius: 0px !important;
         }
 
-        /* Memastikan warna abu-abu pada subheader tabel tetap tercetak */
         .bg-neutral-50 {
             background-color: #f5f5f5 !important;
             -webkit-print-color-adjust: exact;
@@ -80,7 +74,6 @@
 
 <x-guest-dashboard-layout>
     @php
-        // Cek status pembayaran akomodasi saat ini secara real-time
         $isPaid = $currentBooking ? (DB::table('bookings')->where('id', $currentBooking->booking_id)->value('status') === 'confirmed') : false;
     @endphp
 
@@ -89,6 +82,10 @@
             openKeyModal: false, 
             keySuccess: false, 
             doorUnlocked: false,
+            nfcSupported: false,
+            nfcReading: false,
+            nfcErrorMessage: '',
+            nfcModeLabel: 'INITIALIZING',
             openServiceModal: false,
             serviceType: '',
             openItineraryModal: false,
@@ -109,15 +106,64 @@
                 this.openNotificationModal = true;
             },
 
+            // ======================================================================
+            // HYBRID CORE ENGINE: NFC HARDWARE + SOFTWARE TESTING BYPASS MATRIX
+            // ======================================================================
+            checkNfcSupport() {
+                if ('NDEFReader' in window) {
+                    this.nfcSupported = true;
+                    this.nfcModeLabel = 'NFC Hardware Available';
+                } else {
+                    this.nfcSupported = false;
+                    this.nfcModeLabel = 'Testing Mode Enabled (No NFC)';
+                }
+            },
+
             triggerSmartLock() {
                 this.openKeyModal = true;
                 this.doorUnlocked = false;
                 this.keySuccess = false;
+                this.nfcReading = false;
+                this.nfcErrorMessage = '';
+                this.checkNfcSupport();
+
+                if (this.nfcSupported) {
+                    this.executeNfcHardwareScan();
+                } else {
+                    // Jika mode testing tanpa hardware: Berikan simulasi loading awal 1 detik sebelum bypass siap
+                    this.nfcReading = true;
+                    setTimeout(() => {
+                        this.nfcReading = false;
+                    }, 1000);
+                }
+            },
+
+            executeNfcHardwareScan() {
+                this.nfcReading = true;
+                const ndef = new NDEFReader();
                 
+                ndef.scan().then(() => {
+                    ndef.onreading = event => {
+                        this.keySuccess = true;
+                        this.doorUnlocked = true;
+                        this.nfcReading = false;
+                    };
+                }).catch(error => {
+                    this.nfcReading = false;
+                    this.nfcErrorMessage = 'Gagal mengakses sensor NFC perangkat Anda.';
+                });
+            },
+
+            executeSoftwareSimulationBypass() {
+                this.nfcReading = true;
+                this.nfcErrorMessage = '';
+                
+                // Memicu delay kosmetik seolah hardware sedang membaca enkripsi data
                 setTimeout(() => { 
                     this.keySuccess = true; 
                     this.doorUnlocked = true; 
-                }, 2200);
+                    this.nfcReading = false;
+                }, 1500);
             },
 
             fetchRoomInvoiceDetails(bookingId) {
@@ -135,7 +181,7 @@
                     this.launchNotify('Network Outage', 'Gagal memproses pengiriman data.', false);
                 });
             }
-         }">
+         }" x-init="checkNfcSupport()">
         
         @if($currentBooking)
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-neutral-200">
@@ -146,7 +192,7 @@
                 
                 @if(isset($allActiveBookings) && $allActiveBookings->count() > 1)
                     <div class="relative inline-block align-middle mt-3">
-                        <form action="{{ route('stay.my') }}" method="GET" id="roomSelectorForm">
+                        <form action="{{ route('guest.stay.my') }}" method="GET" id="roomSelectorForm">
                             <select name="booking_id" 
                                     onchange="document.getElementById('roomSelectorForm').submit()" 
                                     class="appearance-none pr-10 pl-3 py-1 text-xs font-bold uppercase tracking-wider bg-white border border-neutral-300 text-amber-800 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded-none cursor-pointer h-8 shadow-sm">
@@ -228,7 +274,7 @@
                             <div class="w-10 h-10 bg-neutral-900 flex items-center justify-center border border-neutral-800" :class="'{{ $isPaid }}' ? 'text-amber-500' : 'text-neutral-600'"><i class="fa-solid fa-wifi text-lg"></i></div>
                             <div>
                                 <p class="text-xs font-bold text-white">Room {{ $currentBooking->room_number ?? 'N/A' }}</p>
-                                <span class="text-[10px] text-neutral-500 font-medium">{{ $currentBooking->room_name }}</span>
+                                <span class="text-[10px] text-neutral-500 font-medium" x-text="nfcModeLabel"></span>
                             </div>
                         </div>
                     </div>
@@ -238,7 +284,7 @@
                             <div class="w-20 h-20 bg-neutral-900 flex flex-col items-center justify-center text-white text-[9px] font-mono tracking-tighter text-center p-1">
                                 @if($isPaid)
                                     <i class="fa-solid fa-qrcode text-lg text-amber-500 mb-1"></i>
-                                    NFC READY
+                                    HYBRID LOCK
                                 @else
                                     <i class="fa-solid fa-lock text-lg text-rose-500 mb-1"></i>
                                     LOCKED
@@ -270,7 +316,7 @@
                         <div class="flex justify-between items-center pb-3 border-b border-neutral-100 mb-4">
                             <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Today's Itinerary</h4>
                             @if($isPaid)
-                                <a href="{{ route('facilities.booking') }}" class="text-[10px] font-bold uppercase tracking-wide text-neutral-900 underline hover:text-amber-700">Book Slot</a>
+                                <a href="{{ route('guest.facilities.booking') }}" class="text-[10px] font-bold uppercase tracking-wide text-neutral-400 hover:text-neutral-900 underline">Book Slot</a>
                             @endif
                         </div>
                         <div class="space-y-4 relative before:absolute before:inset-y-1 before:left-3 before:w-0.5 before:bg-neutral-100 max-h-44 overflow-y-auto custom-scrollbar pr-1">
@@ -331,7 +377,7 @@
                     <div>
                         <div class="flex justify-between items-center pb-3 border-b border-neutral-100 mb-4">
                             <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Current Bill</h4>
-                            <a href="{{ route('billing.matrix') }}" class="text-[10px] font-bold uppercase tracking-wide text-neutral-400 hover:text-neutral-900">View Details</a>
+                            <a href="{{ route('guest.billing.matrix') }}" class="text-[10px] font-bold uppercase tracking-wide text-neutral-400 hover:text-neutral-900">View Details</a>
                         </div>
                         <div class="space-y-2 text-xs font-medium text-neutral-600">
                             <div class="flex justify-between"><span>Room Charges</span><span class="font-mono text-neutral-800 font-bold">Rp {{ number_format($currentBooking->room_bill, 0, ',', '.') }}</span></div>
@@ -363,21 +409,44 @@
                         <h3 class="text-xl font-serif tracking-wide">Oasis Smart Lock</h3>
                         <p class="text-[9px] text-neutral-500 uppercase tracking-widest">Suite {{ $currentBooking->room_number }} &bull; Secure Encrypted Node</p>
                     </div>
+                    
                     <div class="flex justify-center py-2">
                         <div class="w-24 h-24 rounded-full border border-neutral-800 flex flex-col items-center justify-center transition-all duration-500"
-                             :class="doorUnlocked ? 'border-emerald-500/50 bg-emerald-950/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-amber-500/30 bg-neutral-900/50 text-amber-500'">
-                            <template x-if="!keySuccess">
-                                <i class="fa-solid fa-satellite-dish text-2xl animate-spin"></i>
+                             :class="doorUnlocked ? 'border-emerald-500/50 bg-emerald-950/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : (nfcReading ? 'border-amber-500 bg-amber-950/20 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'border-neutral-800 bg-neutral-900/50 text-neutral-500')">
+                            <template x-if="nfcReading">
+                                <i class="fa-solid fa-satellite-dish text-2xl animate-spin text-amber-500"></i>
                             </template>
                             <template x-if="keySuccess">
-                                <i class="fa-solid fa-door-open text-2xl animate-bounce"></i>
+                                <i class="fa-solid fa-door-open text-2xl animate-bounce text-emerald-400"></i>
+                            </template>
+                            <template x-if="nfcErrorMessage && !keySuccess">
+                                <i class="fa-solid fa-triangle-exclamation text-2xl text-rose-500"></i>
+                            </template>
+                            <template x-if="!nfcReading && !keySuccess && !nfcErrorMessage">
+                                <i class="fa-solid fa-tablet-screen-button text-2xl"></i>
                             </template>
                         </div>
                     </div>
+                    
                     <div class="space-y-1 px-2">
-                        <p class="text-xs font-bold font-mono uppercase tracking-wider" :class="doorUnlocked ? 'text-emerald-400' : 'text-amber-500'" x-text="doorUnlocked ? 'Access Granted' : 'Transmitting NFC Key...'"></p>
-                        <p class="text-neutral-400 text-[11px] leading-relaxed" x-text="doorUnlocked ? 'Mekanisme grendel pintu otomatis telah terbuka sepenuhnya. Selamat datang di kamar Anda.' : 'Memverifikasi tanda tangan manifes digital terenkripsi pada sistem kunci fisik...'"></p>
+                        <p class="text-xs font-bold font-mono uppercase tracking-wider" 
+                           :class="doorUnlocked ? 'text-emerald-400' : (nfcErrorMessage ? 'text-rose-500' : 'text-amber-500')" 
+                           x-text="doorUnlocked ? 'Access Granted' : (nfcErrorMessage ? 'Hardware Failure' : (nfcReading ? 'Scanning Signal...' : 'Ready to Connect'))">
+                        </p>
+                        
+                        <p class="text-neutral-400 text-[11px] leading-relaxed" 
+                           x-text="doorUnlocked ? 'Grendel pintu otomatis telah terbuka sepenuhnya. Selamat datang.' : (nfcErrorMessage ? nfcErrorMessage : (nfcSupported ? 'Tempelkan smartphone Anda pada sensor pintu kamar untuk mentransmisikan token NFC...' : 'Menunggu inisiasi bypass testing untuk simulasi tanpa hardware...'))">
+                        </p>
                     </div>
+
+                    <template x-if="!nfcSupported && !doorUnlocked">
+                        <div class="pt-2">
+                            <button type="button" @click="executeSoftwareSimulationBypass()" :disabled="nfcReading" class="w-full bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 border border-amber-500/30 text-[9px] font-bold uppercase tracking-widest py-2.5 transition-all cursor-pointer disabled:opacity-50">
+                                <i class="fa-solid fa-flask-vial mr-1"></i> Simulate Successful NFC Tap
+                            </button>
+                        </div>
+                    </template>
+
                     <div x-show="doorUnlocked" x-transition>
                         <button type="button" @click="openKeyModal = false" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors">Close Key</button>
                     </div>
@@ -508,7 +577,7 @@
                 <div class="w-16 h-16 bg-amber-50 text-amber-800 flex items-center justify-center text-xl border border-amber-100 mb-4"><i class="fa-solid fa-bed-pulse"></i></div>
                 <h3 class="text-xl font-serif text-neutral-900 mb-1">No Active Stay Record Located</h3>
                 <p class="text-xs text-neutral-400 max-w-sm leading-relaxed mb-6">Sistem ledger kami tidak mendeteksi registrasi check-in akomodasi yang aktif atas nama akun Anda hari ini.</p>
-                <a href="{{ route('bookings.my') }}" class="bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3 px-6 shadow-md transition-colors">Check My Bookings</a>
+                <a href="{{ route('guest.bookings.my') }}" class="bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3 px-6 shadow-md transition-colors">Check My Bookings</a>
             </div>
         @endif
     </div>
@@ -544,11 +613,11 @@
                                 },
                                 body: JSON.stringify({ booking_id: bookingId })
                             }).then(() => {
-                                window.location.href = '{{ route("stay.my") }}';
+                                window.location.href = '{{ route("guest.stay.my") }}';
                             });
                         },
                         onPending: function(result) { 
-                            window.location.href = '{{ route("stay.my") }}'; 
+                            window.location.href = '{{ route("guest.stay.my") }}'; 
                         },
                         onError: function(result) { 
                             payButton.disabled = false;

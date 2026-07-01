@@ -260,10 +260,10 @@
                         }).then(() => {
                             if (isFromCart) this.clearCart();
                             this.launchNotify('Success', 'Pembayaran sukses diverifikasi! Pesanan Anda dikirim ke dapur.', true);
-                            setTimeout(() => { window.location.href = '{{ route("restaurant.orders") }}'; }, 2000);
+                            setTimeout(() => { window.location.href = '{{ route("guest.restaurant.orders") }}'; }, 2000);
                         });
                     },
-                    onPending: () => { window.location.href = '{{ route("restaurant.orders") }}'; },
+                    onPending: () => { window.location.href = '{{ route("guest.restaurant.orders") }}'; },
                     onError: () => { 
                         this.launchNotify('Failed', 'Transaksi dibatalkan atau ditolak perbankan.', false);
                         buttonEl.disabled = false;
@@ -271,7 +271,7 @@
                     },
                     onClose: () => {
                         if (isFromCart) this.clearCart();
-                        window.location.href = '{{ route("restaurant.orders") }}';
+                        window.location.href = '{{ route("guest.restaurant.orders") }}';
                     }
                 });
             },
@@ -302,7 +302,7 @@
                     <div class="text-xs">
                         <p class="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Ordering From</p>
                         @if(isset($allActiveBookings) && $allActiveBookings->count() > 1)
-                            <form action="{{ route('restaurant.orders') }}" method="GET" id="roomSorterForm">
+                            <form action="{{ route('guest.restaurant.orders') }}" method="GET" id="roomSorterForm">
                                 <select name="booking_id" onchange="document.getElementById('roomSorterForm').submit()" class="appearance-none text-xs font-bold text-neutral-800 bg-transparent border-0 p-0 pr-6 focus:ring-0 cursor-pointer uppercase tracking-wider">
                                     @foreach($allActiveBookings as $activeTab)
                                         <option value="{{ $activeTab->id }}" {{ $activeTab->id == $booking_id ? 'selected' : '' }}>Room {{ $activeTab->room_number }}</option>

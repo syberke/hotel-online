@@ -301,7 +301,7 @@
                     <span class="text-3xl font-light font-mono text-rose-800">{{ number_format($hkStatus['dirty'] ?? 0) }}</span>
                     <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wide block mt-1.5">Dirty Rooms</span>
                 </div>
-                <div class="p-4 bg-blue-50/40 border border-blue-100/70 flex flex-col justify-center items-center">
+                <div class="p-4 bg-blue-50/ 40 border border-blue-100/70 flex flex-col justify-center items-center">
                     <span class="text-3xl font-light font-mono text-blue-800">{{ number_format($hkStatus['inspected'] ?? 0) }}</span>
                     <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wide block mt-1.5">Inspected</span>
                 </div>

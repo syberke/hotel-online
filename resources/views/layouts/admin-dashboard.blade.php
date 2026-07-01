@@ -43,10 +43,7 @@
                         <i class="fa-solid fa-calendar-check text-sm w-5"></i> Reservations
                     </a>
                     
-                    <a href="{{ route('admin.frontdesk') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.frontdesk') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-bell-concierge text-sm w-5"></i> Front Desk (Active Stays)
-                    </a>
-                    
+                   
                     <a href="{{ route('admin.rooms') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.rooms') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                         <i class="fa-solid fa-bed text-sm w-5"></i> Rooms & Inventory
                     </a>

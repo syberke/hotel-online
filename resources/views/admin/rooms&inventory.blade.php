@@ -1,5 +1,16 @@
 <x-admin-dashboard-layout>
 
+    @if(session('success'))
+        <div class="bg-emerald-900/90 border border-emerald-700 text-emerald-200 p-4 text-xs font-semibold uppercase tracking-wider mb-6 flex items-center shadow-md">
+            <i class="fa-solid fa-circle-check mr-2 text-emerald-400 text-sm"></i> {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="bg-rose-950/95 border border-rose-800 text-rose-300 p-4 text-xs font-semibold uppercase tracking-wider mb-6 flex items-center shadow-md">
+            <i class="fa-solid fa-triangle-exclamation mr-2 text-rose-400 text-sm"></i> {{ session('error') }}
+        </div>
+    @endif
+
     <div class="flex flex-col xl:flex-row gap-8 items-start w-full">
         
         <div class="flex-1 w-full space-y-6">
@@ -27,7 +38,7 @@
                     </div>
                 </div>
                 <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Out of Order</span>
+                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Out Of Order</span>
                     <div class="flex items-baseline justify-between mt-2">
                         <span class="text-3xl font-light font-serif text-amber-700">{{ $stats['maintenance'] }}</span>
                         <span class="text-[9px] font-bold text-amber-600">{{ $stats['maintenance_pct'] }}% <span class="text-neutral-400 font-normal">Maint.</span></span>
@@ -43,10 +54,10 @@
             </div>
 
             <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-4">
-                <form action="{{ url()->current() }}" method="GET" class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <form action="{{ request()->url() }}" method="GET" class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div class="flex text-xs font-bold uppercase tracking-wider text-neutral-400 gap-6 border-b border-neutral-100 lg:border-none pb-2 lg:pb-0">
                         <button type="button" class="text-neutral-900 border-b-2 border-neutral-900 pb-1 px-0.5">Room List</button>
-                        <button type="button" class="hover:text-neutral-900 transition-colors pb-1 px-0.5 opacity-50 cursor-not-allowed">Room Calendar</button>
+                        <button type="button" class="hover:text-neutral-900 transition-colors pb-1 px-0.5 opacity-50 cursor-not-allowed" disabled>Room Calendar</button>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
@@ -55,18 +66,23 @@
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by room number or type..." class="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
                         </div>
                         
-                        <select name="status_filter" onchange="this.form.submit()" class="border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-700 focus:outline-none">
-                            <option value="">All Statuses</option>
-                            <option value="available" {{ request('status_filter') == 'available' ? 'selected' : '' }}>Available</option>
-                            <option value="occupied" {{ request('status_filter') == 'occupied' ? 'selected' : '' }}>Occupied</option>
-                            <option value="maintenance" {{ request('status_filter') == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
-                            <option value="dirty" {{ request('status_filter') == 'dirty' ? 'selected' : '' }}>Cleaning</option>
-                        </select>
+                        <div class="relative flex-1 lg:flex-none">
+                            <select name="status_filter" onchange="this.form.submit()" class="appearance-none w-full border border-neutral-200 bg-white pl-3 pr-8 py-2 text-xs font-medium text-neutral-700 focus:outline-none focus:border-neutral-900 cursor-pointer">
+                                <option value="">All Statuses</option>
+                                <option value="available" {{ request('status_filter') == 'available' ? 'selected' : '' }}>Available</option>
+                                <option value="occupied" {{ request('status_filter') == 'occupied' ? 'selected' : '' }}>Occupied</option>
+                                <option value="maintenance" {{ request('status_filter') == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
+                                <option value="dirty" {{ request('status_filter') == 'dirty' ? 'selected' : '' }}>Cleaning</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down text-[9px] text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        </div>
 
-                        <button type="submit" class="bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 text-xs font-bold uppercase transition-colors">Apply</button>
+                        <button type="submit" class="bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors">Apply</button>
 
                         @if(auth()->user()->role !== 'manager')
-                            <button type="button" class="bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"><i class="fa-solid fa-plus text-[10px]"></i> Add Room</button>
+                            <button type="button" onclick="openAddRoomModal()" class="bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Room
+                            </button>
                         @endif
                     </div>
                 </form>
@@ -78,7 +94,7 @@
                                 <th class="py-3 px-4 font-semibold">Room Number</th>
                                 <th class="py-3 px-4 font-semibold">Room Type</th>
                                 <th class="py-3 px-4 font-semibold">Floor</th>
-                                <th class="py-3 px-4 font-semibold">Status</th>
+                                <th class="py-3 px-4 font-semibold">Status / Rentang Jadwal</th>
                                 <th class="py-3 px-4 font-semibold">Capacity</th>
                                 <th class="py-3 px-4 font-semibold">Price / Night</th>
                                 <th class="py-3 px-4 font-semibold">Features</th>
@@ -91,26 +107,27 @@
                                     <td class="py-4 px-4 flex items-center gap-3">
                                         <img src="{{ $room->foto_url ?? 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1200' }}" class="w-12 h-8 object-cover border border-neutral-200 rounded-sm">
                                         <div>
-                                            <span class="text-xs font-bold text-neutral-900 block font-mono">{{ $room->room_number }}</span>
+                                            <span class="text-xs font-bold text-neutral-900 block font-mono">Room {{ $room->room_number }}</span>
                                             <span class="text-[9px] text-neutral-400 block font-normal mt-0.5">{{ $room->type_name }}</span>
                                         </div>
                                     </td>
                                     <td class="py-4 px-4 text-neutral-800">{{ $room->type_name }}</td>
-                                    <td class="py-4 px-4 font-mono">{{ substr($room->room_number, 0, strlen($room->room_number) - 2) ?: '1' }}</td>
+                                    <td class="py-4 px-4 font-mono">{{ substr($room->room_number, 0, strlen($room->room_number) - 2) ?: '1' }}F</td>
                                     <td class="py-4 px-4">
                                         @if($room->status == 'occupied')
                                             <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wide">Occupied</span>
                                             @if($room->active_booking)
-                                                <span class="text-[9px] text-neutral-400 block font-normal mt-1">Out: {{ \Carbon\Carbon::parse($room->active_booking->check_out)->format('d M Y') }}</span>
+                                                <span class="text-[9px] text-neutral-500 block font-semibold mt-1 bg-neutral-100 p-1 border-l-2 border-blue-500">
+                                                    <i class="fa-regular fa-calendar-days text-[9px] mr-1 text-blue-600"></i>
+                                                    {{ \Carbon\Carbon::parse($room->active_booking->check_in)->format('d M') }} s/d {{ \Carbon\Carbon::parse($room->active_booking->check_out)->format('d M Y') }}
+                                                </span>
                                             @endif
                                         @elseif($room->status == 'available')
                                             <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wide">Available</span>
                                         @elseif($room->status == 'dirty')
                                             <span class="bg-purple-50 text-purple-800 border border-purple-100 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wide">Cleaning</span>
-                                            <span class="text-[9px] text-neutral-400 block font-normal mt-1">Housekeeping Queue</span>
                                         @else
                                             <span class="bg-red-50 text-red-800 border border-red-100 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wide">Out Of Order</span>
-                                            <span class="text-[9px] text-red-600 block font-normal mt-1">Maintenance Block</span>
                                         @endif
                                     </td>
                                     <td class="py-4 px-4 text-neutral-500 text-[11px]"><i class="fa-solid fa-user-friends mr-1"></i> Max {{ $room->max_capacity }} Pax</td>
@@ -122,15 +139,24 @@
                                     </td>
                                     <td class="py-4 px-4 text-center">
                                         @if(auth()->user()->role !== 'manager')
-                                            <button type="button" class="w-7 h-7 bg-neutral-50 border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer"><i class="fa-solid fa-ellipsis-vertical text-xs"></i></button>
+                                            <button type="button" 
+                                                    onclick="openGlobalDropdown(event, {{ $room->id }}, '{{ $room->room_number }}')" 
+                                                    class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-500 cursor-pointer transition-colors shadow-xs">
+                                                <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                                            </button>
                                         @else
-                                            <button type="button" class="w-7 h-7 bg-neutral-100/60 border border-neutral-200 text-neutral-400 cursor-not-allowed" title="Read-Only Mode Locked"><i class="fa-solid fa-eye text-xs"></i></button>
+                                            <button type="button" 
+                                                    onclick="openManagerViewModal({{ $room->id }})"
+                                                    class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-800 cursor-pointer transition-colors shadow-xs" 
+                                                    title="View Enclosure Blueprint Manifes">
+                                                <i class="fa-solid fa-eye text-xs"></i>
+                                            </button>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="py-8 text-center text-neutral-400">No rooms match your specific search criteria.</td>
+                                    <td colspan="8" class="py-12 text-center text-neutral-400 font-sans italic">No physical luxury suites registry entries match filter criteria.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -139,7 +165,7 @@
 
                 <div class="flex justify-between items-center text-[11px] text-neutral-400 pt-2 font-medium">
                     <span>Showing entries {{ $rooms->firstItem() ?? 0 }} to {{ $rooms->lastItem() ?? 0 }} of {{ $rooms->total() }} total rooms</span>
-                    <div class="font-mono text-neutral-800">
+                    <div class="font-sans text-neutral-800">
                         {{ $rooms->links() }}
                     </div>
                 </div>
@@ -147,7 +173,6 @@
         </div>
 
         <aside class="w-full xl:w-80 space-y-6 shrink-0">
-            
             <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col">
                 <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
                     <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Room Type Matrix</h3>
@@ -156,15 +181,19 @@
                 <div class="space-y-3.5 text-xs font-semibold text-neutral-500">
                     <div class="flex justify-between text-[8px] text-neutral-400 uppercase tracking-wider font-bold border-b border-neutral-50 pb-1.5">
                         <span>Room Type Class</span>
-                        <div class="flex gap-4 font-mono"><span>Tot</span><span>Occ</span><span>Avail</span></div>
+                        <div class="grid grid-cols-3 gap-2 w-28 text-center font-mono">
+                            <span>Tot</span>
+                            <span>Occ</span>
+                            <span>Avail</span>
+                        </div>
                     </div>
                     @forelse($summary as $row)
-                        <div class="flex justify-between items-center hover:text-neutral-900 transition-colors">
-                            <span class="text-neutral-800 font-bold truncate max-w-[130px]">{{ $row['name'] }}</span>
-                            <div class="flex gap-4 font-mono font-bold text-neutral-700">
-                                <span>{{ $row['total'] }}</span>
-                                <span class="text-blue-600">{{ $row['occupied'] }}</span>
-                                <span class="text-emerald-600">{{ $row['available'] }}</span>
+                        <div class="flex justify-between items-center hover:text-neutral-900 transition-colors py-0.5">
+                            <span class="text-neutral-800 font-bold truncate pr-2" style="max-w: calc(100% - 112px);">{{ $row['name'] }}</span>
+                            <div class="grid grid-cols-3 gap-2 w-28 text-center font-mono font-bold text-neutral-700">
+                                <span class="bg-neutral-50 py-0.5 text-neutral-900 border border-neutral-100 rounded-xs">{{ $row['total'] }}</span>
+                                <span class="bg-blue-50/60 py-0.5 text-blue-600 border border-blue-50 rounded-xs">{{ $row['occupied'] }}</span>
+                                <span class="bg-emerald-50/60 py-0.5 text-emerald-600 border border-emerald-50 rounded-xs">{{ $row['available'] }}</span>
                             </div>
                         </div>
                     @empty
@@ -189,13 +218,11 @@
                     @php
                         $startOfMonth = now()->startOfMonth();
                         $daysInMonth = now()->daysInMonth;
-                        $dayOfWeek = $startOfMonth->dayOfWeekIso; // 1 (Mon) to 7 (Sun)
+                        $dayOfWeek = $startOfMonth->dayOfWeekIso;
                         $todayDay = now()->day;
                     @endphp
 
-                    @for($i = 1; $i < $dayOfWeek; $i++)
-                        <span></span>
-                    @endfor
+                    @for($i = 1; $i < $dayOfWeek; $i++) <span></span> @endfor
 
                     @for($day = 1; $day <= $daysInMonth; $day++)
                         @if($day == $todayDay)
@@ -207,15 +234,221 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[9px] font-bold uppercase tracking-wider text-neutral-500 pt-3">
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-none inline-block"></span> <span>Available</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-blue-500 rounded-none inline-block"></span> <span>Occupied</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-purple-500 rounded-none inline-block"></span> <span>Cleaning</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-red-500 rounded-none inline-block"></span> <span>Maint. Block</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 inline-block"></span> <span>Available</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-blue-500 inline-block"></span> <span>Occupied</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-purple-500 inline-block"></span> <span>Cleaning</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-red-500 inline-block"></span> <span>Maint. Block</span></div>
                 </div>
             </div>
-
         </aside>
 
     </div>
 
+    @if(auth()->user()->role !== 'manager')
+        <div id="addRoomModal" class="fixed inset-0 bg-neutral-950/50 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4">
+            <div class="bg-white border border-neutral-200 max-w-sm w-full p-6 shadow-2xl flex flex-col font-sans">
+                <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Register New Enclosure Room</h4>
+                    <button type="button" onclick="closeAddRoomModal()" class="text-neutral-400 hover:text-neutral-900 text-sm cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <form action="{{ route('rooms.store') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Room Number (Mono-Index)</label>
+                        <input type="text" name="room_number" placeholder="e.g., 101, 305" required class="w-full px-3 py-2 text-xs font-mono font-bold border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Room Type Allocation</label>
+                        <select name="room_type_id" required class="w-full px-3 py-2 text-xs font-medium border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-white">
+                            @foreach($roomTypesList as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }} (Rp {{ number_format($type->price,0,',','.') }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Initial Readiness Status</label>
+                        <select name="status" required class="w-full px-3 py-2 text-xs font-medium border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-white">
+                            <option value="available">Available (Vacant Ready)</option>
+                            <option value="dirty">Dirty / Cleaning Turn</option>
+                            <option value="maintenance">Maintenance Block (OOS)</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button type="submit" class="flex-1 bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer">Confirm Matrix</button>
+                        <button type="button" onclick="closeAddRoomModal()" class="border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-bold text-[10px] uppercase tracking-widest px-4 py-2.5 bg-white cursor-pointer">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <div id="managerRoomViewModal" class="fixed inset-0 bg-neutral-950/50 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white border border-neutral-200 max-w-md w-full p-6 shadow-2xl flex flex-col font-sans text-neutral-900">
+            <div class="flex justify-between items-center border-b border-neutral-200 pb-3 mb-4">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-amber-800">Enclosure Room Audit Blueprint</h4>
+                    <span id="mv_title_room" class="text-base font-serif font-bold text-neutral-900 mt-0.5 block"></span>
+                </div>
+                <button type="button" onclick="closeManagerViewModal()" class="text-neutral-400 hover:text-neutral-900 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4 bg-neutral-50 p-3 border border-neutral-100 text-xs">
+                    <div>
+                        <span class="block text-[9px] font-bold uppercase text-neutral-400">Kategori Kamar</span>
+                        <span id="mv_room_type" class="font-bold text-neutral-800 font-sans"></span>
+                    </div>
+                    <div>
+                        <span class="block text-[9px] font-bold uppercase text-neutral-400">Harga Per Malam</span>
+                        <span id="mv_room_price" class="font-mono font-bold text-neutral-900"></span>
+                    </div>
+                    <div class="mt-2">
+                        <span class="block text-[9px] font-bold uppercase text-neutral-400">Kapasitas Maksimal</span>
+                        <span id="mv_room_cap" class="font-medium text-neutral-700"></span>
+                    </div>
+                    <div class="mt-2">
+                        <span class="block text-[9px] font-bold uppercase text-neutral-400">Status Kesiapan</span>
+                        <span id="mv_room_status" class="inline-block mt-0.5 px-2 py-0.2 text-[9px] font-bold uppercase tracking-wider"></span>
+                    </div>
+                </div>
+
+                <div id="mv_booking_section" class="border border-neutral-200 p-4 space-y-3 hidden">
+                    <span class="text-[9px] font-bold uppercase tracking-widest text-blue-700 block border-b border-blue-50 pb-1.5"><i class="fa-solid fa-user-tag mr-1"></i> Live Active Guest Stay Manifest</span>
+                    <div class="text-xs space-y-2 text-neutral-600 font-medium">
+                        <div class="flex justify-between"><span>Nama Tamu Terdaftar</span><span id="mv_guest_name" class="font-bold text-neutral-900"></span></div>
+                        <div class="flex justify-between"><span>Email Korespondensi</span><span id="mv_guest_email" class="font-mono text-neutral-800"></span></div>
+                        <div class="flex justify-between"><span>Jumlah Tamu Kamar</span><span id="mv_guest_count" class="font-bold text-neutral-900"></span></div>
+                        <div class="flex justify-between border-t pt-2 mt-2 border-neutral-100">
+                            <span>Rentang Jadwal Inap</span>
+                            <span id="mv_stay_dates" class="font-bold text-neutral-900 bg-neutral-100 px-2 py-0.5 text-[10px]"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mv_empty_section" class="border border-dashed border-neutral-200 p-6 text-center text-xs text-neutral-400 italic hidden">
+                    <i class="fa-solid fa-bed text-lg text-neutral-300 block mb-1"></i>
+                    Unit kamar saat ini kosong dan tidak memiliki manifes inap aktif.
+                </div>
+            </div>
+
+            <button type="button" onclick="closeManagerViewModal()" class="w-full bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 mt-5 shadow-sm">Dismiss Audit Blueprint</button>
+        </div>
+    </div>
+
+    <div id="global-action-dropdown" class="hidden fixed w-48 bg-white border border-neutral-200 shadow-2xl z-50 text-left font-sans text-xs">
+        <div class="p-2 border-b border-neutral-100 bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Ubah Status Kamar <span id="drop-room-title" class="font-mono text-neutral-900"></span></div>
+        <form id="form-update-status" action="" method="POST" class="m-0">
+            @csrf
+            <button name="status" value="available" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-emerald-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Set Available</button>
+            <button name="status" value="dirty" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-purple-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span> Set Cleaning</button>
+            <button name="status" value="maintenance" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-amber-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span> Set Out Of Order</button>
+        </form>
+        <div class="border-t border-neutral-100 p-1">
+            <form id="form-delete-unit" action="" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kamar ini?')" class="m-0">
+                @csrf @method('DELETE')
+                <button type="submit" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 font-bold rounded-xs flex items-center cursor-pointer"><i class="fa-regular fa-trash-can mr-2"></i> Delete Unit</button>
+            </form>
+        </div>
+    </div>
+
 </x-admin-dashboard-layout>
+
+<script type="text/javascript">
+    /**
+     * Memicu Modal Read-Only Khusus Akun Manager via AJAX Fetch Engine
+     */
+    function openManagerViewModal(roomId) {
+        const modal = document.getElementById('managerRoomViewModal');
+        const bookingSection = document.getElementById('mv_booking_section');
+        const emptySection = document.getElementById('mv_empty_section');
+        const statusBadge = document.getElementById('mv_room_status');
+
+        // Tarik data kamar riil dari database endpoint
+        fetch(`/admin/rooms/${roomId}/json-detail`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    // Petakan data spesifikasi fisik kamar ke modal
+                    document.getElementById('mv_title_room').innerText = 'Room ' + res.room.room_number;
+                    document.getElementById('mv_room_type').innerText = res.room.type_name;
+                    document.getElementById('mv_room_price').innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(res.room.price);
+                    document.getElementById('mv_room_cap').innerText = 'Max ' + res.room.max_capacity + ' Persons';
+
+                    // Modifikasi kosmetik badge status
+                    statusBadge.innerText = res.room.status;
+                    if (res.room.status === 'available') {
+                        statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-100";
+                    } else if (res.room.status === 'occupied') {
+                        statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-100";
+                    } else if (res.room.status === 'dirty') {
+                        statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-800 border border-purple-100";
+                    } else {
+                        statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-800 border border-red-100";
+                    }
+
+                    // Tampilkan rincian tamu secara kondisional jika terdeteksi data booking aktif
+                    if (res.booking) {
+                        document.getElementById('mv_guest_name').innerText = res.booking.guest_name;
+                        document.getElementById('mv_guest_email').innerText = res.booking.guest_email;
+                        document.getElementById('mv_guest_count').innerText = res.booking.guests_count + ' Persons';
+                        
+                        // Parse format tanggal rentang inap
+                        const inDate = new Date(res.booking.check_in).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'});
+                        const outDate = new Date(res.booking.check_out).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'});
+                        document.getElementById('mv_stay_dates').innerText = inDate + ' - ' + outDate;
+
+                        bookingSection.classList.remove('hidden');
+                        emptySection.classList.add('hidden');
+                    } else {
+                        bookingSection.classList.add('hidden');
+                        emptySection.classList.remove('hidden');
+                    }
+
+                    modal.classList.remove('hidden');
+                } else {
+                    alert('Gagal memproses data visualisasi kamar.');
+                }
+            })
+            .catch(() => alert('Terjadi gangguan transmisi jaringan data.'));
+    }
+
+    function closeManagerViewModal() {
+        document.getElementById('managerRoomViewModal').classList.add('hidden');
+    }
+
+    /**
+     * Manajemen Penempatan Posisi Dropdown untuk Admin
+     */
+    function openGlobalDropdown(event, roomId, roomNumber) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('global-action-dropdown');
+        const triggerBtn = event.currentTarget;
+        
+        document.getElementById('drop-room-title').innerText = '(Rm ' + roomNumber + ')';
+        document.getElementById('form-update-status').action = `/rooms/${roomId}/update-status`;
+        document.getElementById('form-delete-unit').action = `/rooms/${roomId}/delete`;
+        
+        const rect = triggerBtn.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        dropdown.style.left = (rect.left + window.scrollX - 160) + 'px';
+        dropdown.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('global-action-dropdown');
+        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.dropdown-trigger-btn')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    function openAddRoomModal() {
+        const modal = document.getElementById('addRoomModal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAddRoomModal() {
+        const modal = document.getElementById('addRoomModal');
+        if (modal) modal.classList.add('hidden');
+    }
+</script>

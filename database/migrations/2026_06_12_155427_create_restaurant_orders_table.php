@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('restaurant_orders', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('guest_id')->constrained('guests')->onDelete('cascade');
-    $table->decimal('total_price', 12, 2);
-    $table->enum('status', ['ordered', 'paid'])->default('ordered');
-    $table->timestamps();
-});
+        Schema::create('restaurant_orders', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('guest_id')->constrained('guests')->onDelete('cascade');
+            $table->decimal('total_price', 12, 2);
+            // Diganti dari enum ke string agar menerima status 'preparing' dan 'cancelled' dari dapur admin
+            $table->string('status', 30)->default('ordered');
+            $table->timestamps();
+        });
     }
 
     /**

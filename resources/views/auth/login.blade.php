@@ -73,6 +73,13 @@
                         @endif
                     </div>
 
+                    <div class="pt-4 border-t border-neutral-100 space-y-2 flex flex-col items-center justify-center">
+                        <div class="inline-block transform scale-95 origin-center select-none">
+                            <div class="g-recaptcha" data-sitekey="{{ env('RECAPTCHA_SITE_KEY') }}"></div>
+                        </div>
+                        <x-input-error :messages="$errors->get('g-recaptcha-response')" class="text-xs text-red-600 font-medium text-center w-full mt-1" />
+                    </div>
+
                     <div class="pt-2">
                         <button type="submit" 
                                 class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-3.5 px-4 rounded-none uppercase tracking-[0.2em] text-[10px] transition-all active:translate-y-[1px]">
@@ -91,4 +98,6 @@
             </div>
         </div>
     </div>
+
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </x-guest-layout>

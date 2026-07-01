@@ -8,6 +8,69 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f3; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d4; }
     [x-cloak] { display: none !important; }
+
+    /* ==========================================================================
+       PENGATURAN KHUSUS CETAK/PRINT KWITANSI FASILITAS (BERSIH & FULL CENTER)
+       ========================================================================== */
+    @media print {
+        /* 1. Hilangkan header dan footer bawaan browser (Tanggal, URL, Halaman, dll) */
+        @page {
+            size: auto;
+            margin: 0mm;
+        }
+
+        /* 2. Sembunyikan seluruh elemen dashboard utama dan backdrop luar */
+        body * {
+            visibility: hidden;
+        }
+
+        /* 3. Tampilkan hanya area kertas kwitansi utama dengan layout flexbox terpusat */
+        #print-target-invoice, #print-target-invoice * {
+            visibility: visible;
+        }
+
+        #print-target-invoice {
+            position: fixed;
+            inset: 0;
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center; /* Membuat konten tegak lurus di tengah (Vertikal) */
+            background: #ffffff !important;
+            width: 100vw;
+            height: 100vh;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* 4. Atur kertas kwitansi dalam kotak proporsional agar rapi di tengah halaman */
+        #print-target-invoice {
+            box-shadow: none !important;
+            margin: 0 auto !important;
+        }
+        
+        /* Membungkus struktur konten utama kwitansi saat dicetak */
+        #print-target-invoice {
+            padding: 40px !important;
+            width: 85% !important;
+            max-width: 600px !important;
+            border: 1px solid #e5e5e5 !important;
+        }
+
+        /* 5. Sembunyikan tombol print, dismiss, dan navigasi modal saat dicetak */
+        #print-target-invoice .action-buttons-container,
+        #print-target-invoice button,
+        #print-target-invoice .font-sans.action-buttons-container {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* 6. Pertahankan baris tabel strip abu-abu tipis saat dicetak */
+        .bg-neutral-50 {
+            background-color: #f9f9f9 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
 </style>
 
 <x-guest-dashboard-layout>
@@ -27,6 +90,16 @@
             seatingPreference: 'No Preference',
             notes: '',
             
+            // State Modal Invoice Cetak Fasilitas
+            showInvoiceModal: false,
+            invId: '',
+            invName: '',
+            invDate: '',
+            invTime: '',
+            invGuests: '',
+            invPreference: '',
+            invStatus: '',
+
             // Notifikasi Popup
             alertMessage: '',
             alertSuccess: true,
@@ -58,6 +131,17 @@
                 this.selectedFacilityId = id;
                 this.selectedFacilityName = name;
                 this.showBookingModal = true;
+            },
+
+            triggerInvoice(id, name, date, time, guests, preference, status) {
+                this.invId = '#FC-' + String(id).padStart(2, '0');
+                this.invName = name;
+                this.invDate = date;
+                this.invTime = time;
+                this.invGuests = guests;
+                this.invPreference = preference;
+                this.invStatus = status;
+                this.showInvoiceModal = true;
             },
 
             submitBooking() {
@@ -212,7 +296,7 @@
                 
                 <div class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-1">
                     @forelse($myReservations as $res)
-                        <div class="bg-[#fafafa] border border-neutral-200 p-3 flex justify-between items-start">
+                        <div class="bg-[#fafafa] border border-neutral-200 p-3 flex justify-between items-start group hover:border-neutral-400 transition-colors">
                             <div class="space-y-1">
                                 <h4 class="text-xs font-bold text-neutral-900 uppercase tracking-wide">{{ $res->facility_name }}</h4>
                                 <p class="text-[10px] text-neutral-500 font-medium">
@@ -221,6 +305,9 @@
                                 <p class="text-[10px] text-neutral-400 font-medium">
                                  Guests: {{ $res->guests_count }} PPL &bull; <span class="italic text-neutral-500">{{ $res->seating_preference ?? 'Standard Seating' }}</span>
                                 </p>
+                                <button type="button" @click="triggerInvoice({{ $res->id }}, '{{ addslashes($res->facility_name) }}', '{{ date('d M Y', strtotime($res->booking_date)) }}', '{{ substr($res->booking_time, 0, 5) }}', {{ $res->guests_count }}, '{{ $res->seating_preference ?? 'Standard Seating' }}', '{{ $res->status }}')" class="mt-2 text-[9px] font-bold text-amber-800 uppercase tracking-wider block hover:text-amber-950 cursor-pointer">
+                                    <i class="fa-solid fa-receipt mr-1"></i> View Receipt
+                                </button>
                             </div>
                             <span class="text-[8px] font-bold font-mono tracking-wider px-2 py-0.5 border uppercase
                                 {{ $res->status === 'confirmed' ? 'text-emerald-800 bg-emerald-50 border-emerald-200' : 'text-amber-800 bg-amber-50 border-amber-200' }}">
@@ -250,9 +337,9 @@
             <div class="space-y-3 pt-4 border-t border-neutral-100 mt-auto">
                 <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">Facilities Layout</h3>
                 <div class="relative h-28 border border-neutral-200 bg-neutral-100 overflow-hidden shadow-inner flex items-center justify-center">
-                    <img src="https://images.unsplash.com/photo-1524661135339-9140b0078ee0?q=80&w=400" class="w-full h-full object-cover blur-[1px] opacity-70" alt="Resort layout schematic">
+                    <img src="https://i.ibb.co.com/N6HNFQFZ/Chat-GPT-Image-Jun-26-2026-09-44-21-AM.png" class="w-full h-full object-cover opacity-70" alt="Resort layout schematic">
                     <div class="absolute inset-0 bg-neutral-900/10 flex items-center justify-center">
-                        <a href="https://images.unsplash.com/photo-1524661135339-9140b0078ee0?q=80&w=1200" target="_blank" class="bg-white border border-neutral-300 text-neutral-800 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 hover:border-neutral-900 shadow-md transition-colors">
+                        <a href="https://ibb.co.com/PZfWr3rw" target="_blank" class="bg-white border border-neutral-300 text-neutral-800 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 hover:border-neutral-900 shadow-md transition-colors">
                             <i class="fa-solid fa-map-location-dot text-amber-700 mr-1"></i> Open Resort Map
                         </a>
                     </div>
@@ -273,7 +360,7 @@
 
         </aside>
 
-        <div x-show="showBookingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" x-cloak>
+        <div x-show="showBookingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
             <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showBookingModal = false"></div>
             <div class="relative bg-white max-w-sm w-full border border-neutral-200 p-6 shadow-2xl transform transition-all text-left space-y-4">
                 <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
@@ -326,6 +413,66 @@
                         Confirm Reservation Slot
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div x-show="showInvoiceModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+            <div class="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs" @click="showInvoiceModal = false"></div>
+            
+            <div id="print-target-invoice" class="relative bg-[#ffffff] border border-neutral-300 max-w-xl w-full p-8 shadow-2xl transform transition-all z-10 flex flex-col font-serif text-neutral-900 text-left">
+                
+                <div class="text-center border-b border-neutral-200 pb-4 mb-5">
+                    <h3 class="text-2xl font-light tracking-[0.2em] uppercase">Oasis</h3>
+                    <span class="text-[8px] font-sans font-bold uppercase text-amber-800 tracking-widest block mt-1">Sanctuary Enclave Enclosure</span>
+                </div>
+                <div class="text-center text-xs uppercase tracking-wider text-neutral-500 mb-6 font-sans font-bold">Official Venue Reservation Receipt</div>
+                
+                <div class="grid grid-cols-2 gap-4 text-xs font-sans mb-6 pb-6 border-b border-neutral-100">
+                    <div>
+                        <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Transaction Reference</span>
+                        <span class="font-mono font-bold text-neutral-900" x-text="invId"></span>
+                        
+                        <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block mt-3">Guest Profile</span>
+                        <span class="font-medium text-neutral-800">{{ auth()->user()->name }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Allocation Status</span>
+                        <span class="font-bold uppercase tracking-wider text-xs" :class="invStatus === 'confirmed' ? 'text-emerald-700' : 'text-amber-700'" x-text="invStatus"></span>
+                        
+                        <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block mt-3">Target Schedule</span>
+                        <span class="font-medium text-neutral-800 text-[11px]" x-text="invDate + ' @ ' + invTime"></span>
+                    </div>
+                </div>
+
+                <div class="font-sans text-xs w-full mb-6">
+                    <div class="bg-neutral-50 p-3 flex justify-between font-bold text-[9px] text-neutral-400 uppercase tracking-wider">
+                        <span>Venue Allocation Description</span>
+                        <span>Matrix</span>
+                    </div>
+                    <div class="p-3 flex justify-between border-b border-neutral-100 items-center py-4 text-neutral-700">
+                        <div>
+                            <span class="font-bold text-neutral-900 block" x-text="invName"></span>
+                            <span class="text-[10px] text-neutral-400 block mt-0.5">Seating Orientation: <span class="italic text-neutral-600" x-text="invPreference"></span></span>
+                        </div>
+                        <span class="font-mono font-bold text-neutral-900" x-text="invGuests + ' Patrons'"></span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-baseline border-t border-neutral-200 pt-4 font-sans mb-8">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Access Fees Settlement:</span>
+                    <span class="text-base font-serif italic font-bold text-emerald-800">Complimentary Tokened</span>
+                </div>
+
+                <div class="flex gap-3 font-sans action-buttons-container">
+                    <button onclick="window.print()" class="flex-1 bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-3 transition-colors cursor-pointer text-center shadow-sm">
+                        <i class="fa-solid fa-print me-1.5"></i> Print Document
+                    </button>
+                    <button @click="showInvoiceModal = false" class="border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors cursor-pointer bg-white">
+                        Dismiss
+                    </button>
+                </div>
+                
+                <div class="text-center font-sans text-[9px] text-neutral-300 uppercase tracking-widest mt-6">Verified Electronic Ledger Enclosure</div>
             </div>
         </div>
 

@@ -64,30 +64,14 @@
                         <i class="fa-solid fa-users text-sm w-5"></i> Guests
                     </a>
 
-                    <a href="{{ route('receptionist.checkin') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.checkin') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-door-open text-sm w-5"></i> Check-in
-                    </a>
-
-                    <a href="{{ route('receptionist.checkout') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.checkout') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-door-closed text-sm w-5"></i> Check-out
-                    </a>
-
                     <a href="{{ route('receptionist.roomassignment') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.roomassignment') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                         <i class="fa-solid fa-key text-sm w-5"></i> Room Assignment
                     </a>
 
-                    <a href="{{ route('receptionist.folio') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.folio') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-receipt text-sm w-5"></i> Folio / Charges
-                    </a>
+            
+                
 
-                    <a href="{{ route('receptionist.payments') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.payments') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-credit-card text-sm w-5"></i> Payments
-                    </a>
-
-                    <a href="{{ route('receptionist.wakeupcall') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.wakeupcall') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-clock text-sm w-5"></i> Wake-up Call
-                    </a>
-
+            
                     <a href="{{ route('receptionist.guesthistory') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.guesthistory') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                         <i class="fa-solid fa-history text-sm w-5"></i> Guest History
                     </a>

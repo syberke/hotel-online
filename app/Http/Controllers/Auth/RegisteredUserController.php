@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -26,13 +27,27 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      */
-public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        // Validasi utama (Mencegah email ganda terdaftar di tabel users)
+        // Validasi utama beserta Google reCAPTCHA v2 native
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'g-recaptcha-response' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                        'secret'   => env('RECAPTCHA_SECRET_KEY'),
+                        'response' => $value,
+                        'remoteip' => request()->ip(),
+                    ]);
+
+                    if (!$response->json('success')) {
+                        $fail('Verifikasi robot gagal, silakan centang ulang kotak reCAPTCHA.');
+                    }
+                },
+            ],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Alamat email wajib diisi.',
@@ -40,6 +55,7 @@ public function store(Request $request): RedirectResponse
             'email.unique' => 'Email ini sudah terdaftar di Oasis, silakan gunakan email lain.',
             'password.required' => 'Password wajib ditentukan.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'g-recaptcha-response.required' => 'Silakan centang verifikasi robot reCAPTCHA.',
         ]);
 
         $user = DB::transaction(function () use ($request) {
@@ -72,7 +88,7 @@ public function store(Request $request): RedirectResponse
             );
 
             return $newUser;
-        });
+    });
 
         event(new Registered($user));
 
@@ -80,4 +96,4 @@ public function store(Request $request): RedirectResponse
 
         return redirect()->route('dashboard');
     }
-    }
+}

@@ -1,6 +1,6 @@
 <x-guest-dashboard-layout>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch mb-8">
         
         <div class="lg:col-span-2 relative bg-neutral-950 overflow-hidden border border-neutral-200/40 flex flex-col justify-hidden p-8 min-h-[260px] shadow-sm group">
             <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1200&auto=format&fit=crop" alt="Resort Atmosphere" class="absolute inset-0 w-full h-full object-cover opacity-40 scale-105 group-hover:scale-100 transition-transform duration-[4000ms]">
@@ -47,7 +47,7 @@
                 
                 <div class="pt-4 border-t border-neutral-800 mt-4 flex justify-between items-center text-[10px]">
                     <span class="text-neutral-500 font-mono">ID: #OA-{{ str_pad($latest->id, 2, '0', STR_PAD_LEFT) }}</span>
-                    <a href="{{ route('bookings.my') }}" class="font-bold uppercase tracking-widest text-white underline hover:text-amber-400 transition-colors">
+                    <a href="{{ route('guest.bookings.my') }}" class="font-bold uppercase tracking-widest text-white underline hover:text-amber-400 transition-colors">
                         Manage Stay &rarr;
                     </a>
                 </div>
@@ -63,31 +63,39 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <a href="{{ route('room.service') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-950 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
-            <div class="text-neutral-800 text-lg group-hover:text-amber-700 group-hover:scale-110 transition-all"><i class="fa-solid fa-bell-concierge"></i></div>
-            <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Room Service</h4>
-        </a>
-        <a href="{{ route('restaurant.orders') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-950 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
-            <div class="text-neutral-800 text-lg group-hover:text-amber-700 group-hover:scale-110 transition-all"><i class="fa-solid fa-utensils"></i></div>
-            <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Restaurant</h4>
-        </a>
-        <a href="{{ route('facilities.booking') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-950 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
-            <div class="text-neutral-800 text-lg group-hover:text-amber-700 group-hover:scale-110 transition-all"><i class="fa-solid fa-spa"></i></div>
-            <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Facilities</h4>
-        </a>
-        <div class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-950 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm cursor-pointer">
-            <div class="text-neutral-800 text-lg group-hover:text-amber-700 group-hover:scale-110 transition-all"><i class="fa-solid fa-feather-pointed"></i></div>
-            <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Special Requests</h4>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white border border-neutral-200 p-5 flex items-center space-x-4 shadow-sm">
+            <div class="w-10 h-10 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-amber-800 text-base">
+                <i class="fa-solid fa-wifi"></i>
+            </div>
+            <div>
+                <p class="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Enclosure Network</p>
+                <h3 class="text-xs font-sans font-bold text-neutral-900 mt-0.5">Oasis_Sanctuary_5G</h3>
+                <span class="text-[9px] text-neutral-400 block font-mono">Pass: luxury_stay_2026</span>
+            </div>
         </div>
-        <div class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-950 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm cursor-pointer">
-            <div class="text-neutral-800 text-lg group-hover:text-amber-700 group-hover:scale-110 transition-all"><i class="fa-solid fa-message"></i></div>
-            <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Messages Center</h4>
+
+        <div class="bg-white border border-neutral-200 p-5 flex items-center space-x-4 shadow-sm">
+            <div class="w-10 h-10 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-800 text-base">
+                <i class="fa-solid fa-phone-volume"></i>
+            </div>
+            <div>
+                <p class="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Internal Concierge</p>
+                <h3 class="text-xs font-sans font-bold text-neutral-900 mt-0.5">Dial Extension: 001</h3>
+                <span class="text-[9px] text-emerald-600 font-medium block">Active Matrix &bull; 24 Hours</span>
+            </div>
         </div>
-        <a href="{{ route('billing.matrix') }}" class="bg-white border border-neutral-200 p-5 text-center hover:border-neutral-950 transition-all duration-300 group flex flex-col justify-center items-center shadow-sm">
-            <div class="text-neutral-800 text-lg group-hover:text-amber-700 group-hover:scale-110 transition-all"><i class="fa-solid fa-receipt"></i></div>
-            <h4 class="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-800 mt-2.5">Billing Matrix</h4>
-        </a>
+
+        <div class="bg-white border border-neutral-200 p-5 flex items-center space-x-4 shadow-sm">
+            <div class="w-10 h-10 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-amber-700 text-base">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <p class="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Standard Sign-Out</p>
+                <h3 class="text-xs font-sans font-bold text-neutral-900 mt-0.5">Check-Out: 12:00 PM</h3>
+                <span class="text-[9px] text-neutral-400 block">Late request requires authorization</span>
+            </div>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">

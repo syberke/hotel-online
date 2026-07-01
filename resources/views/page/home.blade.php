@@ -5,7 +5,7 @@
         
         @include('layouts.navigation')
 
-        <header class="relative h-[90vh] bg-neutral-950 overflow-hidden">
+        <header class="relative h-[85vh] bg-neutral-950 overflow-hidden">
             <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop" 
                  alt="Oasis Hero Premium Suite" 
                  class="w-full h-full object-cover opacity-60 scale-105 transform transition-transform duration-[10000ms]">
@@ -20,10 +20,7 @@
                         Experience exceptional comfort, world-class hospitality, and unforgettable stays. Designed as an architectural sanctuary for the discerning traveler.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="#booking-bar" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 transition-all text-center">
-                            Book Your Stay
-                        </a>
-                        <a href="#rooms" class="border border-white/40 hover:border-white hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 transition-all text-center">
+                        <a href="{{ route('rooms') }}" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 transition-all text-center">
                             Explore Rooms
                         </a>
                     </div>
@@ -54,51 +51,7 @@
         </div>
         @endif
 
- <section id="booking-bar" class="max-w-6xl mx-auto px-6 relative -mt-16 z-20">
-            <form id="availability-search-form" action="{{ route('rooms.check') }}" method="POST" class="bg-white border border-neutral-200/80 p-6 rounded-none shadow-xl grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
-                @csrf
-                <input type="hidden" name="mode_check_only" value="1">
-
-                <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check In</label>
-                    <input type="date" id="bar_check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
-                </div>
-
-                <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check Out</label>
-                    <input type="date" id="bar_check_out" name="check_out" required min="{{ date('Y-m-d', strtotime('+1 day')) }}" value="{{ date('Y-m-d', strtotime('+1 day')) }}" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 bg-transparent">
-                </div>
-
-                <div class="border-b md:border-b-0 md:border-r border-neutral-200 pb-4 md:pb-0 md:pr-4">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Guests</label>
-                    <select id="bar_guests" name="guests" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
-                        <option value="1 Adult">1 Adult</option>
-                        <option value="2 Adults" selected>2 Adults</option>
-                        <option value="3 Adults">3 Adults</option>
-                        <option value="4 Adults">4 Adults</option>
-                    </select>
-                </div>
-
-                <div class="pb-4 md:pb-0">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Suite Type</label>
-                    <select name="suite_type" class="w-full border-none p-0 text-sm font-bold focus:ring-0 cursor-pointer text-neutral-800 appearance-none bg-transparent">
-                        @foreach($roomsLiveList as $rl)
-                            <option value="{{ $rl->name }}">{{ $rl->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <button type="submit" id="search-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 transition-all rounded-none cursor-pointer">
-                        Search Availability
-                    </button>
-                </div>
-            </form>
-
-            <div id="availability-alert-box" class="hidden mt-4 p-4 text-xs font-bold uppercase tracking-wider rounded-none transition-all"></div>
-        </section>
-
-        <section class="max-w-7xl mx-auto px-6 pt-24 pb-12">
+        <section class="max-w-7xl mx-auto px-6 pt-20 pb-12">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-neutral-100 pb-16">
                 <div class="flex gap-4">
                     <div class="text-amber-700 text-xl"><i class="fa-solid fa-star"></i></div>
@@ -159,16 +112,9 @@
                             <a href="{{ route('rooms.show', $room->id) }}" class="border border-neutral-300 text-center py-2 text-neutral-800 text-[10px] font-bold uppercase tracking-wider hover:border-neutral-900 transition-colors">
                                 Details
                             </a>
-                            
-                            @if($room->available_count > 0)
-                                <button type="button" onclick="navigateWithDates({{ $room->id }})" class="py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center">
-                                    Book Now
-                                </button>
-                            @else
-                                <button type="button" disabled class="py-2 bg-neutral-200 text-neutral-400 text-[10px] font-bold uppercase tracking-wider cursor-not-allowed transition-all text-center">
-                                    Sold Out
-                                </button>
-                            @endif
+                            <a href="{{ route('rooms') }}" class="py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-wider transition-all text-center">
+                                View Tariffs
+                            </a>
                         </div>
                     </div>
 
@@ -274,7 +220,7 @@
                         <span id="display-total-cost" class="text-amber-800 font-mono text-sm">Rp 0</span>
                     </div>
                     <div id="modal-response-message" class="hidden p-3 text-[10px] font-bold uppercase tracking-wider"></div>
-                    <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
+                    <button type="submit" id="modal-submit-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-3.5 transition-all shadow-md cursor-pointer">
                         Confirm Order To Room
                     </button>
                 </form>
@@ -434,181 +380,97 @@
             </div>
         </section>
 
-        <section class="bg-neutral-900 text-white py-24 px-6 text-center border-t border-neutral-800">
-            <div class="max-w-xl mx-auto">
-                <p class="text-xs uppercase tracking-[0.3em] text-amber-400 font-bold mb-3">Your Perfect Stay Awaits</p>
-                <h2 class="text-3xl md:text-5xl font-light tracking-tight mb-8">Secure Your Absolute Sanctuary</h2>
-                <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="#booking-bar" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 transition-all rounded-none">
-                        Reserve Now
-                    </a>
-                    <a href="mailto:concierge@oasis.com" class="border border-neutral-700 hover:border-neutral-500 text-neutral-300 font-bold text-xs uppercase tracking-widest py-4 px-8 transition-all rounded-none">
-                        Contact Us
-                    </a>
-                </div>
-            </div>
-        </section>
-
         @include('layouts.footer')
 
     </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script>
-        var map = L.map('liveOasisMap').setView([-8.8034, 115.2126], 13);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
-
-        var marker = L.marker([-8.8034, 115.2126]).addTo(map);
-        marker.bindPopup("<b>Oasis Premium Resort</b><br>Nusa Dua, Bali.").openPopup();
-    </script>
-
-    <script>
-        const orderModalBox = document.getElementById('culinaryOrderModal');
-        const foodTitleLabel = document.getElementById('modal-food-title');
-        const invoicePriceInput = document.getElementById('final-invoice-price');
-        const qtyCountInput = document.getElementById('display-qty');
-        const totalCostLabel = document.getElementById('display-total-cost');
-        const resAlertBox = document.getElementById('modal-response-message');
-        const culinaryForm = document.getElementById('gastronomy-ajax-form');
-        const actionSubmitBtn = document.getElementById('modal-submit-btn');
-
-        let rawFoodPrice = 0;
-
-        function openOrderModal(itemName, unitPrice) {
-            rawFoodPrice = unitPrice;
-            foodTitleLabel.innerText = itemName;
-            qtyCountInput.value = 1;
-            recalculateInvoiceCost();
-            resAlertBox.classList.add('hidden');
-            orderModalBox.classList.remove('hidden');
-        }
-
-        function closeOrderModal() { 
-            orderModalBox.classList.add('hidden'); 
-        }
-
-        function changeQty(delta) {
-            let targetAmount = parseInt(qtyCountInput.value) + delta;
-            if (targetAmount >= 1 && targetAmount <= 10) {
-                qtyCountInput.value = targetAmount;
-                recalculateInvoiceCost();
-            }
-        }
-
-        function recalculateInvoiceCost() {
-            let combinedSum = rawFoodPrice * parseInt(qtyCountInput.value);
-            invoicePriceInput.value = combinedSum;
-            totalCostLabel.innerText = 'Rp ' + combinedSum.toLocaleString('id-ID');
-        }
-
-        culinaryForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            actionSubmitBtn.disabled = true;
-            actionSubmitBtn.innerText = "Transmitting Order Request...";
-
-            fetch(culinaryForm.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: new FormData(culinaryForm)
-            })
-            .then(async res => {
-                const serverData = await res.json();
-                actionSubmitBtn.disabled = false;
-                actionSubmitBtn.innerText = "Confirm Order To Room";
-                resAlertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-                if (res.ok && serverData.success) {
-                    resAlertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                    resAlertBox.innerText = serverData.message;
-                    setTimeout(() => { closeOrderModal(); }, 2000);
-                } else {
-                    resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    resAlertBox.innerText = serverData.message || "Pemesanan ditolak oleh server internal.";
-                }
-            })
-            .catch(() => {
-                actionSubmitBtn.disabled = false;
-                actionSubmitBtn.innerText = "Confirm Order To Room";
-                resAlertBox.classList.remove('hidden');
-                resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                resAlertBox.innerText = "Terjadi gangguan transmisi jaringan lokal.";
-            });
-        });
-
-        // JAVASCRIPT DETEKTIF TANGGAL: Mengikat kalender atas ke dalam URL tujuan halaman detail
-        function navigateWithDates(roomId) {
-            const checkInVal = document.getElementById('bar_check_in').value;
-            const checkOutVal = document.getElementById('bar_check_out').value;
-            const guestsVal = document.getElementById('bar_guests').value;
-            
-            // Generate link dinamis menuju route detail
-            const baseTargetUrl = "{{ route('rooms.show', ':id') }}".replace(':id', roomId);
-            const compiledUrl = `${baseTargetUrl}?check_in=${checkInVal}&check_out=${checkOutVal}&guests=${encodeURIComponent(guestsVal)}`;
-            
-            // Eksekusi pemindahan halaman tanpa amnesia input tanggal!
-            window.location.href = compiledUrl;
-        }
-        // ASOSIASI ELEMEN OPERASIONAL PENCARIAN KAMAR
-        const searchForm = document.getElementById('availability-search-form');
-        const searchBtn = document.getElementById('search-submit-btn');
-        const alertBox = document.getElementById('availability-alert-box');
-
-        searchForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            
-            // Berikan feedback visual loading status
-            searchBtn.disabled = true;
-            searchBtn.innerText = "Checking Enclave Allocation...";
-            
-            alertBox.classList.add('hidden');
-            alertBox.classList.remove('bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200', 'border');
-
-            fetch(searchForm.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_Original_Token_ atau csrf-token"]')?.value || document.querySelector('input[name="_token"]').value
-                },
-                body: JSON.stringify({
-                    check_in: document.getElementById('bar_check_in').value,
-                    check_out: document.getElementById('bar_check_out').value,
-                    guests: document.getElementById('bar_guests').value,
-                    suite_type: document.querySelector('select[name="suite_type"]').value,
-                    mode_check_only: "1" // Memicu branch return JSON ketersediaan di controller Anda
-                })
-            })
-            .then(async response => {
-                const data = await response.json();
-                searchBtn.disabled = false;
-                searchBtn.innerText = "Search Availability";
-                alertBox.classList.remove('hidden');
-
-                if (response.ok && data.available) {
-                    // Jika alokasi kamar siap di database
-                    alertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                    alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ${data.message} <a href="#rooms" class="ml-4 underline tracking-widest text-[10px] text-neutral-900">Proceed to Selection Below ↓</a>`;
-                } else {
-                    // Jika kamar penuh atau melanggar kapasitas maksimum
-                    alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-2"></i> ${data.message || 'Validation Failure.'}`;
-                }
-            })
-            .catch(() => {
-                searchBtn.disabled = false;
-                searchBtn.innerText = "Search Availability";
-                alertBox.classList.remove('hidden');
-                alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-2"></i> Failed to communicate with internal reservation services.`;
-            });
-        });
-    </script>
 </x-guest-layout>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    var map = L.map('liveOasisMap').setView([-8.8034, 115.2126], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var marker = L.marker([-8.8034, 115.2126]).addTo(map);
+    marker.bindPopup("<b>Oasis Premium Resort</b><br>Nusa Dua, Bali.").openPopup();
+</script>
+
+<script>
+    const orderModalBox = document.getElementById('culinaryOrderModal');
+    const foodTitleLabel = document.getElementById('modal-food-title');
+    const invoicePriceInput = document.getElementById('final-invoice-price');
+    const qtyCountInput = document.getElementById('display-qty');
+    const totalCostLabel = document.getElementById('display-total-cost');
+    const resAlertBox = document.getElementById('modal-response-message');
+    const culinaryForm = document.getElementById('gastronomy-ajax-form');
+    const actionSubmitBtn = document.getElementById('modal-submit-btn');
+
+    let rawFoodPrice = 0;
+
+    function openOrderModal(itemName, unitPrice) {
+        rawFoodPrice = unitPrice;
+        foodTitleLabel.innerText = itemName;
+        qtyCountInput.value = 1;
+        recalculateInvoiceCost();
+        resAlertBox.classList.add('hidden');
+        orderModalBox.classList.remove('hidden');
+    }
+
+    function closeOrderModal() { 
+        orderModalBox.classList.add('hidden'); 
+    }
+
+    function changeQty(delta) {
+        let targetAmount = parseInt(qtyCountInput.value) + delta;
+        if (targetAmount >= 1 && targetAmount <= 10) {
+            qtyCountInput.value = targetAmount;
+            recalculateInvoiceCost();
+        }
+    }
+
+    function recalculateInvoiceCost() {
+        let combinedSum = rawFoodPrice * parseInt(qtyCountInput.value);
+        invoicePriceInput.value = combinedSum;
+        totalCostLabel.innerText = 'Rp ' + combinedSum.toLocaleString('id-ID');
+    }
+
+    culinaryForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        actionSubmitBtn.disabled = true;
+        actionSubmitBtn.innerText = "Transmitting Order Request...";
+
+        fetch(culinaryForm.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: new FormData(culinaryForm)
+        })
+        .then(async res => {
+            const serverData = await res.json();
+            actionSubmitBtn.disabled = false;
+            actionSubmitBtn.innerText = "Confirm Order To Room";
+            resAlertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
+
+            if (res.ok && serverData.success) {
+                resAlertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                resAlertBox.innerText = serverData.message;
+                setTimeout(() => { closeOrderModal(); }, 2000);
+            } else {
+                resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                resAlertBox.innerText = serverData.message || "Pemesanan ditolak oleh server internal.";
+            }
+        })
+        .catch(() => {
+            actionSubmitBtn.disabled = false;
+            actionSubmitBtn.innerText = "Confirm Order To Room";
+            resAlertBox.classList.remove('hidden');
+            resAlertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+            resAlertBox.innerText = "Terjadi gangguan transmisi jaringan lokal.";
+        });
+    });
+</script>

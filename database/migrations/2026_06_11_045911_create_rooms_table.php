@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('rooms', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('room_type_id')->constrained('room_types')->onDelete('cascade');
-    $table->string('room_number', 10);
-    $table->enum('status', ['available', 'occupied', 'maintenance'])->default('available');
-    $table->timestamps();
-});
+        Schema::create('rooms', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('room_type_id')->constrained('room_types')->onDelete('cascade');
+            $table->string('room_number', 10);
+            // Diganti dari enum menjadi string biasa agar PostgreSQL (Supabase) menerima status 'dirty'
+            $table->string('status', 30)->default('available');
+            $table->timestamps();
+        });
     }
 
     /**

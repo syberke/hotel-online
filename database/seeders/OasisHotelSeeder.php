@@ -1,6 +1,6 @@
 <?php
 
-namespace database\seeders;
+namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +18,14 @@ class OasisHotelSeeder extends Seeder
         // =========================================================================
         // 1. DATA MASTER: ROOM TYPES
         // =========================================================================
-          $deluxeId = DB::table('room_types')->insertGetId([
+         $standardId = DB::table('room_types')->insertGetId([
             'name' => 'Standard Room',
             'description' => 'This room provides the essential amenities and features to ensure a comfortable and practical stay without the frills.',
             'price' => 550000,
-            'foto_url' => 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'foto_url' => 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0',
             'created_at' => now(), 'updated_at' => now()
         ]);
+        
         $deluxeId = DB::table('room_types')->insertGetId([
             'name' => 'Deluxe Room',
             'description' => 'A stylish sanctuary featuring partial sea views, custom timber finishes, an integrated media console, and a tropical rain shower assembly.',
@@ -50,9 +51,10 @@ class OasisHotelSeeder extends Seeder
         ]);
 
         // =========================================================================
-        // 2. DATA FISIK: ROOMS INVENTORIES
+        // 2. DATA FISIK: ROOMS INVENTORIES (Menggunakan status valid yang aman)
         // =========================================================================
         DB::table('rooms')->insert([
+            ['room_type_id' => $standardId, 'room_number' => '0301', 'status' => 'available', 'created_at' => now(), 'updated_at' => now()],
             ['room_type_id' => $deluxeId, 'room_number' => '0801', 'status' => 'available', 'created_at' => now(), 'updated_at' => now()],
             ['room_type_id' => $deluxeId, 'room_number' => '0802', 'status' => 'available', 'created_at' => now(), 'updated_at' => now()],
             ['room_type_id' => $deluxeId, 'room_number' => '0803', 'status' => 'available', 'created_at' => now(), 'updated_at' => now()],
@@ -62,24 +64,23 @@ class OasisHotelSeeder extends Seeder
         ]);
 
         // =========================================================================
-        // 3. DATA TRANSAKSI: RESTAURANT ORDERS (Disesuaikan dengan tabel asli kamu)
+        // 3. DATA TRANSAKSI: RESTAURANT ORDERS 
         // =========================================================================
-        // Kita ambil data guest pertama dari tabel guests untuk dipasangkan ke order kuliner
         $existingGuest = DB::table('guests')->first();
 
         if ($existingGuest) {
             DB::table('restaurant_orders')->insert([
                 [
-                    'guest_id'    => $existingGuest->id, // Menggunakan guest_id sesuai relasi tabel kamu
+                    'guest_id'    => $existingGuest->id, 
                     'total_price' => 375000.00,
-                    'status'      => 'ordered', // Menggunakan enum 'ordered' bawaan migrasimu
+                    'status'      => 'ordered', 
                     'created_at'  => now(), 
                     'updated_at'  => now()
                 ],
                 [
                     'guest_id'    => $existingGuest->id,
                     'total_price' => 95000.00,
-                    'status'      => 'paid', // Contoh status yang sudah lunas ('paid')
+                    'status'      => 'paid', 
                     'created_at'  => now(), 
                     'updated_at'  => now()
                 ]
