@@ -46,7 +46,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start w-full">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start w-full mt-6">
         
         <div class="xl:col-span-2 space-y-6">
             <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
@@ -70,7 +70,7 @@
                         <thead>
                             <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
                                 <th class="py-3 px-3 font-semibold">Arrival Date</th>
-                                <th class="py-3 px-3 font-semibold">Guest Enclave Profile</th>
+                                <th class="py-3 px-3 font-semibold">Guest Profile</th>
                                 <th class="py-3 px-3 font-semibold">Reservation Code</th>
                                 <th class="py-3 px-3 font-semibold">Room Mapping</th>
                                 <th class="py-3 px-4 font-semibold">Room Class Type</th>
@@ -84,34 +84,53 @@
                                 <tr class="hover:bg-neutral-50/30 transition-colors">
                                     <td class="py-3.5 px-3 font-mono text-neutral-900 font-bold">{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y') }}</td>
                                     <td class="py-3.5 px-3 flex items-center gap-2.5">
-                                        <img src="{{ $booking->guest_avatar ?? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100' }}" class="w-6 h-6 border object-cover rounded-sm">
+                                        <img src="{{ $booking->guest_avatar ?? 'https://ui-avatars.com/api/?name='.urlencode($booking->guest_name).'&background=2563eb&color=ffffff' }}" class="w-6 h-6 border object-cover rounded-sm">
                                         <div>
                                             <span class="text-neutral-900 font-bold block">{{ $booking->guest_name }}</span>
                                             <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">{{ $booking->guest_phone ?? 'No phone logged' }}</span>
                                         </div>
                                     </td>
                                     <td class="py-3.5 px-3 font-mono text-neutral-500">#RES-OA-{{ $booking->booking_id }}</td>
-                                    <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">{{ $booking->room_number }}</td>
+                                    <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">
+                                        {{ $booking->room_number ?? 'UNASSIGNED' }}
+                                    </td>
                                     <td class="py-3.5 px-4 text-neutral-500">{{ $booking->room_type }}</td>
                                     <td class="py-3.5 px-3 font-mono">
-                                        {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) }}
+                                        {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) ?: 1 }}
                                     </td>
-                                    <td class="py-3.5 px-3">
-                                        @if($booking->booking_status == 'checked_in')
-                                            <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[8px] px-2 py-0.5 font-bold uppercase">Checked In</span>
-                                        @elseif($booking->booking_status == 'confirmed')
-                                            <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] px-2 py-0.5 font-bold uppercase">Confirmed</span>
-                                        @else
-                                            <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[8px] px-2 py-0.5 font-bold uppercase">{{ str_replace('_', ' ', $booking->booking_status) }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-3.5 px-3 text-center">
-                                        @if($booking->booking_status !== 'checked_in' && auth()->user()->role !== 'manager')
-                                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors">Check-In</button>
-                                        @else
-                                            <button class="border border-neutral-200 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none cursor-not-allowed" disabled>In House</button>
-                                        @endif
-                                    </td>
+                                   <td class="py-3.5 px-3">
+    @if($booking->booking_status == 'checked_in')
+        <span class="bg-blue-50 text-blue-800 border border-blue-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">In House</span>
+    @elseif($booking->booking_status == 'checked_out')
+        <span class="bg-neutral-100 text-neutral-500 border border-neutral-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">Checked Out (Archived)</span>
+    @elseif($booking->booking_status == 'confirmed')
+        <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">Confirmed (Paid)</span>
+    @elseif($booking->booking_status == 'pending')
+        <span class="bg-rose-50 text-rose-800 border border-rose-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">Unpaid (Pending)</span>
+    @else
+        <span class="bg-neutral-50 text-neutral-800 border border-neutral-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">{{ str_replace('_', ' ', $booking->booking_status) }}</span>
+    @endif
+</td>
+
+<td class="py-3.5 px-3 text-center">
+    @if($booking->booking_status == 'checked_in')
+        <span class="inline-flex items-center justify-center border border-neutral-200 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none select-none">Active Stay</span>
+    @elseif($booking->booking_status == 'checked_out')
+        <span class="inline-flex items-center justify-center bg-neutral-100 border border-neutral-300 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none select-none" title="Reservasi ini telah selesai dan diarsipkan.">
+            <i class="fa-solid fa-archive mr-1 text-[8px]"></i> Folio Closed
+        </span>
+    @elseif($booking->booking_status == 'pending')
+        <a href="{{ route('receptionist.payments', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors" title="Tamu harus menyelesaikan pelunasan invoice sebelum check-in">
+            <i class="fa-solid fa-lock mr-1 text-[8px]"></i> Settle Bill First
+        </a>
+    @elseif(auth()->user()->role !== 'manager')
+        <a href="{{ route('receptionist.checkin', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors">
+            Execute Check-In
+        </a>
+    @else
+        <span class="inline-flex items-center justify-center border border-neutral-200 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none">Read Only</span>
+    @endif
+</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -203,28 +222,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-neutral-200 p-6 shadow-sm space-y-4">
-                <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide border-b border-neutral-100 pb-2">Operational Action Hub</h3>
-                <div class="grid grid-cols-2 gap-3 text-center">
-                    <a href="{{ route('receptionist.walkin') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
-                        <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-solid fa-user-plus"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Walk-in Reg</span>
-                    </a>
-                    <a href="{{ route('receptionist.reservations') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
-                        <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-regular fa-calendar-check"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Ledger Stream</span>
-                    </a>
-                    <a href="{{ route('receptionist.roomavailability') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
-                        <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-solid fa-key"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Room Stock</span>
-                    </a>
-                    <a href="{{ route('receptionist.guests') }}" class="bg-neutral-50 border border-neutral-200 hover:border-blue-600 p-3.5 flex flex-col justify-center items-center gap-2 group transition-all">
-                        <div class="text-neutral-700 group-hover:text-blue-600 text-xs"><i class="fa-solid fa-magnifying-glass"></i></div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-800">Guest Dossier</span>
-                    </a>
-                </div>
-            </div>
-        </div>
+         
 
     </div>
 

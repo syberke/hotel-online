@@ -1,133 +1,5 @@
-<style>
-    /* Mengubah scrollbar bawaan browser menjadi minimalis tipis sewarna tema Oasis */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #faf9f6; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #d4d4d4; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #737373; 
-    }
-</style>
-
 <x-guest-layout>
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('instant-booking-form');
-    const btn = document.getElementById('submit-booking-btn');
-    const msgBox = document.getElementById('validation-message-box');
-    const checkInInput = document.getElementById('check_in');
-    const checkOutInput = document.getElementById('check_out');
-    const guestsSelect = document.getElementById('guests-select');
-    const roomIdInput = document.getElementById('selected-room-id-input'); // Mengunci elemen ID Kamar
-
-    // Kembalikan tombol ke "Check" jika user mengubah tanggal atau jumlah tamu
-    [checkInInput, checkOutInput, guestsSelect].forEach(input => {
-        if(input) {
-            input.addEventListener('change', () => {
-                btn.disabled = false;
-                btn.setAttribute('data-state', 'check');
-                btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
-                btn.querySelector('span').innerText = "Check Availability";
-                msgBox.classList.add('hidden');
-                if(roomIdInput) roomIdInput.value = ""; // Reset kunci kamar
-            });
-        }
-    });
-
-    btn.addEventListener('click', function () {
-        const state = btn.getAttribute('data-state');
-
-        // STATE 1: Mengecek ketersediaan ke server via AJAX
-        if (state === 'check') {
-            btn.disabled = true;
-            btn.querySelector('span').innerText = "Verifying...";
-
-            const formData = new FormData(form);
-            formData.append('mode_check_only', '1');
-
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false;
-                msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-                if (data.available) {
-                    btn.setAttribute('data-state', 'book');
-                    btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse cursor-pointer";
-                    btn.querySelector('span').innerText = "Book Your Stay Now";
-                    
-                    if(roomIdInput && data.room_id) {
-                        roomIdInput.value = data.room_id; // MENGUNCI ID KAMAR DI FORM GUEST
-                    }
-
-                    msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                    msgBox.innerText = data.message;
-                } else {
-                    btn.querySelector('span').innerText = "Check Availability";
-                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    msgBox.innerText = data.message;
-                    if(roomIdInput) roomIdInput.value = "";
-                }
-            })
-            .catch(() => {
-                btn.disabled = false;
-                btn.querySelector('span').innerText = "Check Availability";
-            });
-
-        // STATE 2: Simpan reservasi menggunakan nomor kamar yang telah dikunci
-        } else if (state === 'book') {
-            btn.disabled = true;
-            btn.querySelector('span').innerText = "Reserving Sanctuary...";
-
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: new FormData(form)
-            })
-            .then(async res => {
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    btn.disabled = false;
-                    btn.setAttribute('data-state', 'check');
-                    btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
-                    btn.querySelector('span').innerText = "Check Availability";
-                    if(roomIdInput) roomIdInput.value = "";
-                    
-                    msgBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
-                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    msgBox.innerText = data.message || "Kamar sudah penuh dipesan.";
-                } else {
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    } else {
-                        window.location.reload();
-                    }
-                }
-            })
-            .catch(() => {
-                btn.disabled = false;
-                btn.querySelector('span').innerText = "Check Availability";
-            });
-        }
-    });
-});
-    </script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
     <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
         @include('layouts.navigation')
@@ -209,7 +81,6 @@
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Max Occupancy</p>
                                 <p class="text-xs font-bold text-neutral-800">
-                                    {{-- Mengatur teks dinamis max capacity --}}
                                     @if(str_contains(strtolower($room->name), 'deluxe')) 4 Persons
                                     @elseif(str_contains(strtolower($room->name), 'executive')) 6 Persons
                                     @elseif(str_contains(strtolower($room->name), 'family')) 8 Persons
@@ -234,20 +105,10 @@
                             <div class="flex items-center"><i class="fa-solid fa-wind text-amber-800 w-5 mr-1"></i> Ionic Hair Dryer</div>
                         </div>
                     </div>
-
-                    <div class="bg-neutral-50 border border-neutral-200 p-6 space-y-3 text-xs">
-                        <h4 class="font-bold text-neutral-800 uppercase tracking-wider text-[10px]">Important Information</h4>
-                        <ul class="space-y-2 text-neutral-500 font-medium">
-                            <li class="flex items-baseline"><i class="fa-solid fa-circle-check text-amber-800 mr-2 text-[9px]"></i> Standard Check-in time starts at 2:00 PM; Check-out checkpoint ledger is until 12:00 PM.</li>
-                            <li class="flex items-baseline"><i class="fa-solid fa-circle-check text-amber-800 mr-2 text-[9px]"></i> Free Cancellation inclusion policies are valid up to 48 hours before point arrival.</li>
-                            <li class="flex items-baseline"><i class="fa-solid fa-circle-check text-amber-800 mr-2 text-[9px]"></i> Rates listed include dynamic standard service charging structures and local governance taxes.</li>
-                        </ul>
-                    </div>
                 </div>
 
                 <div class="lg:col-span-1 sticky top-28">
                     <div class="bg-white border border-neutral-200 p-8 shadow-xl space-y-6">
-                        
                         <div>
                             <div class="flex items-center space-x-1 text-amber-500 text-xs font-bold mb-2">
                                 <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
@@ -257,7 +118,6 @@
                                 Rp {{ number_format($room->price, 0, ',', '.') }} 
                                 <span class="text-neutral-400 text-xs font-normal tracking-wide">/ night</span>
                             </div>
-                            <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wide mt-1">Inclusive of Tax & Service Inclusions</p>
                         </div>
 
                         @if(($room->available_count ?? 0) > 0)
@@ -288,17 +148,10 @@
                             </div>
                         @endif
 
-                        <div class="flex items-start space-x-3 bg-amber-50/50 border border-amber-100 p-3.5 text-xs">
-                            <i class="fa-solid fa-shield-halved text-amber-800 mt-0.5"></i>
-                            <div>
-                                <p class="font-bold text-neutral-800">Best Price Guarantee</p>
-                                <p class="text-neutral-500 text-[11px] mt-0.5">Found a lower rate structure somewhere online? We will instantly match it without friction.</p>
-                            </div>
-                        </div>
-
                         <form id="instant-booking-form" action="{{ route('rooms.check') }}" method="POST" class="space-y-4">
                             @csrf
                             <input type="hidden" name="suite_type" value="{{ $room->name }}">
+                            <input type="hidden" id="selected-room-id-input" name="room_id">
                             
                             <div class="space-y-3">
                                 <div>
@@ -319,10 +172,8 @@
                                     <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Stay Guests</label>
                                     <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
                                         <select id="guests-select" name="guests" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 appearance-none bg-transparent cursor-pointer">
-                                            
-                                            {{-- DDL BERBASIS LOGIKA DINAMIS MENYESUAIKAN TIPE SUITE --}}
                                             @php
-                                                $maxCapacity = 2; // Default untuk Standard
+                                                $maxCapacity = 2;
                                                 if (str_contains(strtolower($room->name), 'deluxe')) { $maxCapacity = 4; }
                                                 elseif (str_contains(strtolower($room->name), 'executive')) { $maxCapacity = 6; }
                                                 elseif (str_contains(strtolower($room->name), 'family')) { $maxCapacity = 8; }
@@ -333,40 +184,19 @@
                                                     {{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}
                                                 </option>
                                             @endfor
-
                                         </select>
                                     </div>
                                 </div>
                             </div>
 
                             <div id="validation-message-box" class="hidden text-[11px] font-bold uppercase tracking-wider p-3 rounded-none"></div>
-<input type="hidden" id="selected-room-id-input" name="room_id">
+
                             <div id="booking-action-container">
                                 <button type="button" id="submit-booking-btn" data-state="check" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
                                     <span>Check Availability</span>
                                 </button>
                             </div>
                         </form>
-
-                        <p class="text-center text-[10px] text-emerald-800 font-bold uppercase tracking-widest"><i class="fa-solid fa-circle-check"></i> Free Cancellation Up to 48 Hours Before Arrival</p>
-
-                        <div class="border-t border-neutral-100 pt-6 space-y-2.5 text-xs font-medium text-neutral-600">
-                            <p class="font-bold text-neutral-800 uppercase tracking-wider text-[9px] text-neutral-400 mb-2">Why Book Direct?</p>
-                            <div class="flex items-center"><i class="fa-solid fa-check text-amber-700 mr-2 w-4"></i> Best Rate Guarantee Secured</div>
-                            <div class="flex items-center"><i class="fa-solid fa-check text-amber-700 mr-2 w-4"></i> Free Cancellation Processing</div>
-                            <div class="flex items-center"><i class="fa-solid fa-check text-amber-700 mr-2 w-4"></i> Exclusive Member Benefits Applied</div>
-                            <div class="flex items-center"><i class="fa-solid fa-check text-amber-700 mr-2 w-4"></i> Priority Room Level Upgrade Inclusions</div>
-                        </div>
-
-                        <div class="border-t border-neutral-100 pt-6 text-center space-y-2">
-                            <p class="font-bold text-neutral-800 uppercase tracking-wider text-[9px] text-neutral-400">Need Help?</p>
-                            <p class="text-[11px] text-neutral-500">Our reservation sanctuary team is ready 24/7 to clear queries.</p>
-                            <div class="text-xs font-bold text-neutral-800 pt-1">
-                                <i class="fa-solid fa-phone text-amber-800 mr-1"></i> +62 361 1234 567
-                            </div>
-                            <p class="text-[10px] text-neutral-400 font-mono">reservation@oasishotel.com</p>
-                        </div>
-
                     </div>
                 </div>
 
@@ -376,3 +206,119 @@
         @include('layouts.footer')
     </div>
 </x-guest-layout>   
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('instant-booking-form');
+    const btn = document.getElementById('submit-booking-btn');
+    const msgBox = document.getElementById('validation-message-box');
+    const checkInInput = document.getElementById('check_in');
+    const checkOutInput = document.getElementById('check_out');
+    const guestsSelect = document.getElementById('guests-select');
+    const roomIdInput = document.getElementById('selected-room-id-input');
+
+    // Kembalikan tombol ke status awal jika user mengganti parameter input
+    [checkInInput, checkOutInput, guestsSelect].forEach(input => {
+        if(input) {
+            input.addEventListener('change', () => {
+                btn.disabled = false;
+                btn.setAttribute('data-state', 'check');
+                btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
+                btn.querySelector('span').innerText = "Check Availability";
+                msgBox.classList.add('hidden');
+                if(roomIdInput) roomIdInput.value = ""; 
+            });
+        }
+    });
+
+    btn.addEventListener('click', function () {
+        const state = btn.getAttribute('data-state');
+
+        // STATE 1: Pengecekan Ketersediaan Kamar Kosong Fisik
+        if (state === 'check') {
+            btn.disabled = true;
+            btn.querySelector('span').innerText = "Verifying...";
+
+            const formData = new FormData(form);
+            formData.append('mode_check_only', '1');
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
+
+                if (data.available) {
+                    btn.setAttribute('data-state', 'book');
+                    btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse cursor-pointer";
+                    btn.querySelector('span').innerText = "Book Your Stay Now";
+                    
+                    if(roomIdInput && data.room_id) {
+                        roomIdInput.value = data.room_id; 
+                    }
+
+                    msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                    msgBox.innerText = data.message;
+                } else {
+                    btn.querySelector('span').innerText = "Check Availability";
+                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    msgBox.innerText = data.message;
+                    if(roomIdInput) roomIdInput.value = "";
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.querySelector('span').innerText = "Check Availability";
+            });
+
+        // STATE 2: Aksi Simpan Real (Terinterupsi Strict Profile Gate)
+        } else if (state === 'book') {
+            btn.disabled = true;
+            btn.querySelector('span').innerText = "Reserving Sanctuary...";
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: new FormData(form)
+            })
+            .then(async res => {
+                const data = await res.json();
+                
+                // MENGHADAPI INTERUPSI REDIRECT (Profil Belum Lengkap / Belum Login)
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                if (!res.ok) {
+                    btn.disabled = false;
+                    btn.setAttribute('data-state', 'check');
+                    btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
+                    btn.querySelector('span').innerText = "Check Availability";
+                    if(roomIdInput) roomIdInput.value = "";
+                    
+                    msgBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    msgBox.innerText = data.message || "Reservasi ditolak sistem.";
+                } else {
+                    window.location.reload();
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.querySelector('span').innerText = "Check Availability";
+            });
+        }
+    });
+});
+</script>

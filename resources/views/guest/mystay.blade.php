@@ -74,7 +74,7 @@
 
 <x-guest-dashboard-layout>
     @php
-        $isPaid = $currentBooking ? (DB::table('bookings')->where('id', $currentBooking->booking_id)->value('status') === 'confirmed') : false;
+        $isPaid = $currentBooking ? ($currentBooking->status === 'checked_in' && !empty($currentBooking->payment_id)) : false;
     @endphp
 
     <div class="w-full text-neutral-900 font-sans antialiased" 

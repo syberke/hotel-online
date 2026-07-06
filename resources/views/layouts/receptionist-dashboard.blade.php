@@ -37,15 +37,7 @@
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar px-3 py-4 space-y-4">
-                
-                <div class="p-4 bg-neutral-900/40 border border-neutral-900/60 flex items-center gap-3 select-none">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100" class="w-8 h-8 object-cover border border-neutral-800">
-                    <div>
-                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Front Office Staff</span>
-                        <span class="text-xs text-neutral-200 font-bold block">Alicia</span>
-                    </div>
-                </div>
-
+               
                 <nav class="space-y-1 text-xs">
                     
                     <span class="px-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Main Ledger</span>
@@ -59,7 +51,12 @@
                     <a href="{{ route('receptionist.reservations') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.reservations') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                         <i class="fa-solid fa-calendar-days text-sm w-5"></i> Reservations
                     </a>
-
+<a href="{{ route('receptionist.checkin') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.checkin') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                        <i class="fa-solid fa-users text-sm w-5"></i> Check-in
+                    </a>
+                    <a href="{{ route('receptionist.checkout') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.checkout') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                        <i class="fa-solid fa-users text-sm w-5"></i> Check-out
+                    </a>
                     <a href="{{ route('receptionist.guests') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('receptionist.guests') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium text-neutral-400 hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                         <i class="fa-solid fa-users text-sm w-5"></i> Guests
                     </a>

@@ -54,7 +54,7 @@
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by guest name, ID, phone..." class="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
                         </div>
                         <button type="submit" class="bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 text-xs font-bold uppercase transition-colors">Search</button>
-                        <a href="{{ route('receptionist.walkin') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 transition-colors shadow-sm rounded-none"><i class="fa-solid fa-plus text-[10px]"></i> New Walk-In</a>
+                        
                     </div>
                 </form>
 

@@ -1,9 +1,5 @@
 @php
-    // Ambil role user yang sedang login, jika kosong default ke 'guest'
     $userRole = auth()->user()->role ?? 'guest';
-    
-    // Tentukan nama komponen berdasarkan role secara otomatis
-    // Hasilnya akan menjadi: admin-dashboard-layout, manager-dashboard-layout, dll.
     $layoutComponent = $userRole . '-dashboard-layout';
 @endphp
 
@@ -20,8 +16,25 @@
                 <p class="text-neutral-400 text-xs mt-1">Manage your personal identification credentials, security tokens, and account status.</p>
             </div>
 
+            @if($userRole === 'guest')
+                @if($isProfileComplete)
+                    <div class="mb-8 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold uppercase tracking-wider">
+                        <i class="fa-solid fa-circle-check mr-2"></i> Status Profil: Lengkap. Anda diizinkan untuk melakukan reservasi & booking kamar secara online.
+                    </div>
+                @else
+                    <div class="mb-8 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold uppercase tracking-wider animate-pulse">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> Status Profil: Belum Lengkap! Silakan lengkapi nomor KTP, telepon, dan alamat Anda di bawah untuk membuka fitur booking hotel.
+                    </div>
+                @endif
+            @endif
+
+            @if(session('info'))
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 text-xs font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-circle-info mr-2"></i> {{ session('info') }}
+                </div>
+            @endif
+
             <div class="space-y-12">
-                
                 <div class="bg-white border border-neutral-200 p-8 rounded-none shadow-none">
                     <div class="max-w-xl">
                         @include('profile.partials.update-profile-information-form')
@@ -41,9 +54,7 @@
                         </div>
                     </div>
                 @endif
-
             </div>
         </div>
-
     </div>
 </x-dynamic-component>

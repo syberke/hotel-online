@@ -1,5 +1,4 @@
 <x-receptionist-dashboard-layout>
-
     <div class="bg-white border border-neutral-200 shadow-sm p-5 space-y-4 text-xs font-semibold">
         <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <form action="{{ url()->current() }}" method="GET" class="flex flex-wrap items-center gap-4 text-neutral-600">
@@ -41,7 +40,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full mt-6">
         
         <div class="lg:col-span-9 bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-3.5 text-xs font-semibold">
@@ -65,16 +64,15 @@
                 <button type="submit" class="bg-neutral-900 text-white font-bold uppercase text-[10px] tracking-wider px-4 ml-2">Filter</button>
             </form>
 
-            <div class="space-y-6 text-[11px] font-bold overflow-x-auto custom-scrollbar pb-2">
+            <div class="space-y-6 text-[11px] font-bold pb-2 relative z-20">
                 @forelse($floorsData as $floorName => $rooms)
-                    <div class="min-w-[760px] flex gap-4 border border-neutral-100 p-3 bg-neutral-50/20">
-                        <div class="w-28 shrink-0 text-left font-serif text-neutral-900 border-r pr-3 space-y-0.5 flex flex-col justify-center">
+                    <div class="min-w-full flex gap-4 border border-neutral-100 p-3 bg-neutral-50/20 relative z-30">
+                        <div class="w-28 shrink-0 text-left font-serif text-neutral-900 border-r pr-3 space-y-0.5 flex flex-col justify-center select-none">
                             <span class="block text-sm font-bold text-neutral-950">{{ $floorName }}</span>
                         </div>
-                        <div class="grid grid-cols-10 gap-2 w-full text-center">
+                        <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 w-full text-center relative">
                             @foreach($rooms as $room)
                                 @php
-                                    // Pemetaan kelas CSS Tailwind secara presisi berdasarkan parameter status PostgreSQL
                                     $statusClasses = match($room->status) {
                                         'available' => 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100',
                                         'occupied'  => 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700',
@@ -83,11 +81,13 @@
                                         default     => 'bg-neutral-100 text-neutral-400 border-neutral-200'
                                     };
                                 @endphp
-                                <div class="border p-2 {{ $statusClasses }} transition-all cursor-pointer relative group" title="{{ $room->type_name }}">
+                                <div class="border p-2 {{ $statusClasses }} transition-all cursor-pointer relative group rounded-none" title="{{ $room->type_name }}">
                                     <span class="block font-mono font-bold">{{ $room->room_number }}</span>
-                                    <span class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-neutral-950 text-white text-[8px] font-sans px-1.5 py-0.5 whitespace-nowrap z-50 normal-case rounded-none mb-1">
+                                    
+                                    <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-neutral-950 text-white text-[9px] font-sans font-normal px-2.5 py-1.5 shadow-2xl z-50 whitespace-nowrap rounded-none mb-2 pointer-events-none border border-neutral-800">
                                        {{ $room->type_name }} ({{ strtoupper($room->status) }})
-                                    </span>
+                                       <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-neutral-950"></div>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -132,7 +132,6 @@
         </div>
 
         <aside class="lg:col-span-3 space-y-6 shrink-0 text-xs font-semibold">
-            
             <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
                 <h4 class="font-serif text-xs font-bold text-neutral-900 uppercase tracking-wide border-b pb-3 mb-4">Room Status Vector Overview</h4>
                 
@@ -170,7 +169,5 @@
                 </div>
             </div>
         </aside>
-
     </div>
-
 </x-receptionist-dashboard-layout>

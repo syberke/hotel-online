@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Backend Laravel (PHP-FPM Alpine)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oasis_hotel_app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www
+    depends_on:
+      - db
+    networks:
+      - oasis_network
+
+  # Frontend Web Server (Nginx) - Diakses Publik lewat Port 8085
+  webserver:
+    image: nginx:alpine
+    container_name: oasis_hotel_nginx
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    volumes:
+      - .:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - oasis_network
+
+  # Database Engine (PostgreSQL)
+  db:
+    image: postgres:16-alpine
+    container_name: oasis_hotel_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: oasis_db
+      POSTGRES_USER: oasis_admin
+      POSTGRES_PASSWORD: SecretPassword123
+    volumes:
+      - oasis_db_data:/var/lib/postgresql/data
+    networks:
+      - oasis_network
+
+networks:
+  oasis_network:
+    driver: bridge
+
+volumes:
+  oasis_db_data:
+    driver: local

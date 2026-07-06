@@ -29,7 +29,7 @@ class RestaurantMenuSeeder extends Seeder
                 'name' => 'Oasis Fried Rice',
                 'description' => 'Nasi goreng tradisional kaya rempah disajikan dengan sate ayam, telur mata sapi, dan kerupuk udang.',
                 'price' => 95000.00,
-                'foto_url' => 'https://images.unsplash.com/photo-1603133872878-6967b646c03b?q=80&w=600',
+                'foto_url' => 'https://cicili.tv/wp-content/uploads/2024/08/Chicken-Fried-Rice-Small-2-1200x900.jpg',
                 'created_at' => now(),
                 'updated_at' => now()
             ],

@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full mt-6">
         
         <div class="xl:col-span-8 bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
             <form action="{{ url()->current() }}" method="GET" class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
@@ -56,16 +56,14 @@
             </form>
 
             <div class="flex flex-wrap text-[10px] font-bold uppercase tracking-wider text-neutral-400 gap-5 border-b border-neutral-50 pb-1">
-                <a href="{{ request()->fullUrlWithQuery(['guest_tab' => 'all']) }}" class="pb-2 px-0.5 {{ $currentTab == 'all' ? 'text-neutral-900 border-b-2 border-neutral-900 font-bold' : 'hover:text-neutral-900' }}">All Guests ({{ $tabCounters['all'] }})</a>
-                <a href="{{ request()->fullUrlWithQuery(['guest_tab' => 'in_house']) }}" class="pb-2 px-0.5 {{ $currentTab == 'in_house' ? 'text-neutral-900 border-b-2 border-neutral-900 font-bold' : 'hover:text-neutral-900' }}">In House ({{ $tabCounters['in_house'] }})</a>
-                <a href="{{ request()->fullUrlWithQuery(['guest_tab' => 'checked_out']) }}" class="pb-2 px-0.5 {{ $currentTab == 'checked_out' ? 'text-neutral-900 border-b-2 border-neutral-900 font-bold' : 'hover:text-neutral-900' }}">Checked-out ({{ $tabCounters['checked_out'] }})</a>
+                <a href="{{ request()->fullUrlWithQuery(array_merge(request()->except(['selected_guest_id']), ['guest_tab' => 'all'])) }}" class="pb-2 px-0.5 {{ $currentTab == 'all' ? 'text-neutral-900 border-b-2 border-neutral-900 font-bold' : 'hover:text-neutral-900' }}">All Guests ({{ $tabCounters['all'] }})</a>
             </div>
 
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                         <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
-                            <th class="py-3 px-4 font-semibold">Guest Enclave Profile</th>
+                            <th class="py-3 px-4 font-semibold">Guest Profile</th>
                             <th class="py-3 px-4 font-semibold">Contact Mapping</th>
                             <th class="py-3 px-4 font-semibold">Status Dossier</th>
                             <th class="py-3 px-4 font-semibold">Current / Last Stay</th>
@@ -77,7 +75,7 @@
                             @php
                                 $isRowSelected = $selectedGuest && $selectedGuest->user_id == $guest->user_id;
                             @endphp
-                            <tr onclick="window.location.href='{{ request()->fullUrlWithQuery(['selected_guest_id' => $guest->user_id]) }}'" 
+                            <tr onclick="window.location.href='{{ request()->fullUrlWithQuery(array_merge(request()->except(['selected_guest_id']), ['selected_guest_id' => $guest->user_id])) }}'" 
                                 class="hover:bg-neutral-50/40 transition-colors cursor-pointer {{ $isRowSelected ? 'bg-blue-50/40 border-l-2 border-blue-600' : '' }}">
                                 <td class="py-3.5 px-4 flex items-center gap-3">
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($guest->guest_name) }}&background=f4f4f5&color=18181b" class="w-7 h-7 object-cover border rounded-sm">
@@ -91,13 +89,13 @@
                                     </div>
                                 </td>
                                 <td class="py-3.5 px-4">
-                                    <span class="text-neutral-800 block font-normal font-mono">{{ $guest->guest_phone ?? 'No Phone Logged' }}</span>
+                                    <span class="text-neutral-800 block font-normal font-mono">{{ $guest->guest_phone ?? '—' }}</span>
                                     <span class="text-[9px] text-neutral-400 block font-normal">{{ $guest->guest_email }}</span>
                                 </td>
                                 <td class="py-3.5 px-4">
                                     @if($guest->booking_status == 'checked_in')
                                         <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] px-2 py-0.5 font-bold uppercase">In House</span>
-                                        <span class="block text-[9px] text-neutral-400 font-mono font-normal mt-0.5">Room {{ $guest->room_number }}</span>
+                                        <span class="block text-[9px] text-neutral-400 font-mono font-normal mt-0.5">Room {{ $guest->room_number ?? '—' }}</span>
                                     @elseif($guest->booking_status == 'checked_out')
                                         <span class="bg-neutral-100 text-neutral-600 border border-neutral-200 text-[8px] px-2 py-0.5 font-bold uppercase">Checked-out</span>
                                     @else
@@ -141,10 +139,26 @@
                 </div>
 
                 <div class="space-y-3.5 text-xs font-semibold text-neutral-600">
-                    <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-door-open w-4 mr-1 text-center"></i> Current Placement</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->room_number ? 'Room ' . $selectedGuest->room_number : 'Not Housed' }}</span></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neutral-400 font-normal"><i class="fa-solid fa-door-open w-4 mr-1 text-center"></i> Current Placement</span>
+                        <span class="text-neutral-900 font-mono">
+                            @php
+                                $statusTamu = $selectedGuest->current_status ?? 'registered';
+                            @endphp
+                            
+                            @if($statusTamu == 'checked_in')
+                                <span class="text-emerald-600 font-bold">Room {{ $selectedGuest->room_number ?? '—' }}</span>
+                            @elseif($statusTamu == 'checked_out')
+                                <span class="text-neutral-400 font-normal">Checked Out (Ex: {{ $selectedGuest->room_number ?? '—' }})</span>
+                            @else
+                                <span class="text-neutral-400 font-normal">Not Housed / Pipeline</span>
+                            @endif
+                        </span>
+                    </div>
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-right-to-bracket w-4 mr-1 text-center"></i> Ledger In</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->check_in ? \Carbon\Carbon::parse($selectedGuest->check_in)->format('d M Y') : '—' }}</span></div>
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-right-from-bracket w-4 mr-1 text-center"></i> Ledger Out</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->check_out ? \Carbon\Carbon::parse($selectedGuest->check_out)->format('d M Y') : '—' }}</span></div>
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-users w-4 mr-1 text-center"></i> Housed Pax</span><span class="text-neutral-900">{{ $selectedGuest->guests_count ?? 0 }} Pax Base</span></div>
+                    
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-phone w-4 mr-1 text-center"></i> Phone</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->phone ?? '—' }}</span></div>
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-envelope w-4 mr-1 text-center"></i> Email Address</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->email }}</span></div>
                     

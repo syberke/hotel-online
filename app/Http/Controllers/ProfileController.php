@@ -6,40 +6,64 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        
+        // Ambil data detail profil dari table guests berdasarkan email
+        $guestDetail = DB::table('guests')->where('email', $user->email)->first();
+        
+        // Cek kelengkapan data primer guest
+        $isProfileComplete = $guestDetail && !empty($guestDetail->phone) && !empty($guestDetail->identity_number) && !empty($guestDetail->address);
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'guestDetail' => $guestDetail,
+            'isProfileComplete' => $isProfileComplete
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // Simpan data dasar ke table users
+        $user->save();
+
+        // JIKA ROLE ADALAH GUEST: Update atau insert otomatis ke table guests
+        if ($user->role === 'guest') {
+            $request->validate([
+                'phone'           => 'required|string|max:15',
+                'identity_number' => 'required|string|max:20',
+                'address'         => 'required|string',
+            ]);
+
+            DB::table('guests')->updateOrInsert(
+                ['email' => $user->email],
+                [
+                    'name'            => $user->name,
+                    'phone'           => $request->phone,
+                    'identity_number' => $request->identity_number,
+                    'address'         => $request->address,
+                    'updated_at'      => now()
+                ]
+            );
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
@@ -50,7 +74,10 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        DB::transaction(function () use ($user) {
+            DB::table('guests')->where('email', $user->email)->delete();
+            $user->delete();
+        });
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
