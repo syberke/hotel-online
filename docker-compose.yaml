@@ -1,53 +1,53 @@
 version: '3.8'
 
 services:
-  # Backend Laravel (PHP-FPM Alpine)
+  # 1. Cluster Aplikasi Laravel (Akan di-scaling menjadi 3 kontainer)
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: oasis_hotel_app
+    # container_name HARUS dihapus agar Docker bisa melakukan duplikasi (scaling)
     restart: unless-stopped
     volumes:
       - .:/var/www
     depends_on:
       - db
     networks:
-      - oasis_network
+      - oasis_ujikom_net
 
-  # Frontend Web Server (Nginx) - Diakses Publik lewat Port 8085
-  webserver:
+  # 2. Container Load Balancer Nginx (Membuka Port 8080 untuk Publik)
+  loadbalancer:
     image: nginx:alpine
-    container_name: oasis_hotel_nginx
+    container_name: oasis_loadbalancer_8080
     restart: unless-stopped
     ports:
-      - "8085:80"
+      - "8080:80"
     volumes:
       - .:/var/www
       - ./docker-compose/nginx:/etc/nginx/conf.d
     depends_on:
       - app
     networks:
-      - oasis_network
+      - oasis_ujikom_net
 
-  # Database Engine (PostgreSQL)
+  # 3. Container Database Engine (PostgreSQL dengan Volume Data Persistent)
   db:
     image: postgres:16-alpine
-    container_name: oasis_hotel_db
+    container_name: oasis_postgres_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: oasis_db
       POSTGRES_USER: oasis_admin
       POSTGRES_PASSWORD: SecretPassword123
     volumes:
-      - oasis_db_data:/var/lib/postgresql/data
+      - oasis_db_persistent_data:/var/lib/postgresql/data
     networks:
-      - oasis_network
+      - oasis_ujikom_net
 
 networks:
-  oasis_network:
+  oasis_ujikom_net:
     driver: bridge
 
 volumes:
-  oasis_db_data:
+  oasis_db_persistent_data:
     driver: local

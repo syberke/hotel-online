@@ -4,6 +4,5 @@ cd oasis-hotel
 
 # 2. Berikan izin eksekusi untuk file script otomatisasi tadi (Cukup sekali saja)
 chmod +x deploy.sh
-
 # 3. JALANKAN SCRIPT-NYA!
 ./deploy.sh

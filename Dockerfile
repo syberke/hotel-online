@@ -8,11 +8,12 @@ RUN apk add --no-cache \
     zip \
     unzip \
     git \
-    curl
+    curl \
+    bash
 
 RUN docker-php-ext-install pdo pdo_pgsql zip gd
 
-# Ambil Composer resmi
+# Ambil Composer resmi terbaru
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
