@@ -37,21 +37,21 @@ Route::get('/contact', function () { return view('page.contact'); })->name('cont
 
 /*
 |--------------------------------------------------------------------------
-| 3. AUTHENTICATION AUTOMATIC ROLE REDIRECTOR
+| 3. AUTHENTICATION AUTOMATIC ROLE REDIRECTOR (Amankan dengan verified)
 |--------------------------------------------------------------------------
 */
 Route::get('/dashboard', function () {
     $role = auth()->user()->role ?: 'guest';
     return redirect()->route($role . '.dashboard');
-})->middleware(['auth'])->name('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 
 /*
 |--------------------------------------------------------------------------
-| 4. PROTECTED SYSTEM ZONE (Requires Authentication)
+| 4. PROTECTED SYSTEM ZONE (Requires Authentication & Email Verified)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
     /* --- GLOBAL ACCOUNT PROFILE MANAGEMENT --- */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -91,41 +91,30 @@ Route::middleware(['auth'])->group(function () {
        5. RECEPTIONIST / FRONT OFFICE DESK CONTROL PANEL
        ====================================================================== */
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
-        
-        // Dashboard Utama Resepsionis
         Route::get('/dashboard', [ReceptionistDeskController::class, 'receptionistDashboardView'])->name('dashboard');
-        
-        // Rute AJAX Quick Checker Terintegrasi Nama Group
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check'); 
-        
-        // Walk-in Management
         Route::get('/walk-in', function() { return view('receptionist.walkin'); })->name('walkin');
         Route::post('/walk-in/store', [FrontOfficeCheckController::class, 'storeWalkIn'])->name('walkin.store');
         
-        // Check-in & Room Assignment Matrix
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
         Route::match(['get', 'post'], '/room-assignment', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment');
         Route::post('/room-assignment/assign', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment.assign');
         
-        // Check-out, Folio & Payments
         Route::match(['get', 'post'], '/check-out', [FrontOfficeCheckController::class, 'processCheckOut'])->name('checkout');
         Route::post('/check-out/process', [FrontOfficeCheckController::class, 'processCheckOut'])->name('checkout.process');
         Route::get('/folio', [FrontOfficeCheckController::class, 'receptionistFolioView'])->name('folio');
         Route::match(['get', 'post'], '/payments', [FrontOfficeCheckController::class, 'processPayment'])->name('payments');
         Route::post('/payments/process', [FrontOfficeCheckController::class, 'processPayment'])->name('payments.process');
         
-        // Operational Registry & Archives
         Route::get('/reservations', [ReceptionistDeskController::class, 'receptionistReservationsView'])->name('reservations');
         Route::get('/guests', [ReceptionistDeskController::class, 'receptionistGuestsView'])->name('guests');
         Route::get('/guest-history', [ReceptionistDeskController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
         
-        // Stock & House Status
         Route::get('/room-availability', [HousekeepingController::class, 'roomAvailabilityView'])->name('roomavailability');
         Route::get('/house-status', [HousekeepingController::class, 'houseStatusView'])->name('housestatus');
         Route::post('/house-status/update', [HousekeepingController::class, 'updateHouseStatus'])->name('housestatus.update');
     });
-
 
     /* ======================================================================
        6. MANAGER & EXECUTIVE STRATEGIC WORKSPACE PORTAL (READ ONLY)
@@ -143,12 +132,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users-control', [AdminOperationController::class, 'adminUserAndRoleView'])->name('userandrole');
     });
 
-
     /* ======================================================================
        7. BACK-OFFICE OPERATIONS HUB (ADMIN - FULL WRITE ACCESS)
        ====================================================================== */
     Route::prefix('admin')->name('admin.')->group(function () {
-        // View Standard Dashboards
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
@@ -156,10 +143,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [ExecutiveReportController::class, 'adminRestaurantView'])->name('restaurant');
         Route::get('/restaurant/menu', [AdminOperationController::class, 'adminTodaysMenuView'])->name('restaurant.menu');
-     Route::get('/facilities-wellness', [ExecutiveReportController::class, 'adminFacilitiesView'])->name('facilities');
+        Route::get('/facilities-wellness', [ExecutiveReportController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/users-control', [AdminOperationController::class, 'adminUserAndRoleView'])->name('userandrole');
         
-        // Finance & Analytics Engine
         Route::get('/finance-billing', [ExecutiveReportController::class, 'adminFinanceView'])->name('finance');
         Route::post('/finance/transaction/{id}/update', [AdminOperationController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
         
@@ -167,19 +153,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/export/excel', [ExecutiveReportController::class, 'exportReportsExcel'])->name('reports.export.excel');
         Route::get('/reports/export/pdf', [ExecutiveReportController::class, 'exportReportsPdf'])->name('reports.export.pdf');
 
-        // CRUD Fasilitas
         Route::post('/facilities/store', [AdminOperationController::class, 'adminStoreFacility'])->name('facilities.store');
         Route::post('/facilities/{id}/update', [AdminOperationController::class, 'adminUpdateFacility'])->name('facilities.update');
         Route::delete('/facilities/{id}/delete', [AdminOperationController::class, 'adminDeleteFacility'])->name('facilities.delete');
         Route::post('/facilities/booking/{id}/update-status', [AdminOperationController::class, 'adminUpdateFacilityBookingStatus'])->name('facilities.booking.update-status');
         
-        // CRUD User System
         Route::post('/users/store', [AdminOperationController::class, 'adminStoreUser'])->name('users.store');
         Route::get('/users/{id}/json-detail', [AdminOperationController::class, 'adminUserJsonDetail'])->name('users.json');
         Route::post('/users/{id}/update', [AdminOperationController::class, 'adminUpdateUser'])->name('users.update');
         Route::delete('/users/{id}/delete', [AdminOperationController::class, 'adminDeleteUser'])->name('users.delete');
     });
-
 
     /* ======================================================================
        8. HARD SECURITY POLICY: ANTI-MANAGER MODIFICATION GATEWAY
@@ -190,16 +173,13 @@ Route::middleware(['auth'])->group(function () {
         }
         return $next($request);
     }], function () {
-        // Admin Write CRUD Kamar
         Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
         Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
         Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
         
-        // Admin Write CRUD Reservasi
         Route::post('/reservations/{id}/update', [AdminOperationController::class, 'adminUpdateReservation'])->name('admin.reservations.update');
         Route::delete('/reservations/{id}/delete', [AdminOperationController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');
         
-        // Admin Write CRUD F&B Menu
         Route::post('/restaurant-order/{id}/update-status', [ExecutiveReportController::class, 'adminUpdateOrderStatus'])->name('admin.restaurant.update-status');
         Route::post('/admin/restaurant/menu/store', [AdminOperationController::class, 'adminStoreMenu'])->name('admin.restaurant.menu.store');
         Route::post('/admin/restaurant/menu/{id}/update', [AdminOperationController::class, 'adminUpdateMenu'])->name('admin.restaurant.menu.update');
@@ -207,7 +187,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     /* ======================================================================
-       9. SHARED READ-ONLY / AUDIT DATA FETCHERS (Admin & Manager Access Zone)
+       9. SHARED READ-ONLY / AUDIT DATA FETCHERS
        ====================================================================== */
     Route::get('/admin/facilities/booking/{id}/detail', [AdminOperationController::class, 'adminFacilityBookingDetail']);
     Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
@@ -216,4 +196,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
 });
 
+// Load file autentikasi bawaan
 require __DIR__.'/auth.php';

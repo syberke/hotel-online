@@ -25,7 +25,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // Validasi Google reCAPTCHA v2 secara native
+        // 1. Validasi Google reCAPTCHA v2 secara native
         $request->validate([
             'g-recaptcha-response' => [
                 'required',
@@ -45,24 +45,24 @@ class AuthenticatedSessionController extends Controller
             'g-recaptcha-response.required' => 'Silakan centang verifikasi Captcha keamanan.',
         ]);
 
-        $request->authenticate();
+        // 2. Cek kecocokan email & password langsung via Laravel Auth
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
 
+        $credentials = $request->only('email', 'password');
+        $remember = $request->has('remember');
+
+        if (!Auth::attempt($credentials, $remember)) {
+            return back()->withErrors(['email' => __('auth.failed')])->withInput();
+        }
+
+        // Regenerasi session setelah sukses login
         $request->session()->regenerate();
 
-        // Mengambil entitas data user yang berhasil terotentikasi
-        $user = Auth::user();
-
-        // LOGIKA REDIRECT STRATEGIS BERDASARKAN LEVEL AKSES (ROLE)
-        if ($user->role === 'guest') {
-            return redirect()->route('guest.dashboard');
-        }
-
-        if (in_array($user->role, ['admin', 'manager', 'receptionist'])) {
-            return redirect()->route($user->role . '.dashboard');
-        }
-
-        // Fallback default jika status user tidak memiliki role spesifik
-        return redirect()->route('home');
+        // Alihkan ke gerbang dashboard utama (akan dicek oleh middleware verified)
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
