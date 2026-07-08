@@ -1,59 +1,78 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Hotel Online
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi hotel berbasis Laravel yang dilengkapi autentikasi, reservasi, manajemen tamu, pembayaran, dan email verifikasi. Project ini dapat dijalankan secara lokal maupun melalui Docker untuk kebutuhan deployment.
 
-## About Laravel
+## Fitur utama
+- Autentikasi pengguna dan verifikasi email
+- Manajemen kamar, tipe kamar, dan pemesanan
+- Manajemen tamu dan fasilitas hotel
+- Integrasi pembayaran Midtrans
+- reCAPTCHA pada form registrasi
+- Deployment dengan Docker, Nginx, PHP-FPM, dan PostgreSQL
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Persyaratan sebelum deploy
+Pastikan server/host memiliki:
+- Docker dan Docker Compose terinstal
+- Port 8080 tersedia
+- Domain atau IP publik yang siap dipakai
+- Database PostgreSQL yang dapat diakses
+- Kredensial SMTP yang valid untuk fitur email
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## File yang perlu diubah saat deploy
+Sebelum menjalankan deployment, ubah nilai berikut di file .env:
+- APP_ENV=production
+- APP_URL=https://domain-anda.com
+- APP_DEBUG=false
+- DB_CONNECTION=pgsql
+- DB_HOST=nama-host-db
+- DB_PORT=5432
+- DB_DATABASE=nama_database
+- DB_USERNAME=nama_user
+- DB_PASSWORD=password_db
+- MAIL_MAILER=smtp
+- MAIL_HOST=smtp.provider.com
+- MAIL_PORT=587
+- MAIL_USERNAME=your@email.com
+- MAIL_PASSWORD=app-password
+- MAIL_ENCRYPTION=tls
+- MAIL_FROM_ADDRESS=noreply@domain-anda.com
+- MAIL_FROM_NAME="Nama Hotel"
+- RECAPTCHA_SITE_KEY=...
+- RECAPTCHA_SECRET_KEY=...
+- MIDTRANS_SERVER_KEY=...
+- MIDTRANS_CLIENT_KEY=...
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+## Menjalankan deployment
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Script deployment akan:
+1. Membuat file .env dari .env.example jika belum ada
+2. Membangun container Docker
+3. Menginstal dependensi Laravel
+4. Menjalankan migrasi database
+5. Menyediakan storage link dan cache Laravel
 
-## Contributing
+Akses aplikasi setelah selesai:
+```text
+http://localhost:8080
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Struktur Docker
+- app: container PHP-FPM + Laravel
+- loadbalancer: container Nginx sebagai reverse proxy
+- db: container PostgreSQL
 
-## Code of Conduct
+## Catatan penting
+- Jangan menjalankan migrasi fresh di production secara sembarangan karena akan menghapus data.
+- Jika ingin mengisi data awal, gunakan APP_SEED_DATABASE=true saat deploy.
+- Untuk production, gunakan HTTPS dan sertifikat TLS yang valid.
+- Jika email tidak terkirim, cek kembali SMTP, port, dan password aplikasi email.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-"# hotel-online" 
+## Troubleshooting singkat
+- Aplikasi blank / 500: cek log container dan pastikan .env benar.
+- Error database: cek koneksi DB dan kredensial PostgreSQL.
+- Error email: cek SMTP dan gunakan app password jika memakai Gmail/Outlook.
+- Error asset: pastikan folder public/build tersedia dan build berhasil.
