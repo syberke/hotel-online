@@ -1,28 +1,52 @@
+version: '3.8'
+
 services:
+  # NODE APPLICATION 1
   web1:
-    image: httpd:2.4-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oasis_app_node1
     restart: unless-stopped
+    environment:
+      - APP_NODE_NAME=WEB NODE 1
+      - APP_NODE_COLOR=#22c55e
     volumes:
-      - ./docker-compose/web-content/web1:/usr/local/apache2/htdocs:ro
+      - .:/var/www
     networks:
       - oasis_ujikom_net
 
+  # NODE APPLICATION 2
   web2:
-    image: httpd:2.4-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oasis_app_node2
     restart: unless-stopped
+    environment:
+      - APP_NODE_NAME=WEB NODE 2
+      - APP_NODE_COLOR=#f59e0b
     volumes:
-      - ./docker-compose/web-content/web2:/usr/local/apache2/htdocs:ro
+      - .:/var/www
     networks:
       - oasis_ujikom_net
 
+  # NODE APPLICATION 3
   web3:
-    image: httpd:2.4-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oasis_app_node3
     restart: unless-stopped
+    environment:
+      - APP_NODE_NAME=WEB NODE 3
+      - APP_NODE_COLOR=#a855f7
     volumes:
-      - ./docker-compose/web-content/web3:/usr/local/apache2/htdocs:ro
+      - .:/var/www
     networks:
       - oasis_ujikom_net
 
+  # NGINX EDGE REVERSE PROXY & BALANCER
   loadbalancer:
     image: nginx:alpine
     container_name: oasis_loadbalancer_8080
@@ -31,6 +55,7 @@ services:
       - "8080:80"
       - "8443:443"
     volumes:
+      - .:/var/www
       - ./docker-compose/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./docker-compose/nginx/certs:/etc/nginx/certs:ro
     depends_on:
@@ -40,6 +65,7 @@ services:
     networks:
       - oasis_ujikom_net
 
+  # PERSISTENT DATABASE ENGINE
   db:
     image: postgres:16-alpine
     container_name: oasis_postgres_db
