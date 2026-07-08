@@ -97,7 +97,6 @@
                                 <th class="py-3 px-4 font-semibold">Status / Rentang Jadwal</th>
                                 <th class="py-3 px-4 font-semibold">Capacity</th>
                                 <th class="py-3 px-4 font-semibold">Price / Night</th>
-                                <th class="py-3 px-4 font-semibold">Features</th>
                                 <th class="py-3 px-4 text-center font-semibold">Actions</th>
                             </tr>
                         </thead>
@@ -132,11 +131,6 @@
                                     </td>
                                     <td class="py-4 px-4 text-neutral-500 text-[11px]"><i class="fa-solid fa-user-friends mr-1"></i> Max {{ $room->max_capacity }} Pax</td>
                                     <td class="py-4 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($room->price, 0, ',', '.') }}</td>
-                                    <td class="py-4 px-4 text-neutral-400 text-sm space-x-2">
-                                        <i class="fa-solid fa-wifi hover:text-neutral-900 cursor-help" title="Complimentary Wi-Fi Available"></i>
-                                        <i class="fa-solid fa-snowflake hover:text-neutral-900 cursor-help" title="Climate Controlled Air Conditioning"></i>
-                                        <i class="fa-solid fa-tv hover:text-neutral-900 cursor-help" title="IPTV System Linked"></i>
-                                    </td>
                                     <td class="py-4 px-4 text-center">
                                         @if(auth()->user()->role !== 'manager')
                                             <button type="button" 
@@ -156,7 +150,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="py-12 text-center text-neutral-400 font-sans italic">No physical luxury suites registry entries match filter criteria.</td>
+                                    <td colspan="7" class="py-12 text-center text-neutral-400 font-sans italic">No physical luxury suites registry entries match filter criteria.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -355,27 +349,21 @@
 </x-admin-dashboard-layout>
 
 <script type="text/javascript">
-    /**
-     * Memicu Modal Read-Only Khusus Akun Manager via AJAX Fetch Engine
-     */
     function openManagerViewModal(roomId) {
         const modal = document.getElementById('managerRoomViewModal');
         const bookingSection = document.getElementById('mv_booking_section');
         const emptySection = document.getElementById('mv_empty_section');
         const statusBadge = document.getElementById('mv_room_status');
 
-        // Tarik data kamar riil dari database endpoint
         fetch(`/admin/rooms/${roomId}/json-detail`)
             .then(res => res.json())
             .then(res => {
                 if (res.success) {
-                    // Petakan data spesifikasi fisik kamar ke modal
                     document.getElementById('mv_title_room').innerText = 'Room ' + res.room.room_number;
                     document.getElementById('mv_room_type').innerText = res.room.type_name;
                     document.getElementById('mv_room_price').innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(res.room.price);
                     document.getElementById('mv_room_cap').innerText = 'Max ' + res.room.max_capacity + ' Persons';
 
-                    // Modifikasi kosmetik badge status
                     statusBadge.innerText = res.room.status;
                     if (res.room.status === 'available') {
                         statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-100";
@@ -387,13 +375,11 @@
                         statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-800 border border-red-100";
                     }
 
-                    // Tampilkan rincian tamu secara kondisional jika terdeteksi data booking aktif
                     if (res.booking) {
                         document.getElementById('mv_guest_name').innerText = res.booking.guest_name;
                         document.getElementById('mv_guest_email').innerText = res.booking.guest_email;
                         document.getElementById('mv_guest_count').innerText = res.booking.guests_count + ' Persons';
                         
-                        // Parse format tanggal rentang inap
                         const inDate = new Date(res.booking.check_in).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'});
                         const outDate = new Date(res.booking.check_out).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'});
                         document.getElementById('mv_stay_dates').innerText = inDate + ' - ' + outDate;
@@ -417,9 +403,6 @@
         document.getElementById('managerRoomViewModal').classList.add('hidden');
     }
 
-    /**
-     * Manajemen Penempatan Posisi Dropdown untuk Admin
-     */
     function openGlobalDropdown(event, roomId, roomNumber) {
         event.stopPropagation();
         const dropdown = document.getElementById('global-action-dropdown');

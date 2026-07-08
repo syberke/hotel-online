@@ -53,26 +53,7 @@
             </div>
         </section>
 
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center border-b border-neutral-200 pb-12">
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">24/7</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Concierge Infrastructure</div>
-                </div>
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">&lt; 15 Mins</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Average Response Speed</div>
-                </div>
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">98%</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Verified Guest Satisfaction</div>
-                </div>
-                <div>
-                    <div class="text-2xl font-light text-amber-800 tracking-tight font-serif">Multilingual</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Global Guest Support Matrix</div>
-                </div>
-            </div>
-        </section>
+      
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="flex flex-col lg:flex-row gap-8 items-start">
@@ -83,83 +64,80 @@
                         <p class="text-neutral-400 text-xs">Fill out the secure communication framework below, and our respective managers will route it immediately.</p>
                     </div>
 
-                    <form action="#" method="POST" class="space-y-5">
-                        @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Full Name</label>
-                                <input type="text" required placeholder="Enter your full name" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 bg-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Email Address</label>
-                                <input type="email" required placeholder="Enter your email address" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 bg-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Phone Number</label>
-                                <input type="tel" placeholder="Enter your phone number" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 bg-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Subject Classification</label>
-                                <select required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
-                                    <option selected disabled>Choose inquiry subject</option>
-                                    <option>Reservation Inquiry</option>
-                                    <option>Booking Modification</option>
-                                    <option>Transportation Request</option>
-                                    <option>Restaurant Reservation</option>
-                                    <option>Event & Wedding Inquiry</option>
-                                    <option>General Support Feedback</option>
-                                </select>
-                            </div>
-                        </div>
+                <form id="whatsapp-contact-form" class="space-y-5">
+    @csrf
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Full Name</label>
+            <input type="text" id="wa-name" required placeholder="Enter your full name" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 bg-transparent">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Email Address</label>
+            <input type="email" id="wa-email" required placeholder="Enter your email address" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 bg-transparent">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Phone Number</label>
+            <input type="tel" placeholder="Enter your phone number" class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 bg-transparent">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Subject Classification</label>
+            <select id="wa-subject" required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
+                <option selected disabled>Choose inquiry subject</option>
+                <option>Reservation Inquiry</option>
+                <option>Booking Modification</option>
+                <option>Transportation Request</option>
+                <option>Restaurant Reservation</option>
+                <option>Event & Wedding Inquiry</option>
+                <option>General Support Feedback</option>
+            </select>
+        </div>
+    </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Department Route</label>
-                                <select required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
-                                    <option>Reservations Department</option>
-                                    <option>Concierge Desk & Experiences</option>
-                                    <option>Culinary & Restaurant Relations</option>
-                                    <option>Events, Weddings & Galas</option>
-                                    <option>Enterprise Partnerships</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Inquiry Priority Level</label>
-                                <div class="flex items-center space-x-4 h-full pt-1">
-                                    <label class="flex items-center text-xs font-medium text-neutral-600 cursor-pointer">
-                                        <input type="radio" name="priority" checked class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 me-2">
-                                        General
-                                    </label>
-                                    <label class="flex items-center text-xs font-medium text-neutral-600 cursor-pointer">
-                                        <input type="radio" name="priority" class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 me-2">
-                                        Important
-                                    </label>
-                                    <label class="flex items-center text-xs font-medium text-neutral-600 cursor-pointer">
-                                        <input type="radio" name="priority" class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 me-2">
-                                        Urgent
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Department Route</label>
+            <select required class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer bg-transparent">
+                <option>Reservations Department</option>
+                <option>Concierge Desk & Experiences</option>
+                <option>Culinary & Restaurant Relations</option>
+                <option>Events, Weddings & Galas</option>
+                <option>Enterprise Partnerships</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Inquiry Priority Level</label>
+            <div class="flex items-center space-x-4 h-full pt-1">
+                <label class="flex items-center text-xs font-medium text-neutral-600 cursor-pointer">
+                    <input type="radio" name="priority" checked class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 me-2"> General
+                </label>
+                <label class="flex items-center text-xs font-medium text-neutral-600 cursor-pointer">
+                    <input type="radio" name="priority" class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 me-2"> Important
+                </label>
+                <label class="flex items-center text-xs font-medium text-neutral-600 cursor-pointer">
+                    <input type="radio" name="priority" class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 me-2"> Urgent
+                </label>
+            </div>
+        </div>
+    </div>
 
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Message Content</label>
-                            <textarea rows="4" required placeholder="Write your personalized specifications or questions here..." class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 placeholder-neutral-300 bg-transparent"></textarea>
-                        </div>
+    <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Message Content</label>
+        <textarea id="wa-message" rows="4" required placeholder="Write your personalized specifications or questions here..." class="w-full border border-neutral-300 text-xs px-4 py-3 rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 placeholder-neutral-300 bg-transparent"></textarea>
+    </div>
 
-                        <div class="flex items-start text-xs text-neutral-500 py-1">
-                            <input type="checkbox" required class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-950 focus:ring-offset-0 w-3.5 h-3.5 mt-0.5">
-                            <span class="ms-2.5 text-[10px] leading-normal font-medium text-neutral-400 uppercase tracking-wider">
-                                I provide strict consent to process this security payload under the data criteria defined within the hotel's <a href="#" class="font-bold text-neutral-900 underline">Privacy matrix</a>.
-                            </span>
-                        </div>
+    <div class="flex items-start text-xs text-neutral-500 py-1">
+        <input type="checkbox" required class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-950 focus:ring-offset-0 w-3.5 h-3.5 mt-0.5">
+        <span class="ms-2.5 text-[10px] leading-normal font-medium text-neutral-400 uppercase tracking-wider">
+            I provide strict consent to process this security payload under the data criteria defined within the hotel's <a href="#" class="font-bold text-neutral-900 underline">Privacy matrix</a>.
+        </span>
+    </div>
 
-                        <div>
-                            <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all">
-                                Dispatch Security Message →
-                            </button>
-                        </div>
-                    </form>
+    <div>
+        <button type="submit" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all cursor-pointer">
+            Dispatch Message via WhatsApp →
+        </button>
+    </div>
+</form>
                 </section>
 
                 <section id="map-block" class="w-full lg:w-5/12 bg-white border border-neutral-200 p-8 rounded-none flex flex-col justify-between self-stretch">
@@ -227,28 +205,7 @@
             </div>
         </section>
 
-        <section class="bg-neutral-50 border-t border-neutral-200 py-16 px-6">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-                    <div class="space-y-1">
-                        <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Front Desk</div>
-                        <div class="text-neutral-800 font-bold">Open 24 Hours / 7 Days</div>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Signature Dining</div>
-                        <div class="text-neutral-800 font-bold">06:30 AM — 11:00 PM</div>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Spa & Wellness</div>
-                        <div class="text-neutral-800 font-bold">09:00 AM — 09:00 PM</div>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="text-neutral-900 font-serif normal-case italic text-lg tracking-normal">Executive Lounge</div>
-                        <div class="text-neutral-800 font-bold">07:00 AM — 11:00 PM</div>
-                    </div>
-                </div>
-            </div>
-        </section>
+       
 
         <section class="max-w-3xl mx-auto px-6 py-12 text-center border-t border-neutral-200/60 text-xs">
             <h4 class="font-bold uppercase tracking-widest text-red-800 mb-1"><i class="fa-solid fa-triangle-exclamation"></i> 24/7 Security & Medical Hotline</h4>
@@ -279,6 +236,29 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script>
+        document.getElementById('whatsapp-contact-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 1. Ambil nilai input dari form
+        const clientName = document.getElementById('wa-name').value;
+        const clientEmail = document.getElementById('wa-email').value;
+        const clientSubject = document.getElementById('wa-subject').value;
+        const clientMessage = document.getElementById('wa-message').value;
+        
+        // 2. Susun template teks WhatsApp terformat estetik (%0A adalah kode pindah baris/Enter)
+        const waText = `Halo Oasis Hotel Concierge Desk,%0A%0A` +
+                       `Saya ingin mengajukan pertanyaan dengan rincian berikut:%0A%0A` +
+                       `*Nama:* ${clientName}%0A` +
+                       `*Email:* ${clientEmail}%0A` +
+                       `*Subjek:* ${clientSubject}%0A%0A` +
+                       `*Isi Pesan:*%0A"${clientMessage}"`;
+        
+        // 3. Nomor WhatsApp tujuan (Ganti dengan nomor HP kamu sendiri untuk demo kelulusan)
+        const targetPhone = "6281234567890"; 
+        
+        // 4. Buka tab baru langsung mengarah ke API WhatsApp resmi
+        window.open(`https://api.whatsapp.com/send?phone=${targetPhone}&text=${waText}`, '_blank');
+    });
         // Inisialisasi peta Leaflet interaktif pada div #contactOasisMap dengan koordinat Nusa Dua Bali
         var contactMap = L.map('contactOasisMap', {
             scrollWheelZoom: false // Mencegah interupsi scroll halaman yang tidak sengaja

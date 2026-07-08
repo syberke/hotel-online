@@ -26,9 +26,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 2. Pasang Foreign Key di sini secara aman setelah skema tabel bookings lahir
-        // Jika skema ini dijalankan di migrate:fresh, kita akan memindahkan ikatan ini 
-        // ke akhir atau membungkusnya agar dieksekusi setelah tabel rooms & guests ada.
+     
     }
 
     /**

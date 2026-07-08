@@ -39,24 +39,11 @@
                 <div class="w-full border border-neutral-200 overflow-hidden bg-neutral-100 shadow-sm relative h-[400px]">
                     <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover">
                     <span class="absolute bottom-4 left-4 bg-amber-800 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1">
-                        <i class="fa-solid fa-star text-amber-400 mr-0.5"></i> Curated Masterpiece
+
                     </span>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-4 text-center text-neutral-500 text-[10px] font-bold uppercase tracking-wider bg-white border border-neutral-200 p-4">
-                    <div>
-                        <div class="text-amber-800 text-sm mb-1"><i class="fa-solid fa-fire-flame-curved"></i></div>
-                        <div>100% Organic</div>
-                    </div>
-                    <div class="border-x border-neutral-100">
-                        <div class="text-amber-800 text-sm mb-1"><i class="fa-solid fa-kitchen-set"></i></div>
-                        <div>Freshly Prepared</div>
-                    </div>
-                    <div>
-                        <div class="text-amber-800 text-sm mb-1"><i class="fa-solid fa-bell-concierge"></i></div>
-                        <div>Room Delivery</div>
-                    </div>
-                </div>
+              
             </div>
 
             <div class="space-y-6">

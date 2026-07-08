@@ -106,30 +106,20 @@
             </div>
         </section>
 
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center border-b border-neutral-200 pb-12">
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">150+</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Menu Items</div>
-                </div>
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">5</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Dining Venues</div>
-                </div>
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">4.9</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Guest Rating</div>
-                </div>
-                <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">20+</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">International Dishes</div>
-                </div>
-                <div class="col-span-2 md:col-span-1">
-                    <div class="text-2xl font-light text-amber-800 tracking-tight font-serif">15 Years</div>
-                    <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Culinary Excellence</div>
-                </div>
+       <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+    <div class="grid grid-cols-2 md:grid-cols-2 gap-4 text-center border-b border-neutral-200 pb-12">
+        <div>
+            <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">
+                {{ $totalMenuItems }}
             </div>
-        </section>
+            <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Menu Items Available</div>
+        </div>
+        <div>
+            <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">5</div>
+            <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Exclusive Dining Venues</div>
+        </div>
+    </div>
+</section>
 
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="text-center mb-16">
@@ -235,7 +225,7 @@
                                         <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
                                     </a>
                                     <span class="absolute bottom-4 left-4 bg-amber-800 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-none">
-                                        <i class="fa-solid fa-star text-amber-400 mr-0.5"></i> Chef Recommendation
+
                                     </span>
                                 </div>
                                 
@@ -245,7 +235,7 @@
                                         <h4 class="text-sm font-bold uppercase tracking-wide text-neutral-900 font-sans mb-1.5">{{ $menu->name }}</h4>
                                     </a>
                                     <p class="text-neutral-400 text-[11px] leading-relaxed mb-3 line-clamp-3">{{ $menu->description }}</p>
-                                    <div class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest"><i class="fa-solid fa-fire-flame-curved text-neutral-400 mr-1"></i> Energy Value: Verified Organic</div>
+                                    
                                 </div>
                             </div>
                             

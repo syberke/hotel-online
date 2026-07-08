@@ -1,3 +1,20 @@
+<style>
+    /* Desain scrollbar minimalis khusus area menu Oasis */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #faf9f6; 
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e5e5; 
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #a3a3a3; 
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <x-guest-layout>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
@@ -18,39 +35,49 @@
             </a>
         </div>
 
+        @php
+            // MEMECAH STRING URL FOTO BERDASARKAN TANDA KOMA
+            // Mengambil hanya 2 foto pertama untuk menjaga layout
+            $allImages = $room->foto_url ? explode(',', $room->foto_url) : [];
+            $images = array_slice(array_map('trim', $allImages), 0, 2);
+            
+            // Set foto utama (default ke gambar Unsplash jika data kosong)
+            $mainImage = count($images) > 0 ? $images[0] : 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2070';
+        @endphp
+
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
                 
                 <div class="lg:col-span-2 space-y-12">
                     <div class="relative h-[55vh] md:h-[60vh] overflow-hidden bg-neutral-950 border border-neutral-200 group">
-                        <img src="{{ $room->foto_url ?? 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2070' }}" 
+                        <img id="room-main-display" src="{{ $mainImage }}" 
                              alt="{{ $room->name }}" 
-                             class="w-full h-full object-cover opacity-95 transition-transform duration-700">
+                             class="w-full h-full object-cover opacity-95 transition-all duration-500 ease-in-out">
                         <span class="absolute top-4 left-4 bg-amber-700 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1">
                             Oasis Exclusive
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-4 gap-3">
-                        <div class="h-24 border border-neutral-300 overflow-hidden cursor-pointer bg-neutral-100">
-                            <img src="{{ $room->foto_url }}" class="w-full h-full object-cover hover:opacity-80 transition-opacity">
-                        </div>
-                        <div class="h-24 border border-neutral-200 overflow-hidden cursor-pointer bg-neutral-100">
-                            <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=600" class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity">
-                        </div>
-                        <div class="h-24 border border-neutral-200 overflow-hidden cursor-pointer bg-neutral-100">
-                            <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=600" class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity">
-                        </div>
-                        <div class="h-24 border border-neutral-200 overflow-hidden relative bg-neutral-900 group cursor-pointer">
-                            <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=600" class="w-full h-full object-cover opacity-40">
-                            <div class="absolute inset-0 flex items-center justify-center text-white font-serif italic text-sm font-bold">+7</div>
-                        </div>
+                    @if(count($images) > 0)
+                    <div class="grid grid-cols-2 gap-4">
+                        @foreach($images as $index => $imgUrl)
+                            <div onclick="switchMainImage('{{ $imgUrl }}', this)" 
+                                 class="thumbnail-container h-28 border {{ $index === 0 ? 'border-amber-700 ring-2 ring-amber-700' : 'border-neutral-300' }} overflow-hidden cursor-pointer bg-neutral-100 transition-all duration-300">
+                                <img src="{{ $imgUrl }}" class="w-full h-full object-cover hover:opacity-90 transition-opacity">
+                            </div>
+                        @endforeach
                     </div>
+                    @else
+                    <div class="p-6 text-center bg-white border border-neutral-200">
+                        <i class="fa-regular fa-image text-4xl text-neutral-300 mb-2 block"></i>
+                        <p class="text-xs italic text-neutral-400">Tidak ada galeri foto tersedia untuk tipe kamar ini.</p>
+                    </div>
+                    @endif
 
                     <div class="space-y-4">
                         <h2 class="text-xl font-serif text-neutral-900 border-b border-neutral-200 pb-3">About This Room</h2>
                         <p class="text-neutral-500 text-sm leading-relaxed antialiased">
-                            Our {{ $room->name }} offers a perfect blend of comfort and elegance. Wake up to breathtaking panoramic structural system views and enjoy premium interior finishes crafted purposefully for an exceptional and unforgettable luxury stay.
+                            {{ $room->description ?? 'Our suites offer a perfect blend of comfort and elegance. Wake up to breathtaking panoramic views and enjoy premium interior finishes crafted purposefully for an exceptional and unforgettable luxury stay.' }}
                         </p>
                     </div>
 
@@ -59,21 +86,21 @@
                             <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-expand"></i></div>
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Room Size</p>
-                                <p class="text-xs font-bold text-neutral-800">45 m²</p>
+                                <p class="text-xs font-bold text-neutral-800">{{ $room->room_size ?? '45 m²' }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-bed"></i></div>
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Bed Configuration</p>
-                                <p class="text-xs font-bold text-neutral-800">1 Elite King Bed</p>
+                                <p class="text-xs font-bold text-neutral-800">{{ $room->bed_configuration ?? '1 Elite King Bed' }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-compass"></i></div>
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">View Perspective</p>
-                                <p class="text-xs font-bold text-neutral-800">Ocean Horizon</p>
+                                <p class="text-xs font-bold text-neutral-800">{{ $room->view_perspective ?? 'Ocean Horizon' }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -81,11 +108,7 @@
                             <div>
                                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Max Occupancy</p>
                                 <p class="text-xs font-bold text-neutral-800">
-                                    @if(str_contains(strtolower($room->name), 'deluxe')) 4 Persons
-                                    @elseif(str_contains(strtolower($room->name), 'executive')) 6 Persons
-                                    @elseif(str_contains(strtolower($room->name), 'family')) 8 Persons
-                                    @else 2 Persons
-                                    @endif
+                                    {{ $room->max_capacity ?? 2 }} Persons
                                 </p>
                             </div>
                         </div>
@@ -94,15 +117,18 @@
                     <div class="space-y-6">
                         <h3 class="text-base font-serif text-neutral-900 border-b border-neutral-200 pb-3">Premium Amenities</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 text-xs font-medium text-neutral-600">
-                            <div class="flex items-center"><i class="fa-solid fa-wifi text-amber-800 w-5 mr-1"></i> High-Speed Free Wi-Fi</div>
-                            <div class="flex items-center"><i class="fa-solid fa-snowflake text-amber-800 w-5 mr-1"></i> Full Air Conditioning</div>
-                            <div class="flex items-center"><i class="fa-solid fa-tv text-amber-800 w-5 mr-1"></i> Smart TV 50" Console</div>
-                            <div class="flex items-center"><i class="fa-solid fa-martini-glass text-amber-800 w-5 mr-1"></i> Fully Stocked Mini Bar</div>
-                            <div class="flex items-center"><i class="fa-solid fa-coffee text-amber-800 w-5 mr-1"></i> Espresso & Tea Maker</div>
-                            <div class="flex items-center"><i class="fa-solid fa-vault text-amber-800 w-5 mr-1"></i> In-Room Electronic Safe</div>
-                            <div class="flex items-center"><i class="fa-solid fa-shower text-amber-800 w-5 mr-1"></i> Tropical Rain Shower</div>
-                            <div class="flex items-center"><i class="fa-solid fa-shirt text-amber-800 w-5 mr-1"></i> Luxury Bathrobes & Slippers</div>
-                            <div class="flex items-center"><i class="fa-solid fa-wind text-amber-800 w-5 mr-1"></i> Ionic Hair Dryer</div>
+                            @if($room->amenities)
+                                @foreach(explode(',', $room->amenities) as $amenity)
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-circle-check text-amber-800 w-5 mr-1"></i> 
+                                        {{ trim($amenity) }}
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="flex items-center"><i class="fa-solid fa-wifi text-amber-800 w-5 mr-1"></i> High-Speed Free Wi-Fi</div>
+                                <div class="flex items-center"><i class="fa-solid fa-snowflake text-amber-800 w-5 mr-1"></i> Full Air Conditioning</div>
+                                <div class="flex items-center"><i class="fa-solid fa-tv text-amber-800 w-5 mr-1"></i> Smart TV 50" Console</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -110,10 +136,6 @@
                 <div class="lg:col-span-1 sticky top-28">
                     <div class="bg-white border border-neutral-200 p-8 shadow-xl space-y-6">
                         <div>
-                            <div class="flex items-center space-x-1 text-amber-500 text-xs font-bold mb-2">
-                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                                <span class="text-neutral-800 font-sans tracking-normal ms-1 text-[11px]">4.9 (128 Reviews)</span>
-                            </div>
                             <div class="text-2xl font-bold text-amber-800">
                                 Rp {{ number_format($room->price, 0, ',', '.') }} 
                                 <span class="text-neutral-400 text-xs font-normal tracking-wide">/ night</span>
@@ -172,14 +194,7 @@
                                     <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Stay Guests</label>
                                     <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
                                         <select id="guests-select" name="guests" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 appearance-none bg-transparent cursor-pointer">
-                                            @php
-                                                $maxCapacity = 2;
-                                                if (str_contains(strtolower($room->name), 'deluxe')) { $maxCapacity = 4; }
-                                                elseif (str_contains(strtolower($room->name), 'executive')) { $maxCapacity = 6; }
-                                                elseif (str_contains(strtolower($room->name), 'family')) { $maxCapacity = 8; }
-                                            @endphp
-
-                                            @for($i = 1; $i <= $maxCapacity; $i++)
+                                            @for($i = 1; $i <= ($room->max_capacity ?? 2); $i++)
                                                 <option value="{{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}" {{ $i == 2 ? 'selected' : '' }}>
                                                     {{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}
                                                 </option>
@@ -208,6 +223,27 @@
 </x-guest-layout>   
 
 <script>
+// FUNGSI JAVASCRIPT GANTI GAMBAR UTAMA SAAT THUMBNAIL DIKLIK (KHUSUS 2 FOTO)
+function switchMainImage(imageUrl, thumbnailElement) {
+    const mainDisplay = document.getElementById('room-main-display');
+    
+    // Efek transisi memudar halus saat berganti foto
+    mainDisplay.style.opacity = '0.3';
+    
+    setTimeout(() => {
+        mainDisplay.src = imageUrl;
+        mainDisplay.style.opacity = '1';
+    }, 200);
+
+    // Update highlight border kotak thumbnail yang sedang aktif
+    document.querySelectorAll('.thumbnail-container').forEach(el => {
+        el.className = "thumbnail-container h-28 border border-neutral-300 overflow-hidden cursor-pointer bg-neutral-100 transition-all duration-300";
+    });
+    
+    // Tambahkan border aktif ke elemen yang diklik
+    thumbnailElement.className = "thumbnail-container h-28 border border-amber-700 ring-2 ring-amber-700 overflow-hidden cursor-pointer bg-neutral-100 transition-all duration-300";
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('instant-booking-form');
     const btn = document.getElementById('submit-booking-btn');
@@ -217,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const guestsSelect = document.getElementById('guests-select');
     const roomIdInput = document.getElementById('selected-room-id-input');
 
-    // Kembalikan tombol ke status awal jika user mengganti parameter input
     [checkInInput, checkOutInput, guestsSelect].forEach(input => {
         if(input) {
             input.addEventListener('change', () => {
@@ -234,7 +269,6 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.addEventListener('click', function () {
         const state = btn.getAttribute('data-state');
 
-        // STATE 1: Pengecekan Ketersediaan Kamar Kosong Fisik
         if (state === 'check') {
             btn.disabled = true;
             btn.querySelector('span').innerText = "Verifying...";
@@ -278,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 btn.querySelector('span').innerText = "Check Availability";
             });
 
-        // STATE 2: Aksi Simpan Real (Terinterupsi Strict Profile Gate)
         } else if (state === 'book') {
             btn.disabled = true;
             btn.querySelector('span').innerText = "Reserving Sanctuary...";
@@ -294,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(async res => {
                 const data = await res.json();
                 
-                // MENGHADAPI INTERUPSI REDIRECT (Profil Belum Lengkap / Belum Login)
                 if (data.redirect) {
                     window.location.href = data.redirect;
                     return;

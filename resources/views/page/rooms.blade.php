@@ -86,7 +86,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-neutral-200 pb-4 mb-8 text-xs font-medium text-neutral-500 gap-4">
                     <div class="flex flex-wrap gap-6 items-center uppercase tracking-wider text-[11px]">
                         <div>Available Inventory: <span class="font-bold text-neutral-900">{{ $totalInventoryReady }} Rooms</span></div>
-                        <div>Avg Rating: <span class="font-bold text-neutral-900"><i class="fa-solid fa-star text-amber-500 mr-0.5"></i> 4.9/5.0</span></div>
+                      
                         <div class="text-amber-800 font-bold"><i class="fa-solid fa-shield-halved"></i> Best Price Guarantee</div>
                     </div>
                     <div class="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-end">
@@ -154,9 +154,7 @@
                     <div class="p-6">
                         <div class="flex justify-between items-baseline mb-2">
                             <h3 class="text-base font-bold tracking-tight text-neutral-900 uppercase font-sans">{{ $room->name }}</h3>
-                            <div class="flex items-center text-[10px] font-bold text-neutral-800">
-                                <i class="fa-solid fa-star text-amber-500 mr-1"></i> 4.9
-                            </div>
+                          
                         </div>
                         <p class="text-neutral-400 text-[11px] leading-relaxed mb-4 line-clamp-2">{{ $room->description }}</p>
                     </div>
@@ -218,9 +216,7 @@
                         <div><i class="fa-solid fa-circle-check text-amber-700 mr-2"></i> In-Villa Bespoke Spa Suite</div>
                     </div>
                     <div class="pt-4">
-                        <button class="bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-4 px-8 rounded-none transition-all">
-                            Take Virtual Tour
-                        </button>
+                       
                     </div>
                 </div>
             </div>

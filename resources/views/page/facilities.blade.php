@@ -55,10 +55,10 @@
             </div>
         </section>
 
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+        <section class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center border-b border-neutral-200 pb-12">
                 <div>
-                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">50+</div>
+                    <div class="text-2xl font-light text-neutral-900 tracking-tight font-serif">{{ $totalMenuItems ?? '50+' }}</div>
                     <div class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-1">Premium Facilities</div>
                 </div>
                 <div>
@@ -80,14 +80,14 @@
             </div>
         </section>
 
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-            <div class="flex flex-wrap justify-center gap-2 border-b border-neutral-200/60 pb-4 text-[10px] font-bold uppercase tracking-widest">
-                <button class="px-5 py-2 bg-neutral-900 text-white rounded-none">All Facilities</button>
-                <button class="px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-colors">Wellness</button>
-                <button class="px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-colors">Dining</button>
-                <button class="px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-colors">Recreation</button>
-                <button class="px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-colors">Business</button>
-                <button class="px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-colors">Family</button>
+     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 mb-12">
+            <div id="filter-button-group" class="flex flex-wrap justify-center gap-2 border-b border-neutral-200/60 pb-4 text-[10px] font-bold uppercase tracking-widest">
+                <button data-filter="all" class="filter-btn px-5 py-2 bg-neutral-900 text-white rounded-none transition-all">All Facilities</button>
+                <button data-filter="wellness" class="filter-btn px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-all">Wellness</button>
+                <button data-filter="dining" class="filter-btn px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-all">Dining</button>
+                <button data-filter="recreation" class="filter-btn px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-all">Recreation</button>
+                <button data-filter="business" class="filter-btn px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-all">Business</button>
+                <button data-filter="family" class="filter-btn px-5 py-2 text-neutral-500 hover:text-neutral-900 transition-all">Family</button>
             </div>
         </section>
 
@@ -97,10 +97,10 @@
                 <h2 class="text-3xl font-serif text-neutral-900">Explore Our Premium Facilities</h2>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div id="facilities-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
                 @forelse($facilities as $item)
-                <div class="bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
+                <div data-category="{{ Str::lower($item->category) }}" class="facility-card bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-500 transform opacity-100 scale-100">
                     <div>
                         <div class="h-60 overflow-hidden relative bg-neutral-100">
                             <img src="{{ $item->image_url ?? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600' }}" alt="{{ $item->name }}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700">
@@ -133,11 +133,16 @@
                     </div>
                 </div>
                 @empty
-                <div class="col-span-3 p-16 text-center bg-white border border-neutral-200 shadow-sm flex flex-col items-center justify-center">
+                <div id="empty-facility-state" class="col-span-3 p-16 text-center bg-white border border-neutral-200 shadow-sm flex flex-col items-center justify-center">
                     <div class="w-12 h-12 bg-amber-50 text-amber-800 flex items-center justify-center text-lg border border-amber-100 mb-3"><i class="fa-solid fa-boxes-pool"></i></div>
                     <p class="text-xs italic text-neutral-400">Belum ada daftar data fasilitas resort aktif di dalam database internal.</p>
                 </div>
                 @endforelse
+
+                <div id="filter-empty-alert" class="hidden col-span-3 p-16 text-center bg-white border border-neutral-200 flex flex-col items-center justify-center">
+                    <div class="w-12 h-12 bg-neutral-50 text-neutral-400 flex items-center justify-center text-lg border border-neutral-200 mb-3"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <p class="text-xs italic text-neutral-400">Fasilitas dengan kategori ini sedang tidak tersedia.</p>
+                </div>
 
             </div>
         </section>
@@ -326,7 +331,6 @@
 </x-guest-layout>
 
 <style>
-    /* Desain scrollbar minimalis khusus area menu Oasis */
     .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
     }
@@ -379,7 +383,6 @@
         }
     });
 
-    // PROSES AJAX SUBMISSION FORM RESERVASI
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         submitBtn.disabled = true;
@@ -415,6 +418,57 @@
             alertBox.classList.remove('hidden');
             alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
             alertBox.innerText = "Terjadi gangguan jaringan internet internal.";
+        });
+    });
+
+    // LOGIC EVENT FILTER KATEGORI FASILITAS (CLIENT-SIDE)
+    document.addEventListener("DOMContentLoaded", function () {
+        const filterButtons = document.querySelectorAll(".filter-btn");
+        const facilityCards = document.querySelectorAll(".facility-card");
+        const filterEmptyAlert = document.getElementById("filter-empty-alert");
+        const emptyFacilityState = document.getElementById("empty-facility-state");
+
+        filterButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                const targetFilter = this.getAttribute("data-filter").toLowerCase();
+
+                // 1. Sinkronisasi warna tombol aktif
+                filterButtons.forEach(btn => {
+                    btn.classList.remove("bg-neutral-900", "text-white");
+                    btn.classList.add("text-neutral-500", "hover:text-neutral-900");
+                });
+                this.classList.add("bg-neutral-900", "text-white");
+                this.classList.remove("text-neutral-500", "hover:text-neutral-900");
+
+                // 2. Filter kartu fasilitas
+                let visibleCardsCount = 0;
+
+                facilityCards.forEach(card => {
+                    const cardCategory = card.getAttribute("data-category").trim();
+
+                    if (targetFilter === "all" || cardCategory === targetFilter) {
+                        card.classList.remove("hidden");
+                        setTimeout(() => {
+                            card.classList.remove("opacity-0", "scale-95");
+                            card.classList.add("opacity-100", "scale-100");
+                        }, 50);
+                        visibleCardsCount++;
+                    } else {
+                        card.classList.add("opacity-0", "scale-95");
+                        card.classList.remove("opacity-100", "scale-100");
+                        setTimeout(() => { card.classList.add("hidden"); }, 300);
+                    }
+                });
+
+                // 3. Hendel kondisi jika kategori kosong
+                if (emptyFacilityState) return;
+
+                if (visibleCardsCount === 0) {
+                    setTimeout(() => { filterEmptyAlert.classList.remove("hidden"); }, 300);
+                } else {
+                    filterEmptyAlert.classList.add("hidden");
+                }
+            });
         });
     });
 </script>

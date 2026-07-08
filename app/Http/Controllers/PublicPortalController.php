@@ -216,7 +216,7 @@ class PublicPortalController extends Controller
         return response()->json(['success' => false, 'redirect' => route('login'), 'message' => 'Silakan login terlebih dahulu.']);
     }
 
-    public function restaurantIndex(Request $request)
+  public function restaurantIndex(Request $request)
     {
         $query = DB::table('restaurant_menus');
 
@@ -241,14 +241,18 @@ class PublicPortalController extends Controller
 
         if ($request->has('dietary') && is_array($request->dietary)) {
             $query->where(function($q) use ($request) {
-                foreach ($request->dietary as $diet) {
-                    $q->orWhere('description', 'ILIKE', '%' . $diet . '%');
-                }
+                $q->orWhere('description', 'ILIKE', '%' . $diet . '%');
             });
         }
 
+        // 1. Eksekusi ambil data menu hasil filter
         $culinaryMenus = $query->get();
-        return view('page.restaurant', compact('culinaryMenus'));
+
+        // 2. KOREKSI SAKTI: Hitung jumlah total item menu yang berhasil ditarik
+        $totalMenuItems = $culinaryMenus->count();
+
+        // 3. Kirimkan KEDUA variabel tersebut ke dalam file Blade
+        return view('page.restaurant', compact('culinaryMenus', 'totalMenuItems'));
     }
 
     public function menuShow($id)

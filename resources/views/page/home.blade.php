@@ -100,10 +100,7 @@
                             <p class="text-amber-800 font-bold text-sm mb-3">Rp {{ number_format($room->price_per_night, 0, ',', '.') }} <span class="text-neutral-400 font-normal text-xs">/ night</span></p>
                             <p class="text-neutral-500 text-xs leading-relaxed mb-4 line-clamp-2">{{ $room->description }}</p>
                             
-                            <div class="text-[10px] text-neutral-400 font-medium space-y-1 border-t pt-3">
-                                <div><i class="fa-solid fa-wifi mr-1 text-amber-800"></i> Free High-Speed Wi-Fi</div>
-                                <div><i class="fa-solid fa-circle-check mr-1 text-amber-800"></i> In-House Premium Amenity Kit</div>
-                            </div>
+                          
                         </div>
                     </div>
                     
@@ -315,28 +312,28 @@
                         <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Honeymoon Package</h4>
                         <p class="text-neutral-500 text-xs leading-relaxed mb-4">Complimentary organic champagne, customized flower configuration, and 1 private beachfront dinner track.</p>
                     </div>
-                    <a href="#" class="text-xs font-bold text-neutral-900 uppercase tracking-wider underline">Learn More</a>
+                    
                 </div>
                 <div class="border border-neutral-200 p-6 bg-neutral-50/50 flex flex-col justify-between">
                     <div>
                         <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Weekend Escape</h4>
                         <p class="text-neutral-500 text-xs leading-relaxed mb-4">Guaranteed dynamic 3PM late check-out privileges and premium signature cocktail vouchers per guest.</p>
                     </div>
-                    <a href="#" class="text-xs font-bold text-neutral-900 uppercase tracking-wider underline">Learn More</a>
+          
                 </div>
                 <div class="border border-neutral-200 p-6 bg-neutral-50/50 flex flex-col justify-between">
                     <div>
                         <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Family Staycation</h4>
                         <p class="text-neutral-500 text-xs leading-relaxed mb-4">Adjoining suite configurations, custom daily kids activity entry, and full premium breakfast inclusions.</p>
                     </div>
-                    <a href="#" class="text-xs font-bold text-neutral-900 uppercase tracking-wider underline">Learn More</a>
+                
                 </div>
                 <div class="border border-neutral-200 p-6 bg-neutral-50/50 flex flex-col justify-between">
                     <div>
                         <h4 class="text-xs uppercase tracking-widest font-bold text-neutral-800 mb-2">Corporate Package</h4>
                         <p class="text-neutral-500 text-xs leading-relaxed mb-4">Seamless boardroom allocations, executive visual setup access, and tailored private dining arrangements.</p>
                     </div>
-                    <a href="#" class="text-xs font-bold text-neutral-900 uppercase tracking-wider underline">Learn More</a>
+            
                 </div>
             </div>
         </section>
