@@ -1,21 +1,22 @@
 version: '3.8'
 
 services:
-  # 1. Cluster Aplikasi Laravel (Akan di-scaling menjadi 3 kontainer)
+  # Kluster Aplikasi Laravel
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    # container_name HARUS dihapus agar Docker bisa melakukan duplikasi (scaling)
     restart: unless-stopped
     volumes:
       - .:/var/www
+      # TAMBAHKAN BARIS INI: Mengamankan folder build agar tidak tertimpa folder lokal host
+      - oasis_vite_assets:/var/www/public/build
     depends_on:
       - db
     networks:
       - oasis_ujikom_net
 
-  # 2. Container Load Balancer Nginx (Membuka Port 8080 untuk Publik)
+  # Container Load Balancer Nginx
   loadbalancer:
     image: nginx:alpine
     container_name: oasis_loadbalancer_8080
@@ -24,13 +25,15 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www
+      # TAMBAHKAN BARIS INI JUGA: Agar Nginx bisa membaca aset CSS/JS yang sama dari named volume
+      - oasis_vite_assets:/var/www/public/build:ro
       - ./docker-compose/nginx:/etc/nginx/conf.d
     depends_on:
       - app
     networks:
       - oasis_ujikom_net
 
-  # 3. Container Database Engine (PostgreSQL dengan Volume Data Persistent)
+  # Container Database Engine
   db:
     image: postgres:16-alpine
     container_name: oasis_postgres_db
@@ -50,4 +53,7 @@ networks:
 
 volumes:
   oasis_db_persistent_data:
+    driver: local
+  # DAFTARKAN VOLUME BARU DI SINI
+  oasis_vite_assets:
     driver: local

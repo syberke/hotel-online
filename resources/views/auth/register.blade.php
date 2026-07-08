@@ -96,7 +96,7 @@
 
                     <div class="pt-4 border-t border-neutral-100 space-y-2 flex flex-col items-center justify-center">
                         <div class="inline-block transform scale-95 origin-center select-none">
-                            <div class="g-recaptcha" data-sitekey="{{ env('RECAPTCHA_SITE_KEY') }}"></div>
+                          <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
                         </div>
                         <x-input-error :messages="$errors->get('g-recaptcha-response')" class="text-xs text-red-600 font-medium text-center w-full mt-1" />
                     </div>

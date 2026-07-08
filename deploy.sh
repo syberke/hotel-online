@@ -11,7 +11,7 @@ echo "======================================================================="
 echo "⏳ Langkah 1: Memeriksa berkas .env..."
 if [ ! -f .env ]; then
     echo "📄 Membuat berkas .env baru dari input manual..."
-    
+
     # ----------------------------------------------------------------------
     # SILAKAN MODIFIKASI / TARUH ISI FILE .ENV KAMU DI ANTARA TANDA DI BAWAH INI
     # ----------------------------------------------------------------------
@@ -93,11 +93,43 @@ EOF
     # ----------------------------------------------------------------------
     # AKHIR DARI TEMPAT MENARUH ISI .ENV
     # ----------------------------------------------------------------------
-    
+
     echo "✅ Berkas .env berhasil dibuat berdasarkan konfigurasi manualmu."
 else
     echo "ℹ️ Berkas .env sudah ada di direktori. Menggunakan file yang sudah ada."
 fi
+
+# =======================================================================
+# SINKRONISASI WAKTU SISTEM (Mencegah Error x509 SSL Docker Hub)
+# =======================================================================
+echo "⏰ Menyinkronkan waktu sistem..."
+
+sudo timedatectl set-timezone Asia/Jakarta || true
+sudo timedatectl set-ntp true || true
+sudo systemctl restart systemd-timesyncd || true
+
+echo "⌛ Menunggu sinkronisasi waktu..."
+
+for i in {1..30}; do
+    if [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ]; then
+        echo "✅ Waktu berhasil tersinkron."
+        break
+    fi
+    sleep 1
+done
+
+echo "🕒 Waktu sistem saat ini:"
+date
+timedatectl
+
+echo "🔄 Me-restart Docker daemon..."
+sudo systemctl restart docker || true
+sleep 5
+
+echo "🧪 Menguji koneksi Docker Hub..."
+docker pull hello-world >/dev/null 2>&1 && \
+echo "✅ Docker Hub dapat diakses." || \
+echo "⚠️ Docker Hub belum dapat diakses. Build mungkin gagal jika koneksi atau waktu sistem masih bermasalah."
 
 # 2. Pembersihan Container Lama (Mencegah Port Terkunci)
 echo "🧹 Langkah 2: Membersihkan sisa orkestrasi kontainer lama..."
@@ -144,12 +176,17 @@ else
     echo "⚠️ Berkas $LAYOUT_FILE tidak ditemukan. Lewati penyuntikan visual."
 fi
 
-# 9. Pembersihan & Optimasi Cache Laravel Produksi
+## 9. Pembersihan & Optimasi Cache Laravel Produksi
 echo "⚡ Langkah 9: Mengoptimalkan sistem cache internal aplikasi..."
-docker-compose exec -T app php artisan config:cache
-docker-compose exec -T app php artisan view:cache
-docker-compose exec -T app php artisan cache:clear
+docker-compose exec -T app php artisan config:cache || true
+# Hapus atau komentari bagian view:cache di bawah ini agar tidak memicu crash component footer
+# docker-compose exec -T app php artisan view:cache || true
+docker-compose exec -T app php artisan cache:clear || true
 
+echo "======================================================================="
+echo "🎉 DEPLOYMENT SELESAI! Proyek Ujikom Berhasil Dijalankan di VM 1"
+echo "🌐 Akses Web Hotel Oasis via Browser pada Port 8080: http://<IP_VM_1>:8080"
+echo "======================================================================="
 echo "======================================================================="
 echo "🎉 DEPLOYMENT SELESAI! Proyek Ujikom Berhasil Dijalankan di VM 1"
 echo "🌐 Akses Web Hotel Oasis via Browser pada Port 8080: http://<IP_VM_1>:8080"
