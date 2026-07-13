@@ -10,8 +10,9 @@ RUN npm run build
 FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
+# GD tersedia pada image runtime. Image Composer hanya dipakai untuk membangun vendor.
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \
-    --no-scripts --no-progress
+    --no-scripts --no-progress --ignore-platform-req=ext-gd
 
 FROM php:8.3-apache-bookworm
 
