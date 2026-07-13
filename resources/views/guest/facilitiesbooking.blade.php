@@ -13,58 +13,39 @@
        PENGATURAN KHUSUS CETAK/PRINT KWITANSI FASILITAS (BERSIH & FULL CENTER)
        ========================================================================== */
     @media print {
-        /* 1. Hilangkan header dan footer bawaan browser (Tanggal, URL, Halaman, dll) */
         @page {
-            size: auto;
-            margin: 0mm;
+            size: A4 portrait;
+            margin: 20mm 15mm 20mm 15mm;
         }
 
-        /* 2. Sembunyikan seluruh elemen dashboard utama dan backdrop luar */
         body * {
             visibility: hidden;
         }
 
-        /* 3. Tampilkan hanya area kertas kwitansi utama dengan layout flexbox terpusat */
         #print-target-invoice, #print-target-invoice * {
             visibility: visible;
         }
 
         #print-target-invoice {
-            position: fixed;
-            inset: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
             display: flex !important;
             flex-direction: column;
-            justify-content: center; /* Membuat konten tegak lurus di tengah (Vertikal) */
             background: #ffffff !important;
-            width: 100vw;
-            height: 100vh;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-
-        /* 4. Atur kertas kwitansi dalam kotak proporsional agar rapi di tengah halaman */
-        #print-target-invoice {
-            box-shadow: none !important;
+            width: 100% !important;
             margin: 0 auto !important;
-        }
-        
-        /* Membungkus struktur konten utama kwitansi saat dicetak */
-        #print-target-invoice {
-            padding: 40px !important;
-            width: 85% !important;
-            max-width: 600px !important;
-            border: 1px solid #e5e5e5 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
         }
 
-        /* 5. Sembunyikan tombol print, dismiss, dan navigasi modal saat dicetak */
         #print-target-invoice .action-buttons-container,
-        #print-target-invoice button,
-        #print-target-invoice .font-sans.action-buttons-container {
+        #print-target-invoice button {
             display: none !important;
             visibility: hidden !important;
         }
 
-        /* 6. Pertahankan baris tabel strip abu-abu tipis saat dicetak */
         .bg-neutral-50 {
             background-color: #f9f9f9 !important;
             -webkit-print-color-adjust: exact;
@@ -76,21 +57,18 @@
 <x-guest-dashboard-layout>
     <div class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex flex-col lg:flex-row"
          x-data="{
-            // Filter Kategori Utama (Sinkron ke Database)
             activeCategory: 'All Facilities',
             
-            // State Manajemen Pop-up Modal Reservasi Dinamis
             showBookingModal: false,
             selectedFacilityId: '',
             selectedFacilityName: '',
-            minDate: '{{ date('Y-m-d') }}',
-            bookingDate: '{{ date('Y-m-d') }}',
+            minDate: @js(date('Y-m-d')),
+            bookingDate: @js(date('Y-m-d')),
             bookingTime: '',
             guestsCount: 2,
             seatingPreference: 'No Preference',
             notes: '',
             
-            // State Modal Invoice Cetak Fasilitas
             showInvoiceModal: false,
             invId: '',
             invName: '',
@@ -100,10 +78,8 @@
             invPreference: '',
             invStatus: '',
 
-            // Payload sudah dinormalisasi controller dan di-encode aman oleh Blade.
             allFacilities: @js($facilitiesPayload),
 
-            // Saringan Filter Frontend Otomatis Tanpa Reload Browser
             get filteredFacilities() {
                 if (this.activeCategory === 'All Facilities') return this.allFacilities;
                 return this.allFacilities.filter(f => f.category.toLowerCase().trim() === this.activeCategory.toLowerCase().trim());
@@ -136,13 +112,13 @@
                 submitBtn.disabled = true;
                 submitBtn.innerText = 'Processing Allocation...';
 
-                fetch('{{ route("facilities.book") }}', {
+                fetch(@js(route('facilities.book')), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': @js(csrf_token())
                     },
                     body: JSON.stringify({
                         facility_name: this.selectedFacilityName,
@@ -155,11 +131,9 @@
                 })
                 .then(async res => {
                     const data = await res.json();
-
                     if (!res.ok) {
                         throw new Error(data.message || 'Gagal mengalokasikan slot reservasi.');
                     }
-
                     return data;
                 })
                 .then(data => {
@@ -172,7 +146,7 @@
                             icon: 'success',
                             title: 'Reservasi Berhasil',
                             text: data.message || 'Slot fasilitas berhasil diamankan.',
-                            footer: '<span class="text-xs text-amber-800">Reservasi sudah masuk ke agenda fasilitas Oasis Hotel.</span>',
+                            footer: '<span class=\'text-xs text-amber-800\'>Reservasi sudah masuk ke agenda fasilitas Oasis Hotel.</span>',
                             confirmButtonText: 'Lihat Reservasi Saya',
                             allowOutsideClick: false,
                         }).then(() => window.location.reload());
@@ -186,10 +160,10 @@
                     OasisDialog.error(error.message || 'Terjadi gangguan komunikasi dengan server.');
                 });
             }
-         }">
+         }"
+         @keyup.escape.window="showBookingModal = false; showInvoiceModal = false;">
 
         <main class="flex-1 p-6 lg:p-8 overflow-y-auto custom-scrollbar space-y-6">
-            
             <div class="pb-4 border-b border-neutral-200">
                 <h2 class="text-3xl font-serif text-neutral-900">Facilities</h2>
                 <p class="text-xs text-neutral-400 mt-0.5">Explore our world-class facilities and create unforgettable moments during your stay.</p>
@@ -255,7 +229,7 @@
                                 <button type="button" @click="f.requires_booking ? triggerBooking(f.id, f.name) : OasisDialog.info('Fasilitas ini terbuka gratis. Anda dapat langsung berkunjung sesuai jam operasional tanpa registrasi slot.')" class="col-span-3 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors text-center cursor-pointer">
                                     <span x-text="f.requires_booking ? 'Reserve Slot' : 'Walk-in Entrance'"></span>
                                 </button>
-                                <a :href="'mailto:concierge@oasisresort.com?subject=Inquiry Facilities: ' + f.name" class="border border-neutral-200 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 flex items-center justify-center py-2.5 transition-colors">
+                                <a :href="'mailto:concierge@oasisresort.com?subject=Inquiry Facilities: ' + f.name" class="border border-neutral-200 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 flex items-center justify-center py-2.5 transition-colors" aria-label="Contact Concierge Regarding Venue">
                                     <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                                 </a>
                             </div>
@@ -279,7 +253,6 @@
         </main>
 
         <aside class="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-neutral-200 p-6 flex flex-col justify-between shrink-0 space-y-6 custom-scrollbar overflow-y-auto max-h-screen">
-            
             <div class="space-y-4 flex-1">
                 <div class="flex justify-between items-center pb-2 border-b border-neutral-100">
                     <h3 class="text-xs uppercase tracking-widest font-bold text-neutral-400">My Reservations</h3>
@@ -297,7 +270,7 @@
                                 <p class="text-[10px] text-neutral-400 font-medium">
                                  Guests: {{ $res->guests_count }} PPL &bull; <span class="italic text-neutral-500">{{ $res->seating_preference ?? 'Standard Seating' }}</span>
                                 </p>
-                                <button type="button" @click="triggerInvoice({{ (int) $res->id }}, @js($res->facility_name), @js(date('d M Y', strtotime($res->booking_date))), @js(substr($res->booking_time, 0, 5)), {{ (int) $res->guests_count }}, @js($res->seating_preference ?? 'Standard Seating'), @js($res->status))" class="mt-2 text-[9px] font-bold text-amber-800 uppercase tracking-wider block hover:text-amber-950 cursor-pointer">
+                                <button type="button" @click="triggerInvoice(@js($res->id), @js($res->facility_name), @js(date('d M Y', strtotime($res->booking_date))), @js(substr($res->booking_time, 0, 5)), @js($res->guests_count), @js($res->seating_preference ?? 'Standard Seating'), @js($res->status))" class="mt-2 text-[9px] font-bold text-amber-800 uppercase tracking-wider block hover:text-amber-950 cursor-pointer">
                                     <i class="fa-solid fa-receipt mr-1"></i> View Receipt
                                 </button>
                             </div>
@@ -349,10 +322,9 @@
                     </div>
                 </div>
             </div>
-
         </aside>
 
-        <div x-show="showBookingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+        <div x-show="showBookingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showBookingModal = false"></div>
             <div class="relative bg-white max-w-sm w-full border border-neutral-200 p-6 shadow-2xl transform transition-all text-left space-y-4">
                 <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
@@ -360,7 +332,7 @@
                         <span class="text-[8px] font-bold uppercase tracking-widest text-amber-700">Instant Venue Allocation</span>
                         <h3 class="text-sm font-serif text-neutral-900 uppercase tracking-wide mt-0.5" x-text="selectedFacilityName"></h3>
                     </div>
-                    <button @click="showBookingModal = false" class="text-neutral-400 hover:text-neutral-900 text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                    <button @click="showBookingModal = false" class="text-neutral-400 hover:text-neutral-900 text-xs cursor-pointer" aria-label="Close Modal"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <div class="space-y-3 text-xs">
@@ -408,7 +380,7 @@
             </div>
         </div>
 
-        <div x-show="showInvoiceModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+        <div x-show="showInvoiceModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs" @click="showInvoiceModal = false"></div>
             
             <div id="print-target-invoice" class="relative bg-[#ffffff] border border-neutral-300 max-w-xl w-full p-8 shadow-2xl transform transition-all z-10 flex flex-col font-serif text-neutral-900 text-left">
@@ -456,10 +428,10 @@
                 </div>
 
                 <div class="flex gap-3 font-sans action-buttons-container">
-                    <button onclick="window.print()" class="flex-1 bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-3 transition-colors cursor-pointer text-center shadow-sm">
+                    <button type="button" onclick="window.print()" class="flex-1 bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-3 transition-colors cursor-pointer text-center shadow-sm">
                         <i class="fa-solid fa-print me-1.5"></i> Print Document
                     </button>
-                    <button @click="showInvoiceModal = false" class="border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors cursor-pointer bg-white">
+                    <button type="button" @click="showInvoiceModal = false" class="border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors cursor-pointer bg-white">
                         Dismiss
                     </button>
                 </div>
