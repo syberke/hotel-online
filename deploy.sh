@@ -26,16 +26,81 @@ echo "🧱 Menyiapkan 3 node web Apache + load balancer Nginx"
 echo "🗄️ Database mengikuti mode yang dikonfigurasi di .env"
 echo "🌐 Akses: http://localhost:8080"
 
+install_server_environment() {
+    if [ ! -t 0 ]; then
+        echo "❌ Setup environment interaktif membutuhkan terminal." >&2
+        echo "   Gunakan OASIS_ENV_FILE=/lokasi/file.env ./deploy.sh untuk proses non-interaktif." >&2
+        exit 1
+    fi
+
+    local temp_file deploy_group line app_key required_key
+    temp_file="$(mktemp)"
+    ENV_TMP_FILE="$temp_file"
+    deploy_group="$(id -gn)"
+    trap 'stty echo 2>/dev/null || true; rm -f "${ENV_TMP_FILE:-}"' EXIT INT TERM
+
+    echo
+    echo "🔐 SETUP ENVIRONMENT PERTAMA"
+    echo "Paste seluruh isi .env kamu di bawah ini."
+    echo "Input disembunyikan agar API key tidak terlihat di terminal."
+    echo "Setelah selesai, ketik __OASIS_ENV_END__ pada baris baru lalu tekan Enter."
+    echo
+
+    stty -echo
+    while IFS= read -r line; do
+        if [ "$line" = "__OASIS_ENV_END__" ]; then
+            break
+        fi
+        printf '%s\n' "$line" >> "$temp_file"
+    done
+    stty echo
+    echo
+
+    for required_key in DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD; do
+        if ! grep -q "^${required_key}=." "$temp_file"; then
+            echo "❌ Konfigurasi wajib belum tersedia: ${required_key}" >&2
+            exit 1
+        fi
+    done
+
+    app_key="$(sed -n 's/^APP_KEY=//p' "$temp_file" | tail -n 1)"
+    if [ -z "$app_key" ]; then
+        app_key="base64:$(openssl rand -base64 32)"
+        if grep -q '^APP_KEY=' "$temp_file"; then
+            sed -i "s|^APP_KEY=.*$|APP_KEY=${app_key}|" "$temp_file"
+        else
+            printf '\nAPP_KEY=%s\n' "$app_key" >> "$temp_file"
+        fi
+    fi
+
+    if [ "$(id -u)" -eq 0 ]; then
+        install -d -m 750 -o root -g "$deploy_group" /etc/oasis-hotel
+        install -m 640 -o root -g "$deploy_group" "$temp_file" /etc/oasis-hotel/oasis.env
+    else
+        sudo install -d -m 750 -o root -g "$deploy_group" /etc/oasis-hotel
+        sudo install -m 640 -o root -g "$deploy_group" "$temp_file" /etc/oasis-hotel/oasis.env
+    fi
+
+    rm -f "$temp_file"
+    ENV_TMP_FILE=""
+    trap - EXIT INT TERM
+    ENV_FILE="/etc/oasis-hotel/oasis.env"
+    echo "✅ Environment tersimpan aman di $ENV_FILE"
+}
+
 ENV_FILE="${OASIS_ENV_FILE:-}"
+
+if [ "${1:-}" = "--setup-env" ]; then
+    install_server_environment
+fi
+
 if [ -z "$ENV_FILE" ]; then
     if [ -f .env ]; then
         ENV_FILE="$SCRIPT_DIR/.env"
     elif [ -r /etc/oasis-hotel/oasis.env ]; then
         ENV_FILE="/etc/oasis-hotel/oasis.env"
     else
-        echo "❌ Environment tidak ditemukan." >&2
-        echo "   Buat .env atau /etc/oasis-hotel/oasis.env terlebih dahulu." >&2
-        exit 1
+        install_server_environment
     fi
 fi
 
