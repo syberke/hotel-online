@@ -25,6 +25,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && a2enmod headers rewrite \
     && rm -rf /var/lib/apt/lists/*
 
+ARG APP_BUILD_REVISION=local
+LABEL org.opencontainers.image.revision=$APP_BUILD_REVISION
+
 WORKDIR /var/www/html
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
