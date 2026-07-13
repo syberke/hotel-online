@@ -87,6 +87,10 @@
                                         <img src="{{ $booking->guest_avatar ?? 'https://ui-avatars.com/api/?name='.urlencode($booking->guest_name).'&background=2563eb&color=ffffff' }}" class="w-6 h-6 border object-cover rounded-sm">
                                         <div>
                                             <span class="text-neutral-900 font-bold block">{{ $booking->guest_name }}</span>
+                                            <span class="text-[9px] text-amber-700 font-mono font-bold block mt-0.5">
+                                                {{ $booking->guest_record_id ? '#GST-'.str_pad($booking->guest_record_id, 5, '0', STR_PAD_LEFT) : 'Guest ID pending' }}
+                                                &bull; {{ $booking->identity_number ?: 'Identity pending' }}
+                                            </span>
                                             <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">{{ $booking->guest_phone ?? 'No phone logged' }}</span>
                                         </div>
                                     </td>

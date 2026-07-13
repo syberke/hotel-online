@@ -87,6 +87,10 @@
                                     <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">#RES-OA-{{ $resv->id }}</td>
                                     <td class="py-3.5 px-3">
                                         <span class="font-bold text-neutral-900 block">{{ $resv->guest_name }}</span>
+                                        <span class="text-[9px] text-amber-700 font-mono font-bold block mt-0.5">
+                                            {{ $resv->guest_record_id ? '#GST-'.str_pad($resv->guest_record_id, 5, '0', STR_PAD_LEFT) : 'Guest ID pending' }}
+                                            &bull; {{ $resv->identity_number ?: 'Identity pending' }}
+                                        </span>
                                         <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">{{ $resv->guest_phone ?? 'No Contact Record' }}</span>
                                     </td>
                                     <td class="py-3.5 px-3 font-mono text-neutral-700">

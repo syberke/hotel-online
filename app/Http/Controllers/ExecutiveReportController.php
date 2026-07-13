@@ -143,11 +143,16 @@ class ExecutiveReportController extends Controller
         // ======================================================================
         $todayArrivals = DB::table('bookings')
             ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', function ($join) {
+                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
+            })
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->whereDate('bookings.check_in', now()->format('Y-m-d'))
             ->select(
-                'users.name as guest_name', 
+                'users.name as guest_name',
+                'guests.id as guest_record_id',
+                'guests.identity_number',
                 'room_types.name as room_type', 
                 'rooms.room_number',
                 DB::raw("CASE WHEN room_types.price >= 1500000 THEN 1 ELSE 0 END as is_vip")
@@ -287,7 +292,7 @@ class ExecutiveReportController extends Controller
         $roomTypes = DB::table('room_types')->select('name')->distinct()->get();
 
         // 3. Bangun query dengan Eager Loading (Mencegah N+1 Problem)
-        $query = \App\Models\Booking::with(['user', 'room.roomType', 'payments']);
+        $query = \App\Models\Booking::with(['user.guestProfile', 'room.roomType', 'payments']);
 
         // Filter: Pencarian Pintar (Booking ID, Nama Guest, atau Email)
         if ($request->filled('search')) {
@@ -334,7 +339,7 @@ class ExecutiveReportController extends Controller
         $selectedBooking = null;
 
         if ($selectedBookingId) {
-            $selectedBooking = \App\Models\Booking::with(['user', 'room.roomType', 'payments'])->find($selectedBookingId);
+            $selectedBooking = \App\Models\Booking::with(['user.guestProfile', 'room.roomType', 'payments'])->find($selectedBookingId);
         } elseif ($bookings->count() > 0) {
             $selectedBooking = $bookings->first();
         }
