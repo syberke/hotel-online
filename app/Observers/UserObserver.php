@@ -12,15 +12,15 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        DB::table('guests')->insert([
-            'id'         => $user->id, // Menyamakan ID agar Auth::id() sinkron di kedua tabel
+        DB::table('guests')->updateOrInsert([
+            'email' => $user->email,
+        ], [
             'name'       => $user->name,
-            'email'      => $user->email,
             'password'   => $user->password, // Menyimpan password hash yang sama
             'phone'      => $user->phone ?? null,
             'address'    => $user->address ?? null,
-            'created_at' => now(),
             'updated_at' => now(),
+            'created_at' => now(),
         ]);
     }
 }
