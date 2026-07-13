@@ -69,7 +69,7 @@ services:
     networks:
       - hotel_internal
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/lb-health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/lb-health"]
       interval: 10s
       timeout: 3s
       retries: 5
