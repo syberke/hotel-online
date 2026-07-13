@@ -100,7 +100,7 @@
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-8 items-start">
-                    <aside class="w-full lg:w-1/4 bg-white border border-neutral-200 p-6 rounded-none space-y-6 sticky top-28">
+                    <aside class="w-full lg:w-1/4 lg:shrink-0 bg-white border border-neutral-200 p-5 sm:p-6 rounded-none space-y-6 lg:sticky lg:top-28 lg:self-start">
                         <div class="flex justify-between items-center border-b border-neutral-100 pb-3">
                             <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Filter Rooms</h3>
                             <a href="{{ route('rooms') }}" class="text-[10px] uppercase tracking-wider font-bold text-neutral-400 hover:text-neutral-900 underline">Clear All</a>
@@ -131,9 +131,9 @@
                     </aside>
             </form>
 
-           <section class="w-full lg:w-3/4">
+           <section class="w-full min-w-0 lg:w-3/4">
     
-    <div class="max-h-[850px] overflow-y-auto pr-2 custom-scrollbar">
+    <div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
