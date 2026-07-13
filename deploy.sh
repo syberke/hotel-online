@@ -168,6 +168,12 @@ echo "🔐 Environment: $ENV_FILE"
 DOCKER_APP_URL_VALUE="$(sed -n 's/^DOCKER_APP_URL=//p' "$ENV_FILE" | tail -n 1)"
 echo "🗄️ Mode database: MariaDB container lokal"
 
+# Gunakan commit sebagai cache key agar perubahan kode, termasuk rename
+# case-sensitive, selalu benar-benar masuk ke image baru.
+APP_BUILD_REVISION="$(git rev-parse HEAD 2>/dev/null || date +%s)"
+export APP_BUILD_REVISION
+echo "📦 Build revision: $APP_BUILD_REVISION"
+
 "${COMPOSE_BIN[@]}" down --remove-orphans || true
 "${COMPOSE_BIN[@]}" up -d --build --wait
 "${COMPOSE_BIN[@]}" exec -T web1 php artisan migrate --force
