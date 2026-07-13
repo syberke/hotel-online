@@ -29,7 +29,7 @@
         
         <div class="flex-1 w-full space-y-6">
             
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
                     <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Rooms</span>
                     <div class="flex items-baseline justify-between mt-2">
@@ -42,6 +42,13 @@
                     <div class="flex items-baseline justify-between mt-2">
                         <span class="text-3xl font-light font-serif text-emerald-700">{{ $stats['available'] }}</span>
                         <span class="text-[9px] font-bold text-emerald-600">{{ $stats['available_pct'] }}% <span class="text-neutral-400 font-normal">Vacant</span></span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
+                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Reserved Rooms</span>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <span class="text-3xl font-light font-serif text-amber-700">{{ $stats['reserved'] }}</span>
+                        <span class="text-[9px] font-bold text-amber-600">{{ $stats['reserved_pct'] }}% <span class="text-neutral-400 font-normal">Booked</span></span>
                     </div>
                 </div>
                 <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
@@ -84,6 +91,7 @@
                             <select name="status_filter" onchange="this.form.submit()" class="appearance-none w-full border border-neutral-200 bg-white pl-3 pr-8 py-2 text-xs font-medium text-neutral-700 focus:outline-none focus:border-neutral-900 cursor-pointer">
                                 <option value="">All Statuses</option>
                                 <option value="available" {{ request('status_filter') == 'available' ? 'selected' : '' }}>Available</option>
+                                <option value="reserved" {{ request('status_filter') == 'reserved' ? 'selected' : '' }}>Reserved</option>
                                 <option value="occupied" {{ request('status_filter') == 'occupied' ? 'selected' : '' }}>Occupied</option>
                                 <option value="maintenance" {{ request('status_filter') == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
                                 <option value="dirty" {{ request('status_filter') == 'dirty' ? 'selected' : '' }}>Cleaning</option>
@@ -132,6 +140,14 @@
                                             @if($room->active_booking)
                                                 <span class="text-[9px] text-neutral-500 block font-semibold mt-1 bg-neutral-100 p-1 border-l-2 border-blue-500">
                                                     <i class="fa-regular fa-calendar-days text-[9px] mr-1 text-blue-600"></i>
+                                                    {{ \Carbon\Carbon::parse($room->active_booking->check_in)->format('d M') }} s/d {{ \Carbon\Carbon::parse($room->active_booking->check_out)->format('d M Y') }}
+                                                </span>
+                                            @endif
+                                        @elseif($room->status == 'reserved')
+                                            <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wide">Reserved</span>
+                                            @if($room->active_booking)
+                                                <span class="text-[9px] text-neutral-500 block font-semibold mt-1 bg-neutral-100 p-1 border-l-2 border-amber-500">
+                                                    <i class="fa-regular fa-calendar-check text-[9px] mr-1 text-amber-700"></i>
                                                     {{ \Carbon\Carbon::parse($room->active_booking->check_in)->format('d M') }} s/d {{ \Carbon\Carbon::parse($room->active_booking->check_out)->format('d M Y') }}
                                                 </span>
                                             @endif
@@ -250,18 +266,20 @@
                 <div class="space-y-3.5 text-xs font-semibold text-neutral-500">
                     <div class="flex justify-between text-[8px] text-neutral-400 uppercase tracking-wider font-bold border-b border-neutral-50 pb-1.5">
                         <span>Room Type Class</span>
-                        <div class="grid grid-cols-3 gap-2 w-28 text-center font-mono">
+                        <div class="grid grid-cols-4 gap-1.5 w-36 text-center font-mono">
                             <span>Tot</span>
                             <span>Occ</span>
+                            <span>Res</span>
                             <span>Avail</span>
                         </div>
                     </div>
                     @forelse($summary as $row)
                         <div class="flex justify-between items-center hover:text-neutral-900 transition-colors py-0.5">
-                            <span class="text-neutral-800 font-bold truncate pr-2" style="max-w: calc(100% - 112px);">{{ $row['name'] }}</span>
-                            <div class="grid grid-cols-3 gap-2 w-28 text-center font-mono font-bold text-neutral-700">
+                            <span class="text-neutral-800 font-bold truncate pr-2" style="max-w: calc(100% - 144px);">{{ $row['name'] }}</span>
+                            <div class="grid grid-cols-4 gap-1.5 w-36 text-center font-mono font-bold text-neutral-700">
                                 <span class="bg-neutral-50 py-0.5 text-neutral-900 border border-neutral-100 rounded-xs">{{ $row['total'] }}</span>
                                 <span class="bg-blue-50/60 py-0.5 text-blue-600 border border-blue-50 rounded-xs">{{ $row['occupied'] }}</span>
+                                <span class="bg-amber-50/60 py-0.5 text-amber-700 border border-amber-50 rounded-xs">{{ $row['reserved'] }}</span>
                                 <span class="bg-emerald-50/60 py-0.5 text-emerald-600 border border-emerald-50 rounded-xs">{{ $row['available'] }}</span>
                             </div>
                         </div>
@@ -304,6 +322,7 @@
 
                 <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[9px] font-bold uppercase tracking-wider text-neutral-500 pt-3">
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 inline-block"></span> <span>Available</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-amber-500 inline-block"></span> <span>Reserved</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-blue-500 inline-block"></span> <span>Occupied</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-purple-500 inline-block"></span> <span>Cleaning</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 bg-red-500 inline-block"></span> <span>Maint. Block</span></div>
@@ -383,7 +402,7 @@
                 </div>
 
                 <div id="mv_booking_section" class="border border-neutral-200 p-4 space-y-3 hidden">
-                    <span class="text-[9px] font-bold uppercase tracking-widest text-blue-700 block border-b border-blue-50 pb-1.5"><i class="fa-solid fa-user-tag mr-1"></i> Live Active Guest Stay Manifest</span>
+                    <span id="mv_booking_heading" class="text-[9px] font-bold uppercase tracking-widest text-blue-700 block border-b border-blue-50 pb-1.5"><i class="fa-solid fa-user-tag mr-1"></i> Guest Booking Manifest</span>
                     <div class="text-xs space-y-2 text-neutral-600 font-medium">
                         <div class="flex justify-between"><span>Nama Tamu Terdaftar</span><span id="mv_guest_name" class="font-bold text-neutral-900"></span></div>
                         <div class="flex justify-between"><span>Email Korespondensi</span><span id="mv_guest_email" class="font-mono text-neutral-800"></span></div>
@@ -544,6 +563,8 @@
                     statusBadge.innerText = res.room.status;
                     if (res.room.status === 'available') {
                         statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-100";
+                    } else if (res.room.status === 'reserved') {
+                        statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-100";
                     } else if (res.room.status === 'occupied') {
                         statusBadge.className = "inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-100";
                     } else if (res.room.status === 'dirty') {
@@ -553,6 +574,9 @@
                     }
 
                     if (res.booking) {
+                        document.getElementById('mv_booking_heading').innerHTML = res.room.status === 'occupied'
+                            ? '<i class="fa-solid fa-user-tag mr-1"></i> Live Active Guest Stay Manifest'
+                            : '<i class="fa-solid fa-calendar-check mr-1"></i> Upcoming Reservation Manifest';
                         document.getElementById('mv_guest_name').innerText = res.booking.guest_name;
                         document.getElementById('mv_guest_email').innerText = res.booking.guest_email;
                         document.getElementById('mv_guest_count').innerText = res.booking.guests_count + ' Persons';
