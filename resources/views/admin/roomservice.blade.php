@@ -126,13 +126,24 @@
                     </td>
                     <td class="py-3.5 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
                     <td class="py-3.5 px-4 text-center" onclick="event.stopPropagation();">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <a href="{{ request()->fullUrlWithQuery(['selected_id' => $order->id]) }}" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-amber-50 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Lihat detail pesanan">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </a>
                         @if(auth()->user()->role !== 'manager')
                             <button type="button" onclick="openFloatingActions(event, {{ $order->id }}, '{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}')" class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs">
                                 <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                             </button>
-                        @else
-                            <button type="button" class="w-7 h-7 bg-neutral-50 border border-neutral-200 text-neutral-400 cursor-not-allowed" title="Read-Only View Mode"><i class="fa-solid fa-eye text-xs"></i></button>
+                            @if($order->status === 'cancelled')
+                                <form action="{{ route('admin.restaurant.order.delete', $order->id) }}" method="POST" class="inline-flex" data-confirm="Hapus pesanan batal #RS-{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}? Pesanan dengan jejak pembayaran tetap akan dilindungi." data-confirm-title="Hapus Pesanan Batal">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center justify-center shadow-xs" title="Hapus pesanan batal">
+                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                </form>
+                            @endif
                         @endif
+                        </div>
                     </td>
                 </tr>
             @empty

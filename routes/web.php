@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\GuestStayController;
 use App\Http\Controllers\GuestServiceController;
+use App\Http\Controllers\GuestFacilityController;
 use App\Http\Controllers\PaymentGatewayController;
 use App\Http\Controllers\RestaurantOrderController;
 use App\Http\Controllers\ReceptionistDeskController;
@@ -67,7 +68,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/my-stay', [GuestStayController::class, 'myStay'])->name('stay.my');
         Route::get('/room-service', [GuestServiceController::class, 'roomService'])->name('room.service');
         Route::get('/restaurant-orders', [GuestServiceController::class, 'restaurantOrders'])->name('restaurant.orders');
-        Route::get('/facilities-booking', [GuestServiceController::class, 'facilitiesBooking'])->name('facilities.booking');
+        Route::get('/facilities-booking', [GuestFacilityController::class, 'index'])->name('facilities.booking');
         Route::get('/facilities-portal', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities.portal');
         Route::get('/billing-matrix', function () { return view('guest.billingmatrix'); })->name('billing.matrix');
         Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
@@ -87,7 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
     
     Route::post('/room-service/order', [GuestServiceController::class, 'storeRoomServiceOrder'])->name('room.service.order');
-    Route::post('/facilities/book', [GuestServiceController::class, 'bookFacility'])->name('facilities.book');
+    Route::post('/facilities/book', [GuestFacilityController::class, 'store'])->name('facilities.book');
 
     /* ======================================================================
        5. RECEPTIONIST / FRONT OFFICE DESK CONTROL PANEL
@@ -182,6 +183,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/reservations/{id}/delete', [AdminOperationController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');
         
         Route::post('/restaurant-order/{id}/update-status', [ExecutiveReportController::class, 'adminUpdateOrderStatus'])->name('admin.restaurant.update-status');
+        Route::delete('/admin/restaurant-order/{id}/delete', [AdminOperationController::class, 'adminDeleteRestaurantOrder'])->name('admin.restaurant.order.delete');
+        Route::delete('/admin/facilities/booking/{id}/delete', [AdminOperationController::class, 'adminDeleteFacilityBooking'])->name('admin.facilities.booking.delete');
         Route::post('/admin/restaurant/menu/store', [AdminOperationController::class, 'adminStoreMenu'])->name('admin.restaurant.menu.store');
         Route::post('/admin/restaurant/menu/{id}/update', [AdminOperationController::class, 'adminUpdateMenu'])->name('admin.restaurant.menu.update');
         Route::delete('/admin/restaurant/menu/{id}/delete', [AdminOperationController::class, 'adminDeleteMenu'])->name('admin.restaurant.menu.delete');

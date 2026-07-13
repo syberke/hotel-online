@@ -114,6 +114,14 @@
                                                 <button type="button" onclick="openManageBookingModal({{ $book->id }})" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-xs mx-auto flex items-center justify-center cursor-pointer shadow-xs" title="Manage Status Pipeline">
                                                     <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                                                 </button>
+                                                @if($book->status === 'cancelled')
+                                                    <form action="{{ route('admin.facilities.booking.delete', $book->id) }}" method="POST" class="inline-flex" data-confirm="Hapus reservasi fasilitas batal #FW-{{ str_pad($book->id, 4, '0', STR_PAD_LEFT) }}?" data-confirm-title="Hapus Reservasi Batal">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-rose-50 text-rose-600 rounded-xs flex items-center justify-center cursor-pointer shadow-xs" title="Hapus reservasi batal">
+                                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             @endif
                                             </div>
                                         </td>

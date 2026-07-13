@@ -137,6 +137,14 @@
                                                         class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs" title="Ubah status pesanan">
                                                     <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                                                 </button>
+                                                @if($order->status === 'cancelled')
+                                                    <form action="{{ route('admin.restaurant.order.delete', $order->id) }}" method="POST" class="inline-flex" data-confirm="Hapus pesanan batal #RS-{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}? Pesanan dengan jejak pembayaran tetap akan dilindungi." data-confirm-title="Hapus Pesanan Batal">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center justify-center shadow-xs" title="Hapus pesanan batal">
+                                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             @endif
                                         </div>
                                     </td>
