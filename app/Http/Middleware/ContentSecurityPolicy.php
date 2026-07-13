@@ -42,21 +42,30 @@ class ContentSecurityPolicy
 
     private function policy(string $nonce): string
     {
-        return implode('; ', [
+        $isLocal = app()->environment('local');
+        $viteHttp = $isLocal ? ' http://localhost:5173 http://127.0.0.1:5173' : '';
+        $viteSocket = $isLocal ? ' ws://localhost:5173 ws://127.0.0.1:5173' : '';
+
+        $directives = [
             "default-src 'self'",
             "base-uri 'self'",
             "object-src 'none'",
             "frame-ancestors 'self'",
             "form-action 'self' https://*.midtrans.com",
-            "script-src 'self' 'nonce-{$nonce}' https://snap-assets.sandbox.midtrans.com https://app.sandbox.midtrans.com https://app.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://www.google.com https://www.gstatic.com https://pay.google.com https://www.googletagmanager.com https://unpkg.com https://cdnjs.cloudflare.com",
+            "script-src 'self' 'nonce-{$nonce}'{$viteHttp} https://snap-assets.sandbox.midtrans.com https://app.sandbox.midtrans.com https://app.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://www.google.com https://www.gstatic.com https://pay.google.com https://www.googletagmanager.com https://unpkg.com https://cdnjs.cloudflare.com",
             "script-src-attr 'unsafe-inline'",
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://unpkg.com https://cdnjs.cloudflare.com",
+            "style-src 'self' 'unsafe-inline'{$viteHttp} https://fonts.bunny.net https://unpkg.com https://cdnjs.cloudflare.com",
             "font-src 'self' data: https://fonts.bunny.net https://cdnjs.cloudflare.com",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self' https://*.midtrans.com https://*.google.com https://*.googleapis.com https://*.gopayapi.com",
+            "connect-src 'self'{$viteHttp}{$viteSocket} https://*.midtrans.com https://*.google.com https://*.googleapis.com https://*.gopayapi.com",
             "frame-src 'self' https://*.midtrans.com https://pay.google.com https://www.google.com",
             "worker-src 'self' blob:",
-            'upgrade-insecure-requests',
-        ]);
+        ];
+
+        if (! $isLocal) {
+            $directives[] = 'upgrade-insecure-requests';
+        }
+
+        return implode('; ', $directives);
     }
 }
