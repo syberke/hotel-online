@@ -26,23 +26,45 @@ echo "🧱 Menyiapkan 3 node web Apache + load balancer Nginx"
 echo "🗄️ Database mengikuti mode yang dikonfigurasi di .env"
 echo "🌐 Akses: http://localhost:8080"
 
-if [ ! -f .env ]; then
-    cp .env.example .env
-    echo "❌ File .env baru dibuat. Isi konfigurasi aplikasi terlebih dahulu, lalu jalankan ulang ./deploy.sh." >&2
+ENV_FILE="${OASIS_ENV_FILE:-}"
+if [ -z "$ENV_FILE" ]; then
+    if [ -f .env ]; then
+        ENV_FILE="$SCRIPT_DIR/.env"
+    elif [ -r /etc/oasis-hotel/oasis.env ]; then
+        ENV_FILE="/etc/oasis-hotel/oasis.env"
+    else
+        echo "❌ Environment tidak ditemukan." >&2
+        echo "   Buat .env atau /etc/oasis-hotel/oasis.env terlebih dahulu." >&2
+        exit 1
+    fi
+fi
+
+if [ ! -r "$ENV_FILE" ]; then
+    echo "❌ Environment file tidak dapat dibaca: $ENV_FILE" >&2
     exit 1
 fi
 
-if grep -q '^APP_KEY=$' .env; then
+ENV_FILE="$(realpath "$ENV_FILE")"
+export OASIS_ENV_FILE="$ENV_FILE"
+COMPOSE_BIN+=( --env-file "$ENV_FILE" )
+
+if grep -q '^APP_KEY=$' "$ENV_FILE"; then
+    if [ ! -w "$ENV_FILE" ]; then
+        echo "❌ APP_KEY kosong dan environment file tidak dapat ditulis." >&2
+        echo "   Isi APP_KEY terlebih dahulu dengan: php artisan key:generate --show" >&2
+        exit 1
+    fi
     APP_KEY="base64:$(openssl rand -base64 32)"
-    sed -i "s|^APP_KEY=$|APP_KEY=${APP_KEY}|" .env
+    sed -i "s|^APP_KEY=$|APP_KEY=${APP_KEY}|" "$ENV_FILE"
 fi
 
-DOCKER_APP_URL_VALUE="$(sed -n 's/^DOCKER_APP_URL=//p' .env | tail -n 1)"
-DOCKER_DATABASE_MODE="$(sed -n 's/^DOCKER_DATABASE_MODE=//p' .env | tail -n 1)"
+echo "🔐 Environment: $ENV_FILE"
+DOCKER_APP_URL_VALUE="$(sed -n 's/^DOCKER_APP_URL=//p' "$ENV_FILE" | tail -n 1)"
+DOCKER_DATABASE_MODE="$(sed -n 's/^DOCKER_DATABASE_MODE=//p' "$ENV_FILE" | tail -n 1)"
 DOCKER_DATABASE_MODE="${DOCKER_DATABASE_MODE:-external}"
 
 if [ "$DOCKER_DATABASE_MODE" = "local" ]; then
-    POSTGRES_PASSWORD_VALUE="$(sed -n 's/^POSTGRES_PASSWORD=//p' .env | tail -n 1)"
+    POSTGRES_PASSWORD_VALUE="$(sed -n 's/^POSTGRES_PASSWORD=//p' "$ENV_FILE" | tail -n 1)"
     if [ -z "$POSTGRES_PASSWORD_VALUE" ] || [ "$POSTGRES_PASSWORD_VALUE" = "change-this-strong-password" ]; then
         echo "❌ Mode local-db membutuhkan POSTGRES_PASSWORD yang kuat di .env." >&2
         exit 1
