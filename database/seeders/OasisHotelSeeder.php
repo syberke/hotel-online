@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OasisHotelSeeder extends Seeder
 {
@@ -13,7 +14,15 @@ class OasisHotelSeeder extends Seeder
     public function run(): void
     {
         // PEMBERSIHAN DATA PRODUK (Menghindari duplikasi saat seeder dijalankan ulang)
-        DB::statement('TRUNCATE TABLE room_types, rooms, restaurant_orders, facility_bookings CASCADE');
+        Schema::disableForeignKeyConstraints();
+        try {
+            DB::table('restaurant_orders')->truncate();
+            DB::table('facility_bookings')->truncate();
+            DB::table('rooms')->truncate();
+            DB::table('room_types')->truncate();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
 
         // =========================================================================
         // 1. DATA MASTER: ROOM TYPES
