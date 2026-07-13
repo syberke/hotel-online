@@ -166,10 +166,10 @@
         </div>
 
         <div class="flex items-center gap-3 self-end lg:self-auto">
-            <a href="{{ route('admin.reports.export.excel') }}" class="bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 font-bold text-[11px] uppercase tracking-wider px-4 py-2 flex items-center gap-2 transition-all shadow-xs cursor-pointer">
+            <a href="{{ route(auth()->user()->role === 'manager' ? 'manager.reports.export.excel' : 'admin.reports.export.excel') }}" class="bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 font-bold text-[11px] uppercase tracking-wider px-4 py-2 flex items-center gap-2 transition-all shadow-xs cursor-pointer">
                 <i class="fa-solid fa-file-excel text-emerald-600 text-xs"></i> Export Spreadsheet
             </a>
-            <a href="{{ route('admin.reports.export.pdf') }}" target="_blank" rel="noopener" class="bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[11px] uppercase tracking-wider px-4 py-2 flex items-center gap-2 transition-colors shadow-sm cursor-pointer">
+            <a href="{{ route(auth()->user()->role === 'manager' ? 'manager.reports.export.pdf' : 'admin.reports.export.pdf') }}" target="_blank" rel="noopener" class="bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[11px] uppercase tracking-wider px-4 py-2 flex items-center gap-2 transition-colors shadow-sm cursor-pointer">
                 <i class="fa-solid fa-print text-rose-400 text-xs"></i> Executive Print / PDF
             </a>
         </div>

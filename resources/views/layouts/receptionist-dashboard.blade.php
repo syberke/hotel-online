@@ -27,7 +27,7 @@
 
 <body class="antialiased h-full bg-[#f5f5f3] text-neutral-900 m-0 p-0 font-sans">
 
-    <div class="h-screen w-full bg-[#f5f5f3] text-neutral-900 flex overflow-hidden relative selection:bg-amber-100 selection:text-amber-900">
+    <div class="dashboard-shell h-screen w-full bg-[#f5f5f3] text-neutral-900 flex overflow-hidden relative selection:bg-amber-100 selection:text-amber-900">
 
         <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 z-30 h-full overflow-hidden">
             
@@ -125,7 +125,7 @@
                 </div>
             </header>
 
-            <div class="p-10 space-y-8 flex-1 overflow-y-auto content-scrollbar bg-[#f5f5f3]">
+            <div class="dashboard-content p-10 space-y-8 flex-1 overflow-y-auto content-scrollbar bg-[#f5f5f3]">
                 {{ $slot }}
             </div>
         </div>
