@@ -107,3 +107,36 @@
     }
     .ui-reveal { opacity: 1; transform: none; }
 }
+
+@media (max-width: 1024px) {
+    .dashboard-shell aside { width: 5rem; }
+    .dashboard-shell aside nav > span,
+    .dashboard-shell aside nav a:not(:has(i)),
+    .dashboard-shell aside > div:last-child,
+    .dashboard-shell aside h2 + p,
+    .dashboard-shell aside h2 + p + div { display: none; }
+    .dashboard-shell aside nav a {
+        justify-content: center;
+        gap: 0;
+        padding-inline: .75rem;
+        font-size: 0;
+    }
+    .dashboard-shell aside nav a i {
+        width: auto;
+        font-size: 1rem;
+    }
+    .dashboard-shell aside > div:first-child > div:first-child { padding: 1.25rem .5rem; }
+    .dashboard-shell aside h2 { font-size: 1rem; letter-spacing: .08em; }
+    .dashboard-shell header { padding-inline: 1.25rem; }
+    .dashboard-shell header > div:last-child > span,
+    .dashboard-shell header > div:last-child > div { display: none; }
+    .dashboard-shell main,
+    .dashboard-shell main + div,
+    .dashboard-shell .dashboard-content { padding: 1.25rem; }
+}
+
+@media (max-width: 640px) {
+    .dashboard-shell aside { width: 4rem; }
+    .dashboard-shell header h1 { font-size: 1rem; }
+    .dashboard-shell header > div:first-child span { display: none; }
+}

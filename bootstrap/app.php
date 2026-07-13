@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\IdentifyApplicationNode::class,
+            \App\Http\Middleware\ContentSecurityPolicy::class,
         ]);
         // 1. Mendaftarkan alias middleware custom milikmu
         $middleware->alias([

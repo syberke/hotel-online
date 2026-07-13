@@ -17,7 +17,7 @@
         }
     </style>
 
-    <div class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
+    <div class="dashboard-shell min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
 
         <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 z-30 relative h-screen sticky top-0 overflow-y-auto custom-scrollbar">
             <div>
@@ -120,7 +120,7 @@
                 </div>
             </header>
 
-            <div class="p-10 space-y-8 flex-1 bg-[#f5f5f3]">
+            <div class="dashboard-content p-10 space-y-8 flex-1 bg-[#f5f5f3]">
                 {{ $slot }}
             </div>
         </div>
