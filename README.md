@@ -6,7 +6,7 @@ tamu, restoran, fasilitas, pembayaran, dan laporan manajemen.
 ## Arsitektur deployment
 
 Stack menjalankan tiga node web identik dari custom image Apache/PHP. Nginx
-mendistribusikan request dengan strategi `least_conn`, sedangkan PostgreSQL
+mendistribusikan request dengan strategi `least_conn`, sedangkan MariaDB
 menyimpan data pada named volume yang persisten.
 
 ```text
@@ -18,7 +18,7 @@ Nginx load balancer
      +-- web2 (Apache + Laravel, jingga)
      +-- web3 (Apache + Laravel, ungu)
      |
-PostgreSQL + hotel_database volume
+MariaDB + hotel_database volume
 ```
 
 Semua service memakai network bridge internal `hotel_internal` dan restart
@@ -28,9 +28,10 @@ policy `unless-stopped`. Database tidak diekspos ke host.
 
 Prasyarat: Docker Engine, Docker Compose v2, OpenSSL, dan port 8080 yang kosong.
 
-Jika `.env` sudah berisi koneksi Supabase, email, reCAPTCHA, dan Midtrans, file
-tersebut dapat langsung digunakan tanpa disalin atau diubah. Docker membaca
-credential saat runtime dan `.dockerignore` memastikan `.env` tidak masuk image.
+Jika `.env` lama masih berisi koneksi Supabase, email, reCAPTCHA, dan Midtrans,
+file tersebut dapat langsung digunakan tanpa mengubah API key satu per satu.
+Saat deployment, nilai koneksi `DB_*` di dalam container otomatis diarahkan ke
+MariaDB. `.dockerignore` memastikan `.env` tidak masuk ke image.
 
 Untuk deployment Ubuntu yang lebih aman dan tidak terganggu `git pull`, simpan
 environment satu kali di `/etc/oasis-hotel/oasis.env`. Script deployment akan
@@ -56,7 +57,6 @@ environment di kemudian hari, jalankan:
 ./deploy.sh --setup-env
 ```
 
-Deployment default menggunakan koneksi `DB_*` yang sudah ada di `.env`.
 Kemudian jalankan:
 
 ```bash
@@ -66,20 +66,14 @@ chmod +x deploy.sh
 
 Aplikasi tersedia di <http://localhost:8080>.
 
-### Database PostgreSQL container opsional
+### Database MariaDB
 
-Jika tidak ingin memakai Supabase dan ingin menjalankan PostgreSQL lokal, tambahkan
-konfigurasi berikut ke `.env`:
-
-```env
-DOCKER_DATABASE_MODE=local
-POSTGRES_DB=oasis_hotel
-POSTGRES_USER=oasis_hotel
-POSTGRES_PASSWORD=password-yang-kuat
-```
-
-Tanpa `DOCKER_DATABASE_MODE=local`, service database tidak dijalankan dan aplikasi
-tetap memakai Supabase atau database eksternal dari konfigurasi `DB_*`.
+MariaDB selalu dijalankan sebagai container internal. Pada deployment pertama,
+`deploy.sh` membuat user dan password acak yang kuat lalu menyimpannya di
+`/etc/oasis-hotel/database.env` dengan permission terbatas. Jangan menghapus file
+tersebut selama volume `hotel_database` masih digunakan karena credential harus
+tetap sama. Data database disimpan di named volume Docker dan tidak hilang saat
+container dibuat ulang.
 
 ## Membuktikan load balancing
 

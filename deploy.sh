@@ -23,7 +23,7 @@ printf '   OASIS HOTEL & RESORT - WEB CLUSTER DEPLOYMENT                 \n'
 printf '=======================================================================\n'
 
 echo "🧱 Menyiapkan 3 node web Apache + load balancer Nginx"
-echo "🗄️ Database mengikuti mode yang dikonfigurasi di .env"
+echo "🗄️ Database MariaDB lokal dengan volume persisten"
 echo "🌐 Akses: http://localhost:8080"
 
 install_server_environment() {
@@ -55,13 +55,6 @@ install_server_environment() {
     done
     stty echo
     echo
-
-    for required_key in DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD; do
-        if ! grep -q "^${required_key}=." "$temp_file"; then
-            echo "❌ Konfigurasi wajib belum tersedia: ${required_key}" >&2
-            exit 1
-        fi
-    done
 
     app_key="$(sed -n 's/^APP_KEY=//p' "$temp_file" | tail -n 1)"
     if [ -z "$app_key" ]; then
@@ -113,6 +106,33 @@ ENV_FILE="$(realpath "$ENV_FILE")"
 export OASIS_ENV_FILE="$ENV_FILE"
 COMPOSE_BIN+=( --env-file "$ENV_FILE" )
 
+DATABASE_ENV_FILE="/etc/oasis-hotel/database.env"
+if [ ! -r "$DATABASE_ENV_FILE" ]; then
+    database_temp="$(mktemp)"
+    deploy_group="$(id -gn)"
+    printf 'MARIADB_DATABASE=oasis_hotel\n' > "$database_temp"
+    printf 'MARIADB_USER=oasis_hotel\n' >> "$database_temp"
+    printf 'MARIADB_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> "$database_temp"
+    printf 'MARIADB_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> "$database_temp"
+    if [ "$(id -u)" -eq 0 ]; then
+        install -d -m 750 -o root -g "$deploy_group" /etc/oasis-hotel
+        install -m 640 -o root -g "$deploy_group" "$database_temp" "$DATABASE_ENV_FILE"
+    else
+        sudo install -d -m 750 -o root -g "$deploy_group" /etc/oasis-hotel
+        sudo install -m 640 -o root -g "$deploy_group" "$database_temp" "$DATABASE_ENV_FILE"
+    fi
+    rm -f "$database_temp"
+    echo "✅ Credential MariaDB dibuat otomatis di $DATABASE_ENV_FILE"
+fi
+
+while IFS='=' read -r key value; do
+    case "$key" in
+        MARIADB_DATABASE|MARIADB_USER|MARIADB_PASSWORD|MARIADB_ROOT_PASSWORD)
+            export "$key=$value"
+            ;;
+    esac
+done < "$DATABASE_ENV_FILE"
+
 if grep -q '^APP_KEY=$' "$ENV_FILE"; then
     if [ ! -w "$ENV_FILE" ]; then
         echo "❌ APP_KEY kosong dan environment file tidak dapat ditulis." >&2
@@ -125,20 +145,7 @@ fi
 
 echo "🔐 Environment: $ENV_FILE"
 DOCKER_APP_URL_VALUE="$(sed -n 's/^DOCKER_APP_URL=//p' "$ENV_FILE" | tail -n 1)"
-DOCKER_DATABASE_MODE="$(sed -n 's/^DOCKER_DATABASE_MODE=//p' "$ENV_FILE" | tail -n 1)"
-DOCKER_DATABASE_MODE="${DOCKER_DATABASE_MODE:-external}"
-
-if [ "$DOCKER_DATABASE_MODE" = "local" ]; then
-    POSTGRES_PASSWORD_VALUE="$(sed -n 's/^POSTGRES_PASSWORD=//p' "$ENV_FILE" | tail -n 1)"
-    if [ -z "$POSTGRES_PASSWORD_VALUE" ] || [ "$POSTGRES_PASSWORD_VALUE" = "change-this-strong-password" ]; then
-        echo "❌ Mode local-db membutuhkan POSTGRES_PASSWORD yang kuat di .env." >&2
-        exit 1
-    fi
-    COMPOSE_BIN+=( -f docker-compose.yaml -f docker-compose.local-db.yaml --profile local-db )
-    echo "🗄️ Mode database: PostgreSQL container lokal"
-else
-    echo "☁️ Mode database: eksternal dari konfigurasi DB_* di .env"
-fi
+echo "🗄️ Mode database: MariaDB container lokal"
 
 "${COMPOSE_BIN[@]}" down --remove-orphans || true
 "${COMPOSE_BIN[@]}" up -d --build --wait

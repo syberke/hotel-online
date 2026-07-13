@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libfreetype6-dev libicu-dev libjpeg62-turbo-dev libpng-dev \
         curl libpq-dev libwebp-dev libzip-dev unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j"$(nproc)" bcmath gd intl opcache pdo_pgsql zip \
+    && docker-php-ext-install -j"$(nproc)" bcmath gd intl opcache pdo_mysql pdo_pgsql zip \
     && a2enmod headers rewrite \
     && rm -rf /var/lib/apt/lists/*
 
