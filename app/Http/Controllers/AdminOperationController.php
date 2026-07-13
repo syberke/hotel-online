@@ -454,7 +454,55 @@ class AdminOperationController extends Controller
         DB::table('users')->where('id', $id)->delete();
         return redirect()->back()->with('success', 'Akun staf berhasil dihapus dari database.');
     }
-        public function adminRoomJsonDetail($id)
+    private function roomBookingManifests(string $today)
+    {
+        return DB::table('bookings')
+            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->whereNotNull('bookings.room_id')
+            ->whereIn('bookings.status', ['pending', 'confirmed', 'checked_in'])
+            ->where('bookings.check_out', '>', $today)
+            ->select(
+                'bookings.id',
+                'bookings.room_id',
+                'bookings.check_in',
+                'bookings.check_out',
+                'bookings.guests_count',
+                'bookings.status',
+                'users.name as guest_name',
+                'users.email as guest_email'
+            )
+            ->orderBy('bookings.check_in')
+            ->get()
+            ->groupBy('room_id');
+    }
+
+    private function resolveRoomDisplayState(object $room, $roomBookings, string $today): array
+    {
+        $roomBookings ??= collect();
+
+        $occupiedBooking = $roomBookings->first(function ($booking) use ($today) {
+            return $booking->status === 'checked_in'
+                && $booking->check_in <= $today
+                && $booking->check_out > $today;
+        });
+
+        if ($occupiedBooking) {
+            return ['occupied', $occupiedBooking];
+        }
+
+        $reservedBooking = $roomBookings->first();
+        if ($reservedBooking) {
+            return ['reserved', $reservedBooking];
+        }
+
+        // Status occupied yang tertinggal setelah checkout tidak boleh membuat
+        // kamar terus terlihat ditempati. Status fisik lain tetap dipertahankan.
+        $physicalStatus = $room->status === 'occupied' ? 'available' : $room->status;
+
+        return [$physicalStatus, null];
+    }
+
+    public function adminRoomJsonDetail($id)
     {
         // Mengambil data kamar beserta nama tipe kamarnya
         $room = DB::table('rooms')
@@ -467,13 +515,12 @@ class AdminOperationController extends Controller
             return response()->json(['success' => false, 'message' => 'Unit kamar tidak ditemukan.'], 404);
         }
 
-        // Mencari apakah ada reservasi aktif yang sedang menempati kamar tersebut (Live Stay)
-        $activeBooking = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
-            ->where('bookings.room_id', $id)
-            ->whereIn('bookings.status', ['confirmed', 'checked_in'])
-            ->select('bookings.check_in', 'bookings.check_out', 'bookings.guests_count', 'users.name as guest_name', 'users.email as guest_email')
-            ->first();
+        $today = now()->toDateString();
+        $roomBookings = $this->roomBookingManifests($today)->get($room->id, collect());
+        [$displayStatus, $activeBooking] = $this->resolveRoomDisplayState($room, $roomBookings, $today);
+
+        $room->physical_status = $room->status;
+        $room->status = $displayStatus;
 
         return response()->json([
             'success' => true,
@@ -512,22 +559,8 @@ class AdminOperationController extends Controller
     }
   public function adminRoomsInventoryView(Request $request)
     {
-        // 1. Ambil tanggal hari ini secara real-time
-        $today = now()->format('Y-m-d');
-
-        // 2. Ambil semua manifes reservasi yang sedang aktif menginap HARI INI
-        // Sesuai request: Hanya yang berstatus 'confirmed' atau pembayaran lunas ('paid')
-        $activeBookings = DB::table('bookings')
-            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
-            ->where(function($q) {
-                $q->where('bookings.status', 'confirmed')
-                ->orWhere('bookings.status', 'checked_in')
-                ->orWhere('payments.payment_status', 'paid');
-            })
-            ->where('bookings.check_in', '<=', $today)
-            ->where('bookings.check_out', '>', $today)
-            ->get()
-            ->keyBy('room_id');
+        $today = now()->toDateString();
+        $bookingManifests = $this->roomBookingManifests($today);
 
         // 3. Ambil seluruh data master fisik kamar
         $rawRooms = DB::table('rooms')
@@ -541,24 +574,21 @@ class AdminOperationController extends Controller
             )
             ->get();
 
-        // 4. Sinkronisasi Status Kamar Secara Otomatis Berdasarkan Validitas Tanggal Hari Ini
+        // Status di bawah adalah status efektif untuk layar. Nilai fisik pada
+        // rooms.status tidak ditimpa oleh status reservasi.
         foreach ($rawRooms as $room) {
-            $room->active_booking = $activeBookings->get($room->id);
-            
-            // JIKA HARI INI ADA BOOKING AKTIF: Paksa status di layar menjadi 'occupied'
-            if ($room->active_booking) {
-                $room->status = 'occupied';
-            } 
-            // JIKA TIDAK ADA JADWAL BOOKING HARI INI: 
-            // Jika status aslinya 'occupied' karena sisa kemarin, kembalikan otomatis ke 'available'
-            elseif ($room->status === 'occupied') {
-                $room->status = 'available';
-            }
+            $room->physical_status = $room->status;
+            [$room->status, $room->active_booking] = $this->resolveRoomDisplayState(
+                $room,
+                $bookingManifests->get($room->id, collect()),
+                $today
+            );
         }
 
-        // 5. Hitung Counter Metrik Atas Berdasarkan Hasil Sinkronisasi Tanggal Terbaru
-        $totalRooms = $rawRooms->count() ?: 1;
+        $totalRooms = $rawRooms->count();
+        $statsDenominator = max(1, $totalRooms);
         $availableRooms = $rawRooms->where('status', 'available')->count();
+        $reservedRooms = $rawRooms->where('status', 'reserved')->count();
         $occupiedRooms = $rawRooms->where('status', 'occupied')->count();
         $maintenanceRooms = $rawRooms->where('status', 'maintenance')->count();
         $dirtyRooms = $rawRooms->where('status', 'dirty')->count();
@@ -566,13 +596,15 @@ class AdminOperationController extends Controller
         $stats = [
             'total' => $totalRooms,
             'available' => $availableRooms,
-            'available_pct' => round(($availableRooms / $totalRooms) * 100, 1),
+            'available_pct' => round(($availableRooms / $statsDenominator) * 100, 1),
+            'reserved' => $reservedRooms,
+            'reserved_pct' => round(($reservedRooms / $statsDenominator) * 100, 1),
             'occupied' => $occupiedRooms,
-            'occupied_pct' => round(($occupiedRooms / $totalRooms) * 100, 1),
+            'occupied_pct' => round(($occupiedRooms / $statsDenominator) * 100, 1),
             'maintenance' => $maintenanceRooms,
-            'maintenance_pct' => round(($maintenanceRooms / $totalRooms) * 100, 1),
+            'maintenance_pct' => round(($maintenanceRooms / $statsDenominator) * 100, 1),
             'cleaning' => $dirtyRooms,
-            'cleaning_pct' => round(($dirtyRooms / $totalRooms) * 100, 1),
+            'cleaning_pct' => round(($dirtyRooms / $statsDenominator) * 100, 1),
         ];
 
         // 6. Bangun Kueri Filter Paginasi Utama untuk Ditampilkan ke Datatable
@@ -598,24 +630,18 @@ class AdminOperationController extends Controller
         // Jalankan Filter Kategori Status
         if ($request->filled('status_filter')) {
             $statusFilter = $request->status_filter;
-            // Jika filter yang dicari 'occupied', kita cari yang terikat booking aktif
-            if ($statusFilter === 'occupied') {
-                $query->whereIn('rooms.id', $activeBookings->keys()->toArray());
-            } else {
-                $query->where('rooms.status', $statusFilter)
-                    ->whereNotIn('rooms.id', $activeBookings->keys()->toArray());
-            }
+            $matchingRoomIds = $rawRooms->where('status', $statusFilter)->pluck('id')->all();
+            $query->whereIn('rooms.id', $matchingRoomIds);
         }
 
         $rooms = $query->orderBy('rooms.room_number', 'asc')->paginate(10)->withQueryString();
 
-        // Pasangkan objek booking aktif ke setiap baris data paginasi
+        $roomDisplayStates = $rawRooms->keyBy('id');
         foreach ($rooms->items() as $room) {
-            $room->active_booking = $activeBookings->get($room->id);
-            if ($room->active_booking) {
-                $room->status = 'occupied';
-            } elseif ($room->status === 'occupied') {
-                $room->status = 'available';
+            if ($displayRoom = $roomDisplayStates->get($room->id)) {
+                $room->physical_status = $displayRoom->physical_status;
+                $room->status = $displayRoom->status;
+                $room->active_booking = $displayRoom->active_booking;
             }
         }
 
@@ -629,6 +655,7 @@ class AdminOperationController extends Controller
                     'name' => $type->name,
                     'total' => $typeRooms->count(),
                     'occupied' => $typeRooms->where('status', 'occupied')->count(),
+                    'reserved' => $typeRooms->where('status', 'reserved')->count(),
                     'available' => $typeRooms->where('status', 'available')->count()
                 ];
             }
