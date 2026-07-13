@@ -1,78 +1,93 @@
-# Hotel Online
+# Oasis Hotel Online
 
-Aplikasi hotel berbasis Laravel yang dilengkapi autentikasi, reservasi, manajemen tamu, pembayaran, dan email verifikasi. Project ini dapat dijalankan secara lokal maupun melalui Docker untuk kebutuhan deployment.
+Sistem operasional hotel berbasis Laravel untuk reservasi, front office, kamar,
+tamu, restoran, fasilitas, pembayaran, dan laporan manajemen.
 
-## Fitur utama
-- Autentikasi pengguna dan verifikasi email
-- Manajemen kamar, tipe kamar, dan pemesanan
-- Manajemen tamu dan fasilitas hotel
-- Integrasi pembayaran Midtrans
-- reCAPTCHA pada form registrasi
-- Deployment dengan Docker, Nginx, PHP-FPM, dan PostgreSQL
+## Arsitektur deployment
 
-## Persyaratan sebelum deploy
-Pastikan server/host memiliki:
-- Docker dan Docker Compose terinstal
-- Port 8080 tersedia
-- Domain atau IP publik yang siap dipakai
-- Database PostgreSQL yang dapat diakses
-- Kredensial SMTP yang valid untuk fitur email
+Stack menjalankan tiga node web identik dari custom image Apache/PHP. Nginx
+mendistribusikan request dengan strategi `least_conn`, sedangkan PostgreSQL
+menyimpan data pada named volume yang persisten.
 
-## File yang perlu diubah saat deploy
-Sebelum menjalankan deployment, ubah nilai berikut di file .env:
-- APP_ENV=production
-- APP_URL=https://domain-anda.com
-- APP_DEBUG=false
-- DB_CONNECTION=pgsql
-- DB_HOST=nama-host-db
-- DB_PORT=5432
-- DB_DATABASE=nama_database
-- DB_USERNAME=nama_user
-- DB_PASSWORD=password_db
-- MAIL_MAILER=smtp
-- MAIL_HOST=smtp.provider.com
-- MAIL_PORT=587
-- MAIL_USERNAME=your@email.com
-- MAIL_PASSWORD=app-password
-- MAIL_ENCRYPTION=tls
-- MAIL_FROM_ADDRESS=noreply@domain-anda.com
-- MAIL_FROM_NAME="Nama Hotel"
-- RECAPTCHA_SITE_KEY=...
-- RECAPTCHA_SECRET_KEY=...
-- MIDTRANS_SERVER_KEY=...
-- MIDTRANS_CLIENT_KEY=...
+```text
+Browser :8080
+     |
+Nginx load balancer
+     |
+     +-- web1 (Apache + Laravel, hijau)
+     +-- web2 (Apache + Laravel, jingga)
+     +-- web3 (Apache + Laravel, ungu)
+     |
+PostgreSQL + hotel_database volume
+```
 
-## Menjalankan deployment
+Semua service memakai network bridge internal `hotel_internal` dan restart
+policy `unless-stopped`. Database tidak diekspos ke host.
+
+## Menjalankan aplikasi dengan Docker
+
+Prasyarat: Docker Engine, Docker Compose v2, OpenSSL, dan port 8080 yang kosong.
+
+```bash
+cp .env.example .env
+```
+
+Ubah minimal `POSTGRES_PASSWORD` dan `DOCKER_APP_URL` pada `.env`. Isi kredensial email, reCAPTCHA, dan
+Midtrans jika fiturnya akan dipakai. Kemudian jalankan:
+
 ```bash
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-Script deployment akan:
-1. Membuat file .env dari .env.example jika belum ada
-2. Membangun container Docker
-3. Menginstal dependensi Laravel
-4. Menjalankan migrasi database
-5. Menyediakan storage link dan cache Laravel
+Aplikasi tersedia di <http://localhost:8080>.
 
-Akses aplikasi setelah selesai:
-```text
-http://localhost:8080
+## Membuktikan load balancing
+
+Halaman publik menampilkan badge node dengan warna berbeda. Header respons juga
+memuat identitas node. Jalankan request berulang:
+
+```bash
+for i in 1 2 3 4 5 6; do
+  curl -sI http://localhost:8080 | grep -i X-App-Node
+done
 ```
 
-## Struktur Docker
-- app: container PHP-FPM + Laravel
-- loadbalancer: container Nginx sebagai reverse proxy
-- db: container PostgreSQL
+Hasil akan bergantian antara `Web 1`, `Web 2`, dan `Web 3` mengikuti kondisi
+koneksi. Periksa kondisi stack dengan:
 
-## Catatan penting
-- Jangan menjalankan migrasi fresh di production secara sembarangan karena akan menghapus data.
-- Jika ingin mengisi data awal, gunakan APP_SEED_DATABASE=true saat deploy.
-- Untuk production, gunakan HTTPS dan sertifikat TLS yang valid.
-- Jika email tidak terkirim, cek kembali SMTP, port, dan password aplikasi email.
+```bash
+docker compose ps
+docker compose logs -f loadbalancer web1 web2 web3
+```
 
-## Troubleshooting singkat
-- Aplikasi blank / 500: cek log container dan pastikan .env benar.
-- Error database: cek koneksi DB dan kredensial PostgreSQL.
-- Error email: cek SMTP dan gunakan app password jika memakai Gmail/Outlook.
-- Error asset: pastikan folder public/build tersedia dan build berhasil.
+## Laporan
+
+Laporan menggunakan satu halaman terpadu agar KPI hotel mudah dibandingkan.
+Isi dibagi menjadi section Overview, Rooms, Gastronomy, dan Facilities. Export
+Excel tetap menggunakan beberapa sheet agar data setiap divisi mudah diolah,
+sedangkan PDF memakai format ringkasan eksekutif.
+
+## Pengembangan lokal
+
+```bash
+composer run setup
+composer run dev
+```
+
+Jalankan pemeriksaan sebelum membuat pull request:
+
+```bash
+composer test
+./vendor/bin/pint --test
+npm run build
+```
+
+## Catatan keamanan
+
+- Jangan commit `.env`, credential, private key, atau backup database.
+- Gunakan password database yang kuat dan `APP_DEBUG=false` di production.
+- Endpoint admin, manager, receptionist, dan guest dibatasi berdasarkan role.
+- Status pembayaran hanya boleh dianggap final setelah callback bertanda tangan
+  dari Midtrans diterima.
+- Pasang TLS pada reverse proxy atau platform ingress saat digunakan di internet.
