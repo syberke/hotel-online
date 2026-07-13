@@ -176,7 +176,40 @@ echo "📦 Build revision: $APP_BUILD_REVISION"
 
 "${COMPOSE_BIN[@]}" down --remove-orphans || true
 "${COMPOSE_BIN[@]}" up -d --build --wait
+
+echo "🧬 Menjalankan migrasi database"
 "${COMPOSE_BIN[@]}" exec -T web1 php artisan migrate --force
+
+# Seed hanya ketika data dasar belum lengkap. Dengan begitu deploy berikutnya
+# tidak mereset data operasional hotel yang sudah tersimpan.
+if "${COMPOSE_BIN[@]}" exec -T web1 php -r '
+    require "vendor/autoload.php";
+    $app = require "bootstrap/app.php";
+    $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+    $requiredTables = ["users", "roles", "room_types", "rooms", "facilities", "restaurant_menus"];
+    foreach ($requiredTables as $table) {
+        if (!Illuminate\Support\Facades\Schema::hasTable($table)
+            || !Illuminate\Support\Facades\DB::table($table)->exists()) {
+            exit(1);
+        }
+    }
+    exit(0);
+'; then
+    echo "🌱 Data awal sudah tersedia, seeding dilewati"
+else
+    echo "🌱 Data awal belum lengkap, menjalankan seeder"
+    "${COMPOSE_BIN[@]}" exec -T web1 php artisan db:seed --force
+fi
+
+echo "⚡ Mengoptimalkan cache Laravel"
+"${COMPOSE_BIN[@]}" exec -T web1 php artisan optimize:clear
+"${COMPOSE_BIN[@]}" exec -T web1 php artisan optimize
+
+echo "🩺 Memverifikasi endpoint aplikasi"
+curl -fsS http://localhost:8080/lb-health >/dev/null
+curl -fsS http://localhost:8080/ >/dev/null
+
 "${COMPOSE_BIN[@]}" ps
 
 echo "✅ Stack deployment selesai"
