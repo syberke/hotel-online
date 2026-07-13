@@ -100,11 +100,6 @@
             invPreference: '',
             invStatus: '',
 
-            // Notifikasi Popup
-            alertMessage: '',
-            alertSuccess: true,
-            showAlert: false,
-
             // Master data array yang disuntik langsung dari database
             allFacilities: [
                 @foreach($facilities as $f)
@@ -169,29 +164,37 @@
                         notes: this.notes
                     })
                 })
-                .then(res => res.json())
+                .then(async res => {
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Gagal mengalokasikan slot reservasi.');
+                    }
+
+                    return data;
+                })
                 .then(data => {
                     submitBtn.disabled = false;
                     submitBtn.innerText = 'Confirm Reservation Slot';
                     this.showBookingModal = false;
 
                     if (data.success) {
-                        this.alertMessage = data.message;
-                        this.alertSuccess = true;
-                        this.showAlert = true;
-                        setTimeout(() => window.location.reload(), 2000);
+                        OasisDialog.fire({
+                            icon: 'success',
+                            title: 'Reservasi Berhasil',
+                            text: data.message || 'Slot fasilitas berhasil diamankan.',
+                            footer: '<span class="text-xs text-amber-800">Reservasi sudah masuk ke agenda fasilitas Oasis Hotel.</span>',
+                            confirmButtonText: 'Lihat Reservasi Saya',
+                            allowOutsideClick: false,
+                        }).then(() => window.location.reload());
                     } else {
-                        this.alertMessage = data.message || 'Gagal mengalokasikan slot reservasi.';
-                        this.alertSuccess = false;
-                        this.showAlert = true;
+                        OasisDialog.error(data.message || 'Gagal mengalokasikan slot reservasi.');
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
                     submitBtn.disabled = false;
                     submitBtn.innerText = 'Confirm Reservation Slot';
-                    this.alertMessage = 'Terjadi gangguan transmisi menuju server cloud.';
-                    this.alertSuccess = false;
-                    this.showAlert = true;
+                    OasisDialog.error(error.message || 'Terjadi gangguan komunikasi dengan server.');
                 });
             }
          }">
@@ -473,18 +476,6 @@
                 </div>
                 
                 <div class="text-center font-sans text-[9px] text-neutral-300 uppercase tracking-widest mt-6">Verified Electronic Ledger Enclosure</div>
-            </div>
-        </div>
-
-        <div x-show="showAlert" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
-            <div class="absolute inset-0 bg-neutral-950/20 backdrop-blur-xs" @click="showAlert = false"></div>
-            <div class="relative bg-white max-w-xs w-full border border-neutral-200 p-6 shadow-2xl text-center transform transition-all space-y-3">
-                <div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center border text-sm" :class="alertSuccess ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'">
-                    <i class="fa-solid" :class="alertSuccess ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
-                </div>
-                <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-900" x-text="alertSuccess ? 'Success Allocation' : 'Operation Refused'"></h4>
-                <p class="text-neutral-500 text-[11px] leading-relaxed" x-text="alertMessage"></p>
-                <button @click="showAlert = false" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-2 transition-colors cursor-pointer">Dismiss</button>
             </div>
         </div>
 

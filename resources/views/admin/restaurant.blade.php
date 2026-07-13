@@ -11,7 +11,7 @@
         </div>
     @endif
 
-    <div class="flex flex-col xl:flex-row gap-8 items-start w-full" x-data="{ openDetailModal: false, activeOrder: {}, activeItems: [] }">
+    <div class="flex flex-col xl:flex-row gap-8 items-start w-full">
         
         <div class="flex-1 w-full space-y-6">
             
@@ -125,22 +125,9 @@
                                     <td class="py-3.5 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
                                     <td class="py-3.5 px-4 text-center">
                                         <div class="flex items-center justify-center gap-1.5">
-                                            <button type="button" @click="
-    fetch('{{ url('/admin/restaurant-order') }}/' + {{ $order->id }} + '/json-detail')
-    .then(res => {
-        if (!res.ok) throw new Error('Detail pesanan tidak tersedia');
-        return res.json();
-    })
-    .then(data => {
-        if(data.success) {
-            activeOrder = data.order;
-            activeItems = data.items;
-            openDetailModal = true;
-        } else {
-            throw new Error(data.message || 'Detail pesanan tidak tersedia');
-        }
-    })
-    .catch(err => OasisDialog.error(err.message))"
+                                            <button type="button"
+                                                data-restaurant-order-detail
+                                                data-detail-url="{{ route('admin.restaurant.order.json', $order->id) }}"
                                                 class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Lihat detail pesanan">
                                                 <i class="fa-solid fa-eye text-xs"></i>
                                             </button>
@@ -247,32 +234,30 @@
 
     </div>
 
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs" 
-         x-show="openDetailModal" 
-         x-transition 
-         x-cloak>
-        <div class="bg-white max-w-md w-full border border-neutral-200 p-6 shadow-2xl flex flex-col text-left font-sans text-neutral-900" @click.away="openDetailModal = false">
+    <div id="restaurant-order-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <button type="button" data-close-restaurant-detail class="absolute inset-0 cursor-default" aria-label="Tutup detail pesanan"></button>
+        <div class="relative bg-white max-w-md w-full border border-neutral-200 p-6 shadow-2xl flex flex-col text-left font-sans text-neutral-900">
             <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
                 <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-800">Gastronomy Manifest Audit</h4>
-                <button type="button" @click="openDetailModal = false" class="text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" data-close-restaurant-detail class="text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="grid grid-cols-2 gap-3 text-[11px] font-medium text-neutral-500 mb-4 pb-3 border-b border-neutral-50">
                 <div>
                     <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Order ID</span>
-                    <span class="font-mono text-neutral-900 font-bold" x-text="'#RS-' + String(activeOrder.id).padStart(4,'0')"></span>
+                    <span id="restaurant-detail-id" class="font-mono text-neutral-900 font-bold">-</span>
                 </div>
                 <div>
                     <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Destination Assignment</span>
-                    <span class="text-neutral-900 font-bold" x-text="activeOrder.room_number"></span>
+                    <span id="restaurant-detail-room" class="text-neutral-900 font-bold">-</span>
                 </div>
                 <div>
                     <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Guest Profile</span>
-                    <span class="text-neutral-900 font-bold" x-text="activeOrder.guest_name"></span>
+                    <span id="restaurant-detail-guest" class="text-neutral-900 font-bold">-</span>
                 </div>
                 <div>
                     <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Timestamp</span>
-                    <span class="text-neutral-700 font-mono text-[10px]" x-text="activeOrder.created_at"></span>
+                    <span id="restaurant-detail-time" class="text-neutral-700 font-mono text-[10px]">-</span>
                 </div>
             </div>
 
@@ -282,28 +267,21 @@
                     <span class="w-12 text-center">Qty</span>
                     <span class="w-24 text-right">Price</span>
                 </div>
-                <div class="divide-y divide-neutral-100 max-h-40 overflow-y-auto custom-scrollbar">
-                    <template x-for="item in activeItems">
-                        <div class="p-2 flex justify-between items-center text-neutral-700 font-medium">
-                            <span class="font-bold text-neutral-900 truncate max-w-[180px]" x-text="item.name"></span>
-                            <span class="w-12 text-center font-mono text-neutral-500" x-text="item.quantity"></span>
-                            <span class="w-24 text-right font-mono text-neutral-900 font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(item.price)"></span>
-                        </div>
-                    </template>
+                <div id="restaurant-detail-items" class="divide-y divide-neutral-100 max-h-40 overflow-y-auto custom-scrollbar">
                 </div>
             </div>
 
             <div class="flex justify-between items-baseline border-t border-neutral-100 pt-3 font-sans mt-2">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Total Charged Invoice:</span>
-                <span class="text-md font-mono font-bold text-neutral-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeOrder.total_price)"></span>
+                <span id="restaurant-detail-total" class="text-md font-mono font-bold text-neutral-900">Rp 0</span>
             </div>
 
             <div class="mt-5 flex gap-2">
                 <div class="flex-1 bg-neutral-50 border p-2 text-center">
                     <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Workflow Matrix</span>
-                    <span class="text-[10px] font-bold uppercase font-mono tracking-wide mt-0.5 inline-block text-amber-700 animate-pulse" x-text="activeOrder.status"></span>
+                    <span id="restaurant-detail-status" class="text-[10px] font-bold uppercase font-mono tracking-wide mt-0.5 inline-block text-amber-700 animate-pulse">-</span>
                 </div>
-                <button type="button" @click="openDetailModal = false" class="bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors shadow-sm cursor-pointer">
+                <button type="button" data-close-restaurant-detail class="bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors shadow-sm cursor-pointer">
                     Dismiss View
                 </button>
             </div>
