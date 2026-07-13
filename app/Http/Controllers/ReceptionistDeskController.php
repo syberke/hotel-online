@@ -47,7 +47,9 @@ class ReceptionistDeskController extends Controller
         ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
         ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
         // Hubungkan ke tabel guests untuk mengambil foto_url yang valid
-        ->leftJoin('guests', 'users.email', '=', 'guests.email')
+        ->leftJoin('guests', function ($join) {
+            $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
+        })
         ->whereDate('bookings.check_in', $today)
         ->select(
             'bookings.id as booking_id',
@@ -55,7 +57,10 @@ class ReceptionistDeskController extends Controller
             'bookings.check_out',
             'bookings.status as booking_status',
             'users.name as guest_name',
-            'users.phone as guest_phone',
+            'guests.id as guest_record_id',
+            'guests.identity_number',
+            DB::raw("COALESCE(NULLIF(guests.phone, ''), NULLIF(users.phone, '')) as guest_phone"),
+            DB::raw("COALESCE(NULLIF(guests.address, ''), NULLIF(users.address, '')) as guest_address"),
             'guests.foto_url as guest_avatar', // FIX: Diambil dari tabel guests, bukan users
             'rooms.room_number',
             'room_types.name as room_type'
@@ -205,12 +210,18 @@ class ReceptionistDeskController extends Controller
         // ======================================================================
         $query = DB::table('bookings')
             ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', function ($join) {
+                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
+            })
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->select(
                 'bookings.*', 
                 'users.name as guest_name', 
-                'users.phone as guest_phone', 
+                'guests.id as guest_record_id',
+                'guests.identity_number',
+                DB::raw("COALESCE(NULLIF(guests.phone, ''), NULLIF(users.phone, '')) as guest_phone"),
+                DB::raw("COALESCE(NULLIF(guests.address, ''), NULLIF(users.address, '')) as guest_address"),
                 'rooms.room_number', 
                 'room_types.name as room_type'
             );
@@ -234,7 +245,9 @@ class ReceptionistDeskController extends Controller
                 $cleanSearch = ltrim($search, '#RES-OA-');
                 $q->where('bookings.id', 'like', "%{$cleanSearch}%")
                   ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhere('users.phone', 'like', "%{$search}%");
+                  ->orWhere('users.phone', 'like', "%{$search}%")
+                  ->orWhere('guests.phone', 'like', "%{$search}%")
+                  ->orWhere('guests.identity_number', 'like', "%{$search}%");
             });
         }
 

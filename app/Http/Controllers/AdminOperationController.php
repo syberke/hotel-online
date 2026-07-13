@@ -124,20 +124,23 @@ class AdminOperationController extends Controller
     }
       public function adminDetailReservation($id)
     {
-        $booking = \App\Models\Booking::with(['user', 'room.roomType', 'payments'])->find($id);
+        $booking = \App\Models\Booking::with(['user.guestProfile', 'room.roomType', 'payments'])->find($id);
         if (!$booking) {
             return response()->json(['success' => false, 'message' => 'Data tidak ditemukan.'], 404);
         }
         
         $latestPayment = $booking->payments->last();
+        $guestProfile = $booking->user?->guestProfile;
         
         return response()->json([
             'success' => true,
             'id' => $booking->id,
+            'guest_id' => $guestProfile?->id,
+            'identity_number' => $guestProfile?->identity_number,
             'guest_name' => $booking->user->name ?? 'N/A',
             'guest_email' => $booking->user->email ?? 'N/A',
-            'guest_phone' => $booking->user->phone ?? '-',
-            'guest_address' => $booking->user->address ?? 'Tidak ada alamat',
+            'guest_phone' => $guestProfile?->phone ?: ($booking->user->phone ?? '-'),
+            'guest_address' => $guestProfile?->address ?: ($booking->user->address ?? 'Tidak ada alamat'),
             'room_type' => $booking->room->roomType->name ?? 'Unassigned',
             'room_number' => $booking->room->room_number ?? 'TBD',
             'check_in' => \Carbon\Carbon::parse($booking->check_in)->format('d M Y'),

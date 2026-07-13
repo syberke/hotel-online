@@ -18,6 +18,11 @@ class User extends Authenticatable implements MustVerifyEmail // Tambahkan imple
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
+    public function guestProfile()
+    {
+        return $this->hasOne(Guest::class, 'email', 'email');
+    }
+
     /**
      * Get the attributes that should be cast.
      *

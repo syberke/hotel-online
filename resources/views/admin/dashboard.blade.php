@@ -152,6 +152,10 @@
                             </div>
                             <div>
                                 <span class="text-xs font-bold text-neutral-900 block">{{ $arrival->guest_name }}</span>
+                                <span class="text-[9px] font-mono font-bold text-amber-700 block mt-0.5">
+                                    {{ $arrival->guest_record_id ? '#GST-'.str_pad($arrival->guest_record_id, 5, '0', STR_PAD_LEFT) : 'Guest ID pending' }}
+                                    &bull; {{ $arrival->identity_number ?: 'Identity pending' }}
+                                </span>
                                 <span class="text-[9px] font-medium text-neutral-400 block mt-0.5">{{ $arrival->room_type }} &bull; Room {{ $arrival->room_number ?? 'Unassigned' }}</span>
                             </div>
                         </div>

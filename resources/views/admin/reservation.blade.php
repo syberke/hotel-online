@@ -182,6 +182,10 @@
                                 </td>
                                 <td class="py-4 px-4 align-middle">
                                     <span class="font-bold text-neutral-900 block">{{ $booking->user->name ?? 'N/A' }}</span>
+                                    <span class="text-[9px] text-amber-700 font-mono font-bold block mt-0.5">
+                                        {{ $booking->user?->guestProfile?->id ? '#GST-'.str_pad($booking->user->guestProfile->id, 5, '0', STR_PAD_LEFT) : 'Guest ID pending' }}
+                                        &bull; {{ $booking->user?->guestProfile?->identity_number ?: 'Identity pending' }}
+                                    </span>
                                     <span class="text-[10px] text-neutral-400 block font-normal mt-0.5">{{ $booking->user->email ?? 'N/A' }}</span>
                                 </td>
                                 <td class="py-4 px-4 align-middle">
@@ -314,12 +318,16 @@
                             <div class="overflow-hidden">
                                 <span class="text-xs font-bold text-neutral-900 block truncate">{{ $selectedBooking->user->name ?? 'N/A' }}</span>
                                 <span class="text-[10px] text-neutral-500 font-medium block mt-0.5 truncate">{{ $selectedBooking->user->email ?? 'N/A' }}</span>
-                                <span class="text-[10px] text-neutral-400 font-mono block mt-0.5">{{ $selectedBooking->user->phone ?? '-' }}</span>
+                                <span class="text-[10px] text-amber-700 font-mono font-bold block mt-0.5">
+                                    {{ $selectedBooking->user?->guestProfile?->id ? '#GST-'.str_pad($selectedBooking->user->guestProfile->id, 5, '0', STR_PAD_LEFT) : 'Guest ID pending' }}
+                                    &bull; {{ $selectedBooking->user?->guestProfile?->identity_number ?: 'Identity pending' }}
+                                </span>
+                                <span class="text-[10px] text-neutral-400 font-mono block mt-0.5">{{ $selectedBooking->user?->guestProfile?->phone ?: ($selectedBooking->user->phone ?? '-') }}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 text-[10px] font-medium text-neutral-500 px-1">
                             <i class="fa-solid fa-location-dot text-neutral-400 shrink-0"></i>
-                            <span class="truncate">{{ $selectedBooking->user->address ?? 'No permanent address recorded' }}</span>
+                            <span class="truncate">{{ $selectedBooking->user?->guestProfile?->address ?: ($selectedBooking->user->address ?? 'No permanent address recorded') }}</span>
                         </div>
                     </div>
 
@@ -447,6 +455,7 @@
                     <h5 class="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Guest Ledger Profile</h5>
                     <div class="border border-neutral-200 p-2.5 space-y-1 bg-white">
                         <p class="font-bold text-neutral-900" id="md-name">-</p>
+                        <p class="font-mono text-[11px] font-bold text-amber-700"><span id="md-guest-id">Guest ID pending</span> &bull; <span id="md-identity">Identity pending</span></p>
                         <p id="md-email">-</p>
                         <p class="font-mono text-[11px]" id="md-phone">-</p>
                         <p class="text-neutral-400 text-[11px]" id="md-address">-</p>
@@ -533,6 +542,10 @@
                 if(data.success) {
                     document.getElementById('md-id').innerText = `#OA-${String(data.id).padStart(2, '0')}`;
                     document.getElementById('md-name').innerText = data.guest_name;
+                    document.getElementById('md-guest-id').innerText = data.guest_id
+                        ? `#GST-${String(data.guest_id).padStart(5, '0')}`
+                        : 'Guest ID pending';
+                    document.getElementById('md-identity').innerText = data.identity_number || 'Identity pending';
                     document.getElementById('md-email').innerText = data.guest_email;
                     document.getElementById('md-phone').innerText = data.guest_phone;
                     document.getElementById('md-address').innerText = data.guest_address || 'No permanent address recorded';
