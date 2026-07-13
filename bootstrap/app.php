@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ]);
         // 1. Mendaftarkan alias middleware custom milikmu
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,   
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'deny-manager-modification' => \App\Http\Middleware\DenyManagerModification::class,
         ]);
 
         // 2. PERBAIKAN: Mengecualikan rute callback Midtrans dari pemeriksaan CSRF bawaan Laravel 11
@@ -28,6 +29,6 @@ return Application::configure(basePath: dirname(__DIR__))
     
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson() || $request->wantsJson(),
         );
     })->create();

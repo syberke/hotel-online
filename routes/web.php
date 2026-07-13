@@ -6,6 +6,7 @@ use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\GuestStayController;
 use App\Http\Controllers\GuestServiceController;
 use App\Http\Controllers\PaymentGatewayController;
+use App\Http\Controllers\RestaurantOrderController;
 use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\HousekeepingController;
@@ -69,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/facilities-booking', [GuestServiceController::class, 'facilitiesBooking'])->name('facilities.booking');
         Route::get('/facilities-portal', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities.portal');
         Route::get('/billing-matrix', function () { return view('guest.billingmatrix'); })->name('billing.matrix');
+        Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
     });
 
     // Guest Transactional Handlers
@@ -82,7 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/restaurant-order/settle', [PaymentGatewayController::class, 'settleRestaurantOrder'])->name('restaurant.order.settle');
     Route::post('/restaurant-order/{id}/cancel', [PaymentGatewayController::class, 'cancelRestaurantOrder'])->name('restaurant.order.cancel');
     Route::post('/restaurant-order/{id}/re-token', [PaymentGatewayController::class, 'reTokenPendingOrder'])->name('restaurant.order.retoken');
-    Route::get('/restaurant-order/{id}/details', [PaymentGatewayController::class, 'getRestaurantOrderDetails'])->name('restaurant.order.details');
+    Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
     
     Route::post('/room-service/order', [GuestServiceController::class, 'storeRoomServiceOrder'])->name('room.service.order');
     Route::post('/facilities/book', [GuestServiceController::class, 'bookFacility'])->name('facilities.book');
@@ -167,15 +169,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        8. HARD SECURITY POLICY: ANTI-MANAGER MODIFICATION GATEWAY
        ====================================================================== */
-    Route::group(['middleware' => function ($request, $next) {
-        if (auth()->check() && auth()->user()->role === 'manager') {
-            return redirect()->back()->with('error', 'Akses ditolak: Akun Manager hanya diizinkan membaca data.');
-        }
-        return $next($request);
-    }], function () {
+    Route::middleware('deny-manager-modification')->group(function () {
         Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
         Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
         Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
+        
+        Route::post('/admin/room-types/store', [AdminOperationController::class, 'storeRoomType'])->name('admin.room-types.store');
+        Route::post('/admin/room-types/{id}/update', [AdminOperationController::class, 'updateRoomType'])->name('admin.room-types.update');
+        Route::delete('/admin/room-types/{id}/delete', [AdminOperationController::class, 'deleteRoomType'])->name('admin.room-types.delete');
         
         Route::post('/reservations/{id}/update', [AdminOperationController::class, 'adminUpdateReservation'])->name('admin.reservations.update');
         Route::delete('/reservations/{id}/delete', [AdminOperationController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');

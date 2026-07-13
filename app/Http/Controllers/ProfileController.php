@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -29,7 +30,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+   public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
         $user->fill($request->validated());
@@ -49,21 +50,44 @@ class ProfileController extends Controller
                 'address'         => 'required|string',
             ]);
 
-            DB::table('guests')->updateOrInsert(
-                ['email' => $user->email],
-                [
+            // 1. Cek apakah data guest dengan email ini sudah ada di database
+            $guestExists = DB::table('guests')->where('email', $user->email)->exists();
+
+            if ($guestExists) {
+                // JIKA DATA SUDAH ADA: Cukup lakukan update data profil
+                DB::table('guests')->where('email', $user->email)->update([
                     'name'            => $user->name,
                     'phone'           => $request->phone,
                     'identity_number' => $request->identity_number,
                     'address'         => $request->address,
                     'updated_at'      => now()
-                ]
-            );
+                ]);
+            } else {
+                // JIKA BELUM ADA DATA: Gunakan insertOrIgnore agar kebal dari tabrakan sequence ID PostgreSQL
+                DB::table('guests')->insertOrIgnore([
+                    'email'           => $user->email,
+                    'name'            => $user->name,
+                    'password'        => bcrypt(Str::random(16)), // Mengisi kolom NOT NULL password database
+                    'phone'           => $request->phone,
+                    'identity_number' => $request->identity_number,
+                    'address'         => $request->address,
+                    'created_at'      => now(),
+                    'updated_at'      => now()
+                ]);
+
+                // Jikalau insertOrIgnore memblokir duplikasi ID, pastikan data terbaru tetap masuk via update
+                DB::table('guests')->where('email', $user->email)->update([
+                    'name'            => $user->name,
+                    'phone'           => $request->phone,
+                    'identity_number' => $request->identity_number,
+                    'address'         => $request->address,
+                    'updated_at'      => now()
+                ]);
+            }
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
-
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [

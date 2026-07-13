@@ -5,6 +5,11 @@
             <i class="fa-solid fa-circle-check mr-2 text-emerald-400 text-sm"></i> {{ session('success') }}
         </div>
     @endif
+    @if(session('error'))
+        <div class="bg-rose-950/95 border border-rose-800 text-rose-300 p-4 text-xs font-semibold uppercase tracking-wider mb-6 flex items-center shadow-md">
+            <i class="fa-solid fa-triangle-exclamation mr-2 text-rose-400 text-sm"></i> {{ session('error') }}
+        </div>
+    @endif
 
     <div class="flex flex-col xl:flex-row gap-8 items-start w-full" x-data="{ openDetailModal: false, activeOrder: {}, activeItems: [] }">
         
@@ -119,24 +124,26 @@
                                     <td class="py-3.5 px-4 text-center">
                                         @if(auth()->user()->role !== 'manager')
                                             <div class="flex items-center justify-center gap-1.5">
-                                                <button type="button" @click="
-                                                    fetch('{{ route('admin.restaurant.order.json', $order->id) }}')
-                                                    .then(res => {
-                                                        if (!res.ok) throw new Error('Server structure error');
-                                                        return res.json();
-                                                    })
-                                                    .then(data => {
-                                                        if(data.success) {
-                                                            activeOrder = data.order;
-                                                            activeItems = data.items;
-                                                            openDetailModal = true;
-                                                        }
-                                                    })
-                                                    .catch(err => console.error('Error info:', err))" 
-                                                    class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Review Order Items">
-                                                    <i class="fa-solid fa-eye text-xs"></i>
-                                                </button>
-                                                <button type="button" onclick="window.location='/admin/room-service-orders?selected_id={{ $order->id }}'" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs">
+                                               <button type="button" @click="
+    fetch('{{ url('/admin/restaurant-order') }}/' + {{ $order->id }} + '/json-detail')
+    .then(res => {
+        if (!res.ok) throw new Error('Server structure error');
+        return res.json();
+    })
+    .then(data => {
+        if(data.success) {
+            activeOrder = data.order;
+            activeItems = data.items;
+            openDetailModal = true;
+        }
+    })
+    .catch(err => alert('Gagal mengambil data dari server.'))" 
+    class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Review Order Items">
+    <i class="fa-solid fa-eye text-xs"></i>
+</button>
+                                                <button type="button" 
+                                                        onclick="openOrderDropdown(event, {{ $order->id }}, '{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}')"
+                                                        class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs">
                                                     <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                                                 </button>
                                             </div>
@@ -240,7 +247,10 @@
 
     </div>
 
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs" x-show="openDetailModal" x-transition x-cloak>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs" 
+         x-show="openDetailModal" 
+         x-transition 
+         x-cloak>
         <div class="bg-white max-w-md w-full border border-neutral-200 p-6 shadow-2xl flex flex-col text-left font-sans text-neutral-900" @click.away="openDetailModal = false">
             <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
                 <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-800">Gastronomy Manifest Audit</h4>
@@ -268,16 +278,16 @@
 
             <div class="text-[11px] w-full mb-4">
                 <div class="bg-neutral-50 p-2 flex justify-between font-bold text-[8px] text-neutral-400 uppercase tracking-wider">
-                    <span>Menu Item Item</span>
+                    <span>Menu Item</span>
                     <span class="w-12 text-center">Qty</span>
-                    <span class="w-24 text-right">Subtotal</span>
+                    <span class="w-24 text-right">Price</span>
                 </div>
                 <div class="divide-y divide-neutral-100 max-h-40 overflow-y-auto custom-scrollbar">
                     <template x-for="item in activeItems">
                         <div class="p-2 flex justify-between items-center text-neutral-700 font-medium">
                             <span class="font-bold text-neutral-900 truncate max-w-[180px]" x-text="item.name"></span>
                             <span class="w-12 text-center font-mono text-neutral-500" x-text="item.quantity"></span>
-                            <span class="w-24 text-right font-mono text-neutral-900 font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(item.subtotal)"></span>
+                            <span class="w-24 text-right font-mono text-neutral-900 font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(item.price)"></span>
                         </div>
                     </template>
                 </div>
@@ -290,14 +300,48 @@
 
             <div class="mt-5 flex gap-2">
                 <div class="flex-1 bg-neutral-50 border p-2 text-center">
-                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Current Workflow Matrix</span>
-                    <span class="text-[10px] font-bold uppercase font-mono tracking-wide mt-0.5 inline-block text-amber-700" x-text="activeOrder.status"></span>
+                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Workflow Matrix</span>
+                    <span class="text-[10px] font-bold uppercase font-mono tracking-wide mt-0.5 inline-block text-amber-700 animate-pulse" x-text="activeOrder.status"></span>
                 </div>
-                <button type="button" @click="openDetailModal = false" class="bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors shadow-sm cursor-pointer">
+                <button type="button" @click="openDetailModal = false" class="bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors shadow-sm cursor-pointer">
                     Dismiss View
                 </button>
             </div>
         </div>
     </div>
 
+    <div id="order-status-dropdown" class="hidden fixed w-48 bg-white border border-neutral-200 shadow-2xl z-50 text-left font-sans text-xs">
+        <div class="p-2 border-b border-neutral-100 bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Update Order <span id="drop-order-id" class="font-mono text-neutral-900"></span></div>
+        <form id="form-update-order-status" action="" method="POST" class="m-0">
+            @csrf
+            <button name="status" value="ordered" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-amber-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span> Set ordered (Pending)</button>
+            <button name="status" value="preparing" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-blue-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> Set Preparing</button>
+            <button name="status" value="paid" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-emerald-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Set paid (Ready)</button>
+            <button name="status" value="cancelled" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-rose-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-rose-500 mr-2"></span> Set Cancelled</button>
+        </form>
+    </div>
+
 </x-admin-dashboard-layout>
+
+<script type="text/javascript">
+    function openOrderDropdown(event, orderId, orderString) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('order-status-dropdown');
+        const triggerBtn = event.currentTarget;
+        
+        document.getElementById('drop-order-id').innerText = '#RS-' + orderString;
+        document.getElementById('form-update-order-status').action = `/admin/restaurant-order/${orderId}/update-status`;
+        
+        const rect = triggerBtn.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        dropdown.style.left = (rect.left + window.scrollX - 160) + 'px';
+        dropdown.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('order-status-dropdown');
+        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.dropdown-trigger-btn')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+</script>

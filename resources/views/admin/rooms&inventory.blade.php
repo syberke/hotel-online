@@ -1,3 +1,17 @@
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f3; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d4; }
+    [x-cloak] { display: none !important; }
+
+    .selected-neon-row {
+        background-color: #f5f5f5 !important;
+        border-left: 3px solid #737373 !important;
+    }
+</style>
+
 <x-admin-dashboard-layout>
 
     @if(session('success'))
@@ -56,11 +70,11 @@
             <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-4">
                 <form action="{{ request()->url() }}" method="GET" class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div class="flex text-xs font-bold uppercase tracking-wider text-neutral-400 gap-6 border-b border-neutral-100 lg:border-none pb-2 lg:pb-0">
-                        <button type="button" class="text-neutral-900 border-b-2 border-neutral-900 pb-1 px-0.5">Room List</button>
-                        <button type="button" class="hover:text-neutral-900 transition-colors pb-1 px-0.5 opacity-50 cursor-not-allowed" disabled>Room Calendar</button>
+                        <button type="button" onclick="switchTab('rooms')" id="tab-rooms" class="text-neutral-900 border-b-2 border-neutral-900 pb-1 px-0.5 transition-colors">Room List</button>
+                        <button type="button" onclick="switchTab('types')" id="tab-types" class="hover:text-neutral-900 transition-colors pb-1 px-0.5 text-neutral-400">Room Types</button>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
+                    <div id="room-list-controls" class="flex flex-wrap items-center gap-3">
                         <div class="relative min-w-[220px] flex-1 lg:flex-none">
                             <i class="fa-solid fa-magnifying-glass text-neutral-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by room number or type..." class="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
@@ -87,7 +101,7 @@
                     </div>
                 </form>
 
-                <div class="overflow-x-auto custom-scrollbar pt-2">
+                <div id="room-list-section" class="overflow-x-auto custom-scrollbar pt-2">
                     <table class="w-full text-left text-xs whitespace-nowrap">
                         <thead>
                             <tr class="border-b border-neutral-200 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
@@ -133,18 +147,11 @@
                                     <td class="py-4 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($room->price, 0, ',', '.') }}</td>
                                     <td class="py-4 px-4 text-center">
                                         @if(auth()->user()->role !== 'manager')
-                                            <button type="button" 
-                                                    onclick="openGlobalDropdown(event, {{ $room->id }}, '{{ $room->room_number }}')" 
-                                                    class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-500 cursor-pointer transition-colors shadow-xs">
+                                            <button type="button" onclick="openGlobalDropdown(event, {{ $room->id }}, '{{ $room->room_number }}')" class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-500 cursor-pointer transition-colors shadow-xs">
                                                 <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                                             </button>
                                         @else
-                                            <button type="button" 
-                                                    onclick="openManagerViewModal({{ $room->id }})"
-                                                    class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-800 cursor-pointer transition-colors shadow-xs" 
-                                                    title="View Enclosure Blueprint Manifes">
-                                                <i class="fa-solid fa-eye text-xs"></i>
-                                            </button>
+                                            <button type="button" onclick="openManagerViewModal({{ $room->id }})" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-800 cursor-pointer transition-colors shadow-xs"><i class="fa-solid fa-eye text-xs"></i></button>
                                         @endif
                                     </td>
                                 </tr>
@@ -155,12 +162,80 @@
                             @endforelse
                         </tbody>
                     </table>
+                    
+                    <div class="flex justify-between items-center text-[11px] text-neutral-400 pt-4 font-medium">
+                        <span>Showing entries {{ $rooms->firstItem() ?? 0 }} to {{ $rooms->lastItem() ?? 0 }} of {{ $rooms->total() }} total rooms</span>
+                        <div class="font-sans text-neutral-800">{{ $rooms->links() }}</div>
+                    </div>
                 </div>
 
-                <div class="flex justify-between items-center text-[11px] text-neutral-400 pt-2 font-medium">
-                    <span>Showing entries {{ $rooms->firstItem() ?? 0 }} to {{ $rooms->lastItem() ?? 0 }} of {{ $rooms->total() }} total rooms</span>
-                    <div class="font-sans text-neutral-800">
-                        {{ $rooms->links() }}
+                <div id="room-type-section" class="hidden pt-2 space-y-4">
+                    <div class="flex justify-between items-center border-b border-neutral-100 pb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-400">Ledger Matrix Classification</h3>
+                        @if(auth()->user()->role !== 'manager')
+                            <button type="button" onclick="openAddRoomTypeModal()" class="bg-amber-800 hover:bg-amber-900 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 transition-colors shadow-sm cursor-pointer">
+                                <i class="fa-solid fa-plus text-[9px] mr-1"></i> Add New Class Type
+                            </button>
+                        @endif
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead>
+                                <tr class="border-b border-neutral-200 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
+                                    <th class="py-3 px-4 font-semibold">Class Identity</th>
+                                    <th class="py-3 px-4 font-semibold">Blueprint Layout Specs</th>
+                                    <th class="py-3 px-4 font-semibold text-center">Max Capacity</th>
+                                    <th class="py-3 px-4 font-semibold">Base Price / Night</th>
+                                    <th class="py-3 px-4 font-semibold text-center">Active Inventory</th>
+                                    <th class="py-3 px-4 text-center font-semibold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
+                                @forelse($roomTypesList as $type)
+                                    <tr class="hover:bg-neutral-50/40 transition-colors">
+                                        <td class="py-4 px-4 flex items-center gap-3">
+                                            <img src="{{ $type->foto_url ?? 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=600' }}" class="w-14 h-9 object-cover border border-neutral-200 rounded-xs">
+                                            <div>
+                                                <span class="font-bold text-neutral-900 block">{{ $type->name }}</span>
+                                                <span class="text-[9px] text-neutral-400 block font-normal mt-0.5">Perspective: {{ $type->view_perspective ?? 'Standard View' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-4">
+                                            <div class="max-w-xs space-y-0.5">
+                                                <p class="text-neutral-800 font-semibold text-[11px] truncate">{{ $type->bed_configuration ?? 'Single/Double Bed' }} &bull; {{ $type->room_size ?? '-' }}</p>
+                                                <p class="text-neutral-400 text-[10px] truncate">{{ $type->description ?? 'No core description logged.' }}</p>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-4 text-center font-mono font-bold text-neutral-800">{{ $type->max_capacity }} Pax</td>
+                                        <td class="py-4 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($type->price, 0, ',', '.') }}</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="bg-neutral-100 text-neutral-800 px-2 py-0.5 text-[10px] font-bold border border-neutral-200">{{ $roomCount[$type->id] ?? 0 }} Units</span>
+                                        </td>
+                                        <td class="py-4 px-4 text-center">
+                                            @if(auth()->user()->role !== 'manager')
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button type="button" 
+                                                            onclick="openEditRoomTypeModal({{ json_encode($type) }}, {{ $roomCount[$type->id] ?? 0 }})" 
+                                                            class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-900 hover:text-white text-neutral-700 cursor-pointer flex items-center justify-center shadow-xs transition-colors">
+                                                        <i class="fa-solid fa-pen text-xs"></i>
+                                                    </button>
+                                                    <button type="button" onclick="confirmDeleteRoomType({{ $type->id }}, '{{ addslashes($type->name) }}')" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-rose-600 hover:text-white text-rose-600 cursor-pointer flex items-center justify-center shadow-xs transition-colors">
+                                                        <i class="fa-solid fa-trash text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span class="text-neutral-400 text-[10px] font-bold uppercase tracking-wider">Read Only</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="py-12 text-center text-neutral-400 font-sans italic">No room types configured yet inside PostgreSQL schema matrix.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -303,7 +378,7 @@
                     </div>
                     <div class="mt-2">
                         <span class="block text-[9px] font-bold uppercase text-neutral-400">Status Kesiapan</span>
-                        <span id="mv_room_status" class="inline-block mt-0.5 px-2 py-0.2 text-[9px] font-bold uppercase tracking-wider"></span>
+                        <span id="mv_room_status" class="inline-block mt-0.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"></span>
                     </div>
                 </div>
 
@@ -345,6 +420,108 @@
             </form>
         </div>
     </div>
+
+@if(auth()->user()->role !== 'manager')
+        <div id="addRoomTypeModal" class="fixed inset-0 bg-neutral-950/50 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4 overflow-y-auto">
+            <div class="bg-white border border-neutral-200 max-w-2xl w-full p-6 md:p-8 shadow-2xl flex flex-col font-sans my-8">
+                
+                <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-6">
+                    <div>
+                        <h4 id="rtFormTitle" class="text-xs font-bold uppercase tracking-widest text-neutral-900">Add New Room Type Class</h4>
+                        <p class="text-[10px] text-neutral-400 mt-0.5">Configure the specifications, imagery, and structural matrix for room blueprint.</p>
+                    </div>
+                    <button type="button" onclick="closeAddRoomTypeModal()" class="text-neutral-400 hover:text-neutral-900 text-sm cursor-pointer transition-colors">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+                
+                <form id="rtForm" method="POST" class="space-y-5">
+                    @csrf
+                    <input type="hidden" id="rtTypeId" name="type_id" value="">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Room Type Name</label>
+                            <input type="text" id="rtName" name="name" placeholder="e.g., Luxury Beachfront Suite" required 
+                                   class="w-full px-3 py-2 text-xs font-semibold border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Image URL Access Link (`foto_url`)</label>
+                            <input type="url" id="rtFotoUrl" name="foto_url" placeholder="https://images.unsplash.com/..." 
+                                   class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 font-mono transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Max Capacity (`max_capacity`)</label>
+                            <div class="relative h-9">
+                                <input type="number" id="rtCapacity" name="max_capacity" min="1" max="12" placeholder="2" required 
+                                       class="w-full h-full pl-3 pr-10 py-2 text-xs font-bold border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 font-mono transition-all">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-neutral-400 uppercase pointer-events-none">Pax</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Room Dimension Size (`room_size`)</label>
+                            <div class="relative h-9">
+                                <input type="text" id="rtRoomSize" name="room_size" placeholder="e.g., 45 m² or 60 sqm" 
+                                       class="w-full h-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 transition-all">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Base Price / Night (`price`)</label>
+                            <div class="relative h-9">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-neutral-400 pointer-events-none">Rp</span>
+                                <input type="number" id="rtPrice" name="price" min="0" placeholder="1250000" required 
+                                       class="w-full h-full pl-8 pr-3 py-2 text-xs font-bold border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 font-mono transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Bed Configuration (`bed_configuration`)</label>
+                            <input type="text" id="rtBedConfig" name="bed_configuration" placeholder="e.g., 1 King Bed or 2 Twin Beds" 
+                                   class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">View Perspective Landscape (`view_perspective`)</label>
+                            <input type="text" id="rtViewPerspective" name="view_perspective" placeholder="e.g., Ocean Horizon View, Tropical Garden" 
+                                   class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 transition-all">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Core Description Text</label>
+                        <textarea id="rtDescription" name="description" placeholder="Write premium core profile summary description layout..." rows="3" 
+                                  class="w-full px-3 py-2 text-xs font-medium border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 resize-none transition-all"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Luxury Room Amenities Matrix (`amenities` - Separated with commas)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-xs"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                            <input type="text" id="rtAmenities" name="amenities" placeholder="Free Wi-Fi, Private Pool, Mini Bar, Bathtub" 
+                                   class="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 bg-neutral-50/30 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-4 border-t border-neutral-100 items-center justify-end">
+                        <button type="button" onclick="closeAddRoomTypeModal()" 
+                                class="border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-bold text-[10px] uppercase tracking-widest px-5 py-3 bg-white cursor-pointer transition-colors rounded-none">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-3 px-6 transition-all shadow-sm cursor-pointer rounded-none active:translate-y-[1px]">
+                            Commit Structure Model
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
 </x-admin-dashboard-layout>
 
@@ -433,5 +610,81 @@
     function closeAddRoomModal() {
         const modal = document.getElementById('addRoomModal');
         if (modal) modal.classList.add('hidden');
+    }
+
+    function switchTab(tab) {
+        const roomListSection = document.getElementById('room-list-section');
+        const roomTypeSection = document.getElementById('room-type-section');
+        const roomListControls = document.getElementById('room-list-controls');
+        const tabRooms = document.getElementById('tab-rooms');
+        const tabTypes = document.getElementById('tab-types');
+
+        if (tab === 'rooms') {
+            roomListSection.classList.remove('hidden');
+            roomTypeSection.classList.add('hidden');
+            roomListControls.classList.remove('hidden');
+            tabRooms.classList.add('text-neutral-900', 'border-b-2', 'border-neutral-900');
+            tabRooms.classList.remove('text-neutral-400');
+            tabTypes.classList.add('text-neutral-400');
+            tabTypes.classList.remove('text-neutral-900', 'border-b-2', 'border-neutral-900');
+        } else {
+            roomListSection.classList.add('hidden');
+            roomTypeSection.classList.remove('hidden');
+            roomListControls.classList.add('hidden');
+            tabTypes.classList.add('text-neutral-900', 'border-b-2', 'border-neutral-900');
+            tabTypes.classList.remove('text-neutral-400');
+            tabRooms.classList.add('text-neutral-400');
+            tabRooms.classList.remove('text-neutral-900', 'border-b-2', 'border-neutral-900');
+        }
+    }
+
+    // ==========================================
+    // CONTROLLER LOGIC: ROOM TYPES SCHEMA CRUD
+    // ==========================================
+    function openAddRoomTypeModal() {
+        const modal = document.getElementById('addRoomTypeModal');
+        if (modal) {
+            document.getElementById('rtForm').reset();
+            document.getElementById('rtForm').action = '/admin/room-types/store';
+            document.getElementById('rtFormTitle').innerText = 'Add New Room Type Class';
+            document.getElementById('rtTypeId').value = '';
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function openEditRoomTypeModal(typeObj, countUnits) {
+        const modal = document.getElementById('addRoomTypeModal');
+        if (modal) {
+            document.getElementById('rtFormTitle').innerText = 'Edit Room Type: ' + typeObj.name;
+            document.getElementById('rtTypeId').value = typeObj.id;
+            document.getElementById('rtName').value = typeObj.name;
+            document.getElementById('rtDescription').value = typeObj.description || '';
+            document.getElementById('rtCapacity').value = typeObj.max_capacity || 2;
+            document.getElementById('rtPrice').value = Math.round(typeObj.price);
+            document.getElementById('rtFotoUrl').value = typeObj.foto_url || '';
+            document.getElementById('rtRoomSize').value = typeObj.room_size || '';
+            document.getElementById('rtBedConfig').value = typeObj.bed_configuration || '';
+            document.getElementById('rtViewPerspective').value = typeObj.view_perspective || '';
+            document.getElementById('rtAmenities').value = typeObj.amenities || '';
+            
+            document.getElementById('rtForm').action = `/admin/room-types/${typeObj.id}/update`;
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function closeAddRoomTypeModal() {
+        const modal = document.getElementById('addRoomTypeModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function confirmDeleteRoomType(id, name) {
+        if (confirm(`Apakah Anda yakin ingin menghapus room type "${name}"?\n\nTindakan ini dapat memengaruhi relasi inventory kamar.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/room-types/${id}/delete`;
+            form.innerHTML = '{{ csrf_field() }} @method("DELETE")';
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 </script>

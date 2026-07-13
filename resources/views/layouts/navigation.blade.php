@@ -2,9 +2,11 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20"> <div class="flex">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('home') }}" class="text-3xl font-serif italic tracking-wide text-neutral-900 select-none transition-transform duration-200 hover:scale-[1.02]">
-                        Oasis
-                    </a>
+       <div class="shrink-0 flex items-center">
+    <a href="{{ route('home') }}" class="block select-none transition-transform duration-200 hover:scale-[1.02]">
+        <img src="{{ asset('logo.svg') }}" alt="Oasis Logo" class="h-11 w-auto object-contain">
+    </a>
+</div>
                 </div>
 
                 <div class="hidden sm:flex sm:space-x-8 sm:ms-12">

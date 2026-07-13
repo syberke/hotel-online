@@ -7,11 +7,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-@if(env('APP_NODE_NAME'))
-    <div style="position: fixed; top: 12px; left: 12px; z-index: 9999; background: {{ env('APP_NODE_COLOR', '#111827') }}; color: #ffffff; font-family: monospace; font-size: 9px; font-weight: bold; tracking-width: 1px; padding: 4px 10px; border-radius: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: none; border: 1px solid rgba(255,255,255,0.1);">
-        <i class="fa-solid fa-server" style="margin-right: 4px;"></i> {{ env('APP_NODE_NAME') }}
-    </div>
-@endif
+
 <body class="bg-[#faf9f5] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900">
 
     <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between min-h-screen sticky top-0 z-30 shadow-2xl shrink-0 border-r border-neutral-900">

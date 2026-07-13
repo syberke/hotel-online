@@ -73,9 +73,10 @@
 </style>
 
 <x-guest-dashboard-layout>
-    @php
-        $isPaid = $currentBooking ? ($currentBooking->status === 'checked_in' && !empty($currentBooking->payment_id)) : false;
-    @endphp
+    {{-- Mengubah pengecekan agar hanya mengacu pada status checked_in yang valid setelah payment --}}
+@php
+    $isPaid = $currentBooking ? ($currentBooking->status === 'checked_in') : false;
+@endphp
 
     <div class="w-full text-neutral-900 font-sans antialiased" 
          x-data="{ 

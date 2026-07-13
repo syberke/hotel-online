@@ -1,25 +1,15 @@
 <style>
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #171717; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #404040; 
-        border-radius: 3px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #b45309; 
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f3; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d4; }
+    [x-cloak] { display: none !important; }
 
-    /* Efek Neon Border untuk baris reservasi yang dipilih */
+    /* Pengaturan Baris Reservasi Terpilih yang Minimalis & Tenang */
     .selected-neon-row {
-        background-color: rgba(254, 243, 199, 0.4) !important; /* bg-amber-50/40 */
-        outline: 2px solid #d97706 !important; /* Garis Amber-600 */
-        outline-offset: -2px;
-        box-shadow: 0 0 12px rgba(217, 119, 6, 0.3) !important;
+        background-color: #f5f5f5 !important; /* bg-neutral-100 lembut */
+        border-left: 3px solid #737373 !important; /* Aksen batas abu-abu netral */
     }
 
     /* Pengaturan Kertas Cetak Kwitansi */
@@ -211,7 +201,7 @@
                                         @if($booking->status == 'confirmed')
                                             <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide rounded-xs">Confirmed</span>
                                         @elseif($booking->status == 'pending')
-                                            <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide animate-pulse rounded-xs">Pending</span>
+                                            <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide rounded-xs">Pending</span>
                                         @elseif($booking->status == 'checked_in')
                                             <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide rounded-xs">Checked In</span>
                                         @elseif($booking->status == 'checked_out')
@@ -240,9 +230,8 @@
                                     <div class="flex items-center justify-center gap-1">
                                         <button onclick="openGlobalViewModal({{ $booking->id }})" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors cursor-pointer flex items-center justify-center" title="Lihat Detail"><i class="fa-solid fa-eye text-xs"></i></button>
                                         
-                                        {{-- JIKA BUKAN MANAGER (ADMIN): BERIKAN AKSES EDIT DAN HAPUS --}}
                                         @if(auth()->user()->role !== 'manager')
-                                            <button onclick="openEditStatusModal({{ $booking->id }}, '{{ $booking->status }}')" class="w-7 h-7 bg-white border border-neutral-200 hover:border-neutral-900 text-amber-800 transition-colors cursor-pointer flex items-center justify-center" title="Edit Status"><i class="fa-solid fa-pen text-xs"></i></button>
+                                            <button onclick="openEditStatusModal({{ $booking->id }}, '{{ $booking->status }}')" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-900 text-amber-800 transition-colors cursor-pointer flex items-center justify-center" title="Edit Status"><i class="fa-solid fa-pen text-xs"></i></button>
                                             <form action="{{ route('admin.reservations.delete', $booking->id) }}" method="POST" class="inline m-0 p-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data manifes ini secara permanen?')">
                                                 @csrf
                                                 @method('DELETE')
@@ -303,7 +292,7 @@
                             @if($selectedBooking->status == 'confirmed')
                                 <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide">Confirmed</span>
                             @elseif($selectedBooking->status == 'pending')
-                                <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide animate-pulse">Pending</span>
+                                <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide">Pending</span>
                             @elseif($selectedBooking->status == 'checked_in')
                                 <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[9px] px-2.5 py-0.5 font-bold uppercase tracking-wide">Checked In</span>
                             @elseif($selectedBooking->status == 'checked_out')
@@ -433,7 +422,7 @@
         <div class="bg-white border border-neutral-200 max-w-lg w-full p-6 shadow-2xl flex flex-col font-sans space-y-4">
             <div class="flex justify-between items-center border-b border-neutral-100 pb-3">
                 <h3 class="font-serif text-sm font-bold text-neutral-900 tracking-wide flex items-center gap-2">
-                    <i class="fa-solid fa-circle-info text-amber-700"></i> Complete Audit Log Information
+                    <i class="fa-solid fa-circle-info text-amber-700"></i> Reservation Audit Log Ledger
                 </h3>
                 <button onclick="closeGlobalViewModal()" class="text-neutral-400 hover:text-neutral-900 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -529,31 +518,36 @@
         const loading = document.getElementById('modal-loading-indicator');
         const content = document.getElementById('modal-content-area');
         
+        loading.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Querying Ledger Data Matrix...';
         loading.classList.remove('hidden');
         content.classList.add('hidden');
         modal.classList.remove('hidden');
 
+        // SINKRONISASI ROUTE YANG BENAR: Menggunakan /admin/reservations/{id}/json-detail sesuai web.php
         fetch(`/admin/reservations/${bookingId}/json-detail`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Server returned internal error status');
+                return res.json();
+            })
             .then(data => {
                 if(data.success) {
                     document.getElementById('md-id').innerText = `#OA-${String(data.id).padStart(2, '0')}`;
                     document.getElementById('md-name').innerText = data.guest_name;
                     document.getElementById('md-email').innerText = data.guest_email;
                     document.getElementById('md-phone').innerText = data.guest_phone;
-                    document.getElementById('md-address').innerText = data.guest_address;
+                    document.getElementById('md-address').innerText = data.guest_address || 'No permanent address recorded';
                     document.getElementById('md-type').innerText = data.room_type;
-                    document.getElementById('md-room').innerText = `Room Number ${data.room_number}`;
+                    document.getElementById('md-room').innerText = `Room Number ${data.room_number || 'TBD'}`;
                     document.getElementById('md-in').innerText = data.check_in;
                     document.getElementById('md-out').innerText = data.check_out;
-                    document.getElementById('md-duration').innerText = data.duration;
-                    document.getElementById('md-guests').innerText = data.guests_count;
-                    document.getElementById('md-method').innerText = data.payment_method;
+                    document.getElementById('md-duration').innerText = `${data.duration} Nights`;
+                    document.getElementById('md-guests').innerText = `${data.guests_count} Registered`;
+                    document.getElementById('md-method').innerText = data.payment_method || 'transfer';
                     document.getElementById('md-total').innerText = data.total_price;
                     
                     const statusBadge = document.getElementById('md-status');
                     statusBadge.innerText = data.status.toUpperCase();
-                    if(data.status === 'confirmed' || data.status === 'checked_out') {
+                    if(data.status === 'confirmed' || data.status === 'checked_out' || data.status === 'checked_in') {
                         statusBadge.className = "inline-block text-[8px] font-bold uppercase tracking-wide px-2 py-0.5 border bg-emerald-50 text-emerald-800 border-emerald-200";
                     } else if(data.status === 'pending') {
                         statusBadge.className = "inline-block text-[8px] font-bold uppercase tracking-wide px-2 py-0.5 border bg-amber-50 text-amber-800 border-amber-200";
@@ -562,7 +556,7 @@
                     }
 
                     const payBadge = document.getElementById('md-paystatus');
-                    let payStatusText = data.payment_status;
+                    let payStatusText = data.payment_status || 'pending';
                     if(data.status === 'confirmed' || data.status === 'checked_in' || data.status === 'checked_out') {
                         payStatusText = 'paid';
                     }
@@ -579,10 +573,12 @@
 
                     loading.classList.add('hidden');
                     content.classList.remove('hidden');
+                } else {
+                    loading.innerText = "Gagal memproses data manifes internal.";
                 }
             })
             .catch(err => {
-                loading.innerText = "Gagal memuat manifes data server.";
+                loading.innerText = "Gagal memuat manifes data server. Periksa status route web.php.";
             });
     }
 

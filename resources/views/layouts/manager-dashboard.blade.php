@@ -19,11 +19,7 @@
     </style>
 </head>
 <body class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
-@if(env('APP_NODE_NAME'))
-    <div style="position: fixed; top: 12px; left: 12px; z-index: 9999; background: {{ env('APP_NODE_COLOR', '#111827') }}; color: #ffffff; font-family: monospace; font-size: 9px; font-weight: bold; tracking-width: 1px; padding: 4px 10px; border-radius: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: none; border: 1px solid rgba(255,255,255,0.1);">
-        <i class="fa-solid fa-server" style="margin-right: 4px;"></i> {{ env('APP_NODE_NAME') }}
-    </div>
-@endif
+
     <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 h-screen sticky top-0 overflow-y-auto custom-scrollbar z-30">
         <div>
             <div class="p-8 border-b border-neutral-900 text-center relative group">

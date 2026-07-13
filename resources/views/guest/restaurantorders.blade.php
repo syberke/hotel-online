@@ -426,12 +426,13 @@
                         </div>
                     </div>
 
-                    <div x-show="activeHistoryTab === 'pending'" class="space-y-2">
+                   <div x-show="activeHistoryTab === 'pending'" class="space-y-2" x-cloak>
                         @php $hasPending = false; @endphp
                         @foreach($orderHistory as $hist)
                             @if($hist->payment_status === 'pending')
                                 @php $hasPending = true; @endphp
-                                <div class="p-3 bg-amber-50/40 border border-amber-200 text-[11px] space-y-2">
+                                <div class="p-3 bg-amber-50/40 border border-amber-200 text-[11px] space-y-3 shadow-xs">
+                                    
                                     <div class="flex justify-between items-center">
                                         <div>
                                             <p class="font-mono font-bold text-neutral-800">#RS-{{ str_pad($hist->id, 4, '0', STR_PAD_LEFT) }}</p>
@@ -439,18 +440,30 @@
                                         </div>
                                         <span class="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">UNPAID / HOLD</span>
                                     </div>
-                                    <div class="flex justify-between items-center pt-1 border-t border-neutral-100">
-                                        <p class="font-mono font-bold text-neutral-800">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
-                                        <div class="flex gap-2 items-center">
-                                            <button type="button" @click="fetchInvoiceDetails({{ $hist->id }})" class="text-[9px] text-neutral-500 font-bold underline cursor-pointer">Details</button>
-                                            <button type="button" id="pay-btn-{{ $hist->id }}" @click="payPendingOrder({{ $hist->id }}, 'pay-btn-{{ $hist->id }}')" class="bg-amber-700 hover:bg-amber-800 text-white px-2 py-1 text-[9px] font-bold uppercase tracking-wider cursor-pointer">Pay Now</button>
+                                    
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-neutral-200/60">
+                                        <p class="font-mono font-bold text-neutral-900 text-xs shrink-0">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
+                                        
+                                        <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wide">
                                             
-                                            <form action="{{ route('restaurant.order.cancel', $hist->id) }}" method="POST" id="cancel-form-{{ $hist->id }}">
+                                            <button type="button" @click="fetchInvoiceDetails({{ $hist->id }})" class="text-neutral-500 hover:text-neutral-900 underline cursor-pointer transition-colors shrink-0">
+                                                Details
+                                            </button>
+                                            
+                                            <form action="{{ route('restaurant.order.cancel', $hist->id) }}" method="POST" id="cancel-form-{{ $hist->id }}" class="inline-block m-0 p-0 shrink-0">
                                                 @csrf
-                                                <button type="button" @click="triggerCancelModal('cancel-form-{{ $hist->id }}')" class="text-[9px] text-red-600 font-bold underline cursor-pointer">Cancel</button>
+                                                <button type="button" @click="triggerCancelModal('cancel-form-{{ $hist->id }}')" class="text-red-600 hover:text-red-800 underline cursor-pointer transition-colors">
+                                                    Cancel
+                                                </button>
                                             </form>
+
+                                            <button type="button" id="pay-btn-{{ $hist->id }}" @click="payPendingOrder({{ $hist->id }}, 'pay-btn-{{ $hist->id }}')" class="bg-amber-700 hover:bg-amber-800 text-white px-2.5 py-1 text-[9px] uppercase tracking-widest transition-colors shadow-xs cursor-pointer shrink-0">
+                                                Pay Now
+                                            </button>
+                                            
                                         </div>
                                     </div>
+
                                 </div>
                             @endif
                         @endforeach

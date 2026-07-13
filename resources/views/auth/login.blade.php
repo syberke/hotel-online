@@ -2,7 +2,7 @@
     <div class="min-h-screen relative font-sans antialiased bg-neutral-900">
 
         <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop"
-             alt="Oasis Hotel"
+             alt="Oasis Hotel Premium Suite"
              class="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75">
 
         <div class="absolute inset-0 bg-neutral-950/30"></div>
@@ -23,7 +23,7 @@
                     <p class="text-[11px] uppercase tracking-wider text-neutral-400 mt-2">Sign in to continue your journey</p>
                 </div>
 
-                <x-auth-session-status class="mb-6 text-xs" :status="session('status')" />
+                <x-auth-session-status class="mb-6 text-xs text-emerald-600 font-bold uppercase tracking-wider bg-emerald-50 p-3 border border-emerald-200 text-center" :status="session('status')" />
 
                 <form method="POST" action="{{ route('login') }}" class="space-y-6">
                     @csrf

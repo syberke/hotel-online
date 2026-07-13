@@ -152,17 +152,3 @@
     </div>
 
 </x-admin-dashboard-layout>
-
-<script type="text/javascript">
-    function openCreateModal() { document.getElementById('createModal').classList.remove('hidden'); }
-    function openEditModal(menu) {
-        document.getElementById('edit_name').value = menu.name;
-        document.getElementById('edit_price').value = Math.round(menu.price);
-        document.getElementById('edit_description').value = menu.description ?? '';
-        document.getElementById('edit_foto_url').value = menu.foto_url ?? '';
-        document.getElementById('editForm').action = `/admin/restaurant/menu/${menu.id}/update`;
-        document.getElementById('editModal').classList.remove('hidden');
-    }
-    function closeCreateModal() { document.getElementById('createModal').classList.add('hidden'); }
-    function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
-</script>

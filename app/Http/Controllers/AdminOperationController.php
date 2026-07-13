@@ -112,6 +112,34 @@ class AdminOperationController extends Controller
 
         return redirect()->back()->with('success', 'Konfigurasi area fasilitas berhasil diperbarui.');
     }
+      public function adminDetailReservation($id)
+    {
+        $booking = \App\Models\Booking::with(['user', 'room.roomType', 'payments'])->find($id);
+        if (!$booking) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan.'], 404);
+        }
+        
+        $latestPayment = $booking->payments->last();
+        
+        return response()->json([
+            'success' => true,
+            'id' => $booking->id,
+            'guest_name' => $booking->user->name ?? 'N/A',
+            'guest_email' => $booking->user->email ?? 'N/A',
+            'guest_phone' => $booking->user->phone ?? '-',
+            'guest_address' => $booking->user->address ?? 'Tidak ada alamat',
+            'room_type' => $booking->room->roomType->name ?? 'Unassigned',
+            'room_number' => $booking->room->room_number ?? 'TBD',
+            'check_in' => \Carbon\Carbon::parse($booking->check_in)->format('d M Y'),
+            'check_out' => \Carbon\Carbon::parse($booking->check_out)->format('d M Y'),
+            'duration' => \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) . ' Malam',
+            'guests_count' => $booking->guests_count . ' Orang',
+            'status' => $booking->status,
+            'payment_method' => $latestPayment ? strtoupper(str_replace('_', ' ', $latestPayment->payment_method)) : 'CASH',
+            'payment_status' => $latestPayment ? $latestPayment->payment_status : 'pending',
+            'total_price' => 'Rp ' . number_format($booking->total_price, 0, ',', '.')
+        ]);
+    }
     public function adminDeleteFacility($id)
     {
         if (auth()->user()->role === 'manager') {
@@ -526,6 +554,85 @@ class AdminOperationController extends Controller
             }
         }
 
-        return view('admin.rooms&inventory', compact('stats', 'rooms', 'summary', 'roomTypesList'));
+        // Calculate room count per room type
+        $roomCount = [];
+        foreach ($roomTypesList as $type) {
+            $roomCount[$type->id] = $rawRooms->where('room_type_id', $type->id)->count();
+        }
+
+        return view('admin.rooms&inventory', compact('stats', 'rooms', 'summary', 'roomTypesList', 'roomCount'));
+    }
+
+    /**
+     * ROOM TYPE CRUD OPERATIONS
+     */
+    public function storeRoomType(Request $request)
+    {
+        if (auth()->user()->role === 'manager') {
+            return redirect()->back()->with('error', 'Manager tidak memiliki hak akses memodifikasi tipe kamar.');
+        }
+
+        $request->validate([
+            'name'        => 'required|string|unique:room_types,name',
+            'description' => 'nullable|string',
+            'capacity'    => 'required|integer|min:1|max:10',
+            'price'       => 'required|numeric|min:0'
+        ]);
+
+        DB::table('room_types')->insert([
+            'name'        => $request->name,
+            'description' => $request->description,
+            'capacity'    => $request->capacity,
+            'price'       => (int) $request->price,
+            'created_at'  => now(),
+            'updated_at'  => now()
+        ]);
+
+        return redirect()->back()->with('success', 'Tipe kamar "' . $request->name . '" berhasil ditambahkan.');
+    }
+
+    public function updateRoomType(Request $request, $id)
+    {
+        if (auth()->user()->role === 'manager') {
+            return redirect()->back()->with('error', 'Manager tidak memiliki hak akses memodifikasi tipe kamar.');
+        }
+
+        $request->validate([
+            'name'        => 'required|string|unique:room_types,name,' . $id,
+            'description' => 'nullable|string',
+            'capacity'    => 'required|integer|min:1|max:10',
+            'price'       => 'required|numeric|min:0'
+        ]);
+
+        DB::table('room_types')->where('id', $id)->update([
+            'name'        => $request->name,
+            'description' => $request->description,
+            'capacity'    => $request->capacity,
+            'price'       => (int) $request->price,
+            'updated_at'  => now()
+        ]);
+
+        return redirect()->back()->with('success', 'Tipe kamar "' . $request->name . '" berhasil diperbarui.');
+    }
+
+    public function deleteRoomType($id)
+    {
+        if (auth()->user()->role === 'manager') {
+            return redirect()->back()->with('error', 'Manager tidak memiliki hak akses menghapus tipe kamar.');
+        }
+
+        $roomType = DB::table('room_types')->find($id);
+        if (!$roomType) {
+            return redirect()->back()->with('error', 'Tipe kamar tidak ditemukan.');
+        }
+
+        // Check if room type is used by any rooms
+        $usedCount = DB::table('rooms')->where('room_type_id', $id)->count();
+        if ($usedCount > 0) {
+            return redirect()->back()->with('error', "Tidak bisa menghapus tipe kamar yang masih digunakan oleh {$usedCount} kamar. Ubah kamar terlebih dahulu.");
+        }
+
+        DB::table('room_types')->where('id', $id)->delete();
+        return redirect()->back()->with('success', 'Tipe kamar "' . $roomType->name . '" berhasil dihapus.');
     }
 }
