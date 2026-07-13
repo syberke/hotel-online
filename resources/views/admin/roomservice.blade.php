@@ -302,7 +302,7 @@
         const triggerBtn = event.currentTarget;
         
         document.getElementById('drop-id-title').innerText = '(#' + orderNumber + ')';
-        document.getElementById('form-update-status-overlay').action = `/restaurant-order/${orderId}/update-status`;
+        document.getElementById('form-update-status-overlay').action = `/admin/restaurant-order/${orderId}/update-status`;
         
         const rect = triggerBtn.getBoundingClientRect();
         
