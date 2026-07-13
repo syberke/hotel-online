@@ -77,4 +77,92 @@ document.addEventListener('submit', async (event) => {
     }
 });
 
+const restaurantCurrency = new Intl.NumberFormat('id-ID');
+
+function closeRestaurantOrderDetail() {
+    document.getElementById('restaurant-order-detail-modal')?.classList.add('hidden');
+}
+
+function renderRestaurantOrderItems(items) {
+    const container = document.getElementById('restaurant-detail-items');
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (!items.length) {
+        const empty = document.createElement('p');
+        empty.className = 'p-4 text-center text-[11px] italic text-neutral-400';
+        empty.textContent = 'Tidak ada item menu pada pesanan ini.';
+        container.appendChild(empty);
+        return;
+    }
+
+    items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'p-2 flex justify-between items-center text-neutral-700 font-medium';
+
+        const name = document.createElement('span');
+        name.className = 'font-bold text-neutral-900 truncate max-w-[180px]';
+        name.textContent = item.name ?? '-';
+
+        const quantity = document.createElement('span');
+        quantity.className = 'w-12 text-center font-mono text-neutral-500';
+        quantity.textContent = item.quantity ?? 0;
+
+        const price = document.createElement('span');
+        price.className = 'w-24 text-right font-mono text-neutral-900 font-bold';
+        price.textContent = `Rp ${restaurantCurrency.format(Number(item.price || 0))}`;
+
+        row.append(name, quantity, price);
+        container.appendChild(row);
+    });
+}
+
+async function openRestaurantOrderDetail(button) {
+    const originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+
+    try {
+        const response = await fetch(button.dataset.detailUrl, {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Detail pesanan tidak tersedia.');
+        }
+
+        const order = data.order;
+        document.getElementById('restaurant-detail-id').textContent = `#RS-${String(order.id).padStart(4, '0')}`;
+        document.getElementById('restaurant-detail-room').textContent = order.room_number || 'Table Walk-in';
+        document.getElementById('restaurant-detail-guest').textContent = order.guest_name || '-';
+        document.getElementById('restaurant-detail-time').textContent = order.created_at || '-';
+        document.getElementById('restaurant-detail-total').textContent = `Rp ${restaurantCurrency.format(Number(order.total_price || 0))}`;
+        document.getElementById('restaurant-detail-status').textContent = order.status || '-';
+        renderRestaurantOrderItems(Array.isArray(data.items) ? data.items : []);
+        document.getElementById('restaurant-order-detail-modal').classList.remove('hidden');
+    } catch (error) {
+        window.OasisDialog.error(error.message || 'Gagal mengambil detail pesanan.');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalHtml;
+    }
+}
+
+document.addEventListener('click', (event) => {
+    const detailButton = event.target.closest('[data-restaurant-order-detail]');
+    if (detailButton) {
+        openRestaurantOrderDetail(detailButton);
+        return;
+    }
+
+    if (event.target.closest('[data-close-restaurant-detail]')) {
+        closeRestaurantOrderDetail();
+    }
+});
+
 Alpine.start();

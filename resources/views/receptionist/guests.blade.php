@@ -128,6 +128,9 @@
             @if($selectedGuest)
                 <div class="flex justify-between items-center border-b pb-3">
                     <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Guest Details File</h3>
+                    <a href="{{ route('receptionist.guesthistory', ['guest_id' => $selectedGuest->user_id]) }}" class="text-[9px] font-bold uppercase tracking-widest text-amber-700 hover:text-amber-900">
+                        Full History <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </a>
                 </div>
 
                 <div class="flex items-center gap-4 py-2">
@@ -160,6 +163,7 @@
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-users w-4 mr-1 text-center"></i> Housed Pax</span><span class="text-neutral-900">{{ $selectedGuest->guests_count ?? 0 }} Pax Base</span></div>
                     
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-phone w-4 mr-1 text-center"></i> Phone</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->phone ?? '—' }}</span></div>
+                    <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-id-card w-4 mr-1 text-center"></i> Identity No.</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->identity_number ?? '—' }}</span></div>
                     <div class="flex justify-between items-center"><span class="text-neutral-400 font-normal"><i class="fa-solid fa-envelope w-4 mr-1 text-center"></i> Email Address</span><span class="text-neutral-900 font-mono">{{ $selectedGuest->email }}</span></div>
                     
                     <div class="border-t pt-3">

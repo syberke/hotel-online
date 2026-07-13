@@ -20,9 +20,10 @@
                     </div>
                 </div>
 
-                <div class="xl:col-span-4 border-t xl:border-t-0 xl:border-l pt-4 xl:pt-0 xl:pl-6 space-y-1 text-neutral-900">
-                    <div class="flex justify-between"><span class="text-neutral-400 font-normal">Nationality Mapping</span><span>ID / International</span></div>
-                    <div class="flex justify-between items-start"><span class="text-neutral-400 font-normal shrink-0 mr-4">Address</span><span class="text-right leading-tight font-medium">{{ $guestProfile->address ?? 'No physical address logs inside system.' }}</span></div>
+                <div class="xl:col-span-4 border-t xl:border-t-0 xl:border-l pt-4 xl:pt-0 xl:pl-6 space-y-2 text-neutral-900">
+                    <div class="flex justify-between gap-4"><span class="text-neutral-400 font-normal">Guest ID</span><span class="font-mono font-bold">#GST-{{ str_pad($guestProfile->guest_record_id ?? $guestProfile->user_id, 5, '0', STR_PAD_LEFT) }}</span></div>
+                    <div class="flex justify-between gap-4"><span class="text-neutral-400 font-normal">Identity No.</span><span class="font-mono font-bold text-right">{{ $guestProfile->identity_number ?: 'Belum dilengkapi' }}</span></div>
+                    <div class="flex justify-between items-start gap-4"><span class="text-neutral-400 font-normal shrink-0">Address</span><span class="text-right leading-tight font-medium">{{ $guestProfile->address ?: 'Belum dilengkapi' }}</span></div>
                 </div>
 
                 <div class="xl:col-span-4 border-t xl:border-t-0 xl:border-l pt-4 xl:pt-0 xl:pl-6 space-y-1 text-neutral-900 font-mono">

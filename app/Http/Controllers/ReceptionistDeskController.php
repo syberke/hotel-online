@@ -394,6 +394,10 @@ class ReceptionistDeskController extends Controller
                 ->select(
                     'users.*',
                     'bookings.*',
+                    'users.id as user_id',
+                    'guests.id as guest_record_id',
+                    'guests.identity_number',
+                    'bookings.status as current_status',
                     'rooms.room_number',
                     'room_types.name as room_type',
                     DB::raw('COALESCE(guests.phone, users.phone) as phone'),
@@ -419,6 +423,10 @@ class ReceptionistDeskController extends Controller
                 ->select(
                     'users.*',
                     'bookings.*',
+                    'users.id as user_id',
+                    'guests.id as guest_record_id',
+                    'guests.identity_number',
+                    'bookings.status as current_status',
                     'rooms.room_number',
                     'room_types.name as room_type',
                     DB::raw('COALESCE(guests.phone, users.phone) as phone'),
@@ -453,8 +461,19 @@ class ReceptionistDeskController extends Controller
         if ($guestId) {
             // 1. Ambil Data Manifes Utama Profil Tamu
             $guestProfile = DB::table('users')
-                ->where('id', $guestId)
-                ->where('role', 'guest')
+                ->leftJoin('guests', function ($join) {
+                    $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
+                })
+                ->where('users.id', $guestId)
+                ->where('users.role', 'guest')
+                ->select(
+                    'users.*',
+                    'users.id as user_id',
+                    'guests.id as guest_record_id',
+                    'guests.identity_number',
+                    DB::raw("COALESCE(NULLIF(guests.phone, ''), NULLIF(users.phone, '')) as phone"),
+                    DB::raw("COALESCE(NULLIF(guests.address, ''), NULLIF(users.address, '')) as address")
+                )
                 ->first();
 
             if ($guestProfile) {
