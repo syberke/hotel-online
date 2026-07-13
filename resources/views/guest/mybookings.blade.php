@@ -77,7 +77,7 @@
 </style>
 
 <x-guest-dashboard-layout>
-    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+    <script type="text/javascript" src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 
     @if(session('success'))
         <div class="bg-emerald-950/80 border border-emerald-800 text-emerald-400 p-4 text-xs font-medium uppercase tracking-wide mb-6 backdrop-blur-xs flex items-center">
