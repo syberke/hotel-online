@@ -32,6 +32,20 @@ Jika `.env` sudah berisi koneksi Supabase, email, reCAPTCHA, dan Midtrans, file
 tersebut dapat langsung digunakan tanpa disalin atau diubah. Docker membaca
 credential saat runtime dan `.dockerignore` memastikan `.env` tidak masuk image.
 
+Untuk deployment Ubuntu yang lebih aman dan tidak terganggu `git pull`, simpan
+environment satu kali di `/etc/oasis-hotel/oasis.env`. Script deployment akan
+mendeteksinya otomatis jika `.env` tidak ada di folder project:
+
+```bash
+sudo install -d -m 750 /etc/oasis-hotel
+sudo nano /etc/oasis-hotel/oasis.env
+sudo chown root:$(id -gn) /etc/oasis-hotel/oasis.env
+sudo chmod 640 /etc/oasis-hotel/oasis.env
+```
+
+File tersebut tidak berada di repository dan tidak masuk ke Docker image. Untuk
+lokasi custom, jalankan `OASIS_ENV_FILE=/lokasi/rahasia.env ./deploy.sh`.
+
 Deployment default menggunakan koneksi `DB_*` yang sudah ada di `.env`.
 Kemudian jalankan:
 

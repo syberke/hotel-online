@@ -4,7 +4,7 @@ x-web: &web
     dockerfile: Dockerfile
   image: oasis-hotel-web:latest
   restart: unless-stopped
-  env_file: .env
+  env_file: ${OASIS_ENV_FILE:-.env}
   environment: &web-environment
     APP_ENV: production
     APP_DEBUG: "false"
