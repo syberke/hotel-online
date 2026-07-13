@@ -13,10 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\IdentifyApplicationNode::class,
-            \App\Http\Middleware\ContentSecurityPolicy::class,
-        ]);
+        \App\Http\Middleware\SetLocale::class,
+    ]);
         // 1. Mendaftarkan alias middleware custom milikmu
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,

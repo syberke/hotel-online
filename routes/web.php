@@ -12,7 +12,6 @@ use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\HousekeepingController;
 use App\Http\Controllers\AdminOperationController;
 use App\Http\Controllers\ExecutiveReportController;
-use App\Http\Controllers\HotelOperationalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,7 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/lang/{locale}', [PublicPortalController::class, 'changeLanguage'])->name('lang.switch');
 
     /* --- IN-HOUSE GUEST PORTAL & AJAX SERVICES --- */
-    Route::middleware('role:guest')->prefix('guest')->name('guest.')->group(function () {
+    Route::prefix('guest')->name('guest.')->group(function () {
         Route::get('/dashboard', [GuestStayController::class, 'dashboard'])->name('dashboard');
         Route::get('/my-bookings', [GuestStayController::class, 'myBookings'])->name('bookings.my');
         Route::get('/my-stay', [GuestStayController::class, 'myStay'])->name('stay.my');
@@ -75,11 +74,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Guest Transactional Handlers
-    Route::middleware('role:guest')->group(function () {
     Route::post('/bookings/{id}/cancel', [GuestStayController::class, 'cancelBooking'])->name('bookings.cancel');
     Route::post('/my-bookings/get-snap-token', [PaymentGatewayController::class, 'getSnapToken'])->name('bookings.pay');
     Route::post('/my-bookings/payment-success', [PaymentGatewayController::class, 'localPaymentSuccess'])->name('bookings.payment.success');
-    Route::get('/room-order/{id}/details', [RestaurantOrderController::class, 'getRoomInvoiceDetails'])->name('room.invoice.details');
+    Route::get('/room-order/{id}/details', [PaymentGatewayController::class, 'getRoomInvoiceDetails'])->name('room.invoice.details');
     
     Route::post('/restaurant/order', [GuestServiceController::class, 'placeGastronomyOrder'])->name('restaurant.order');
     Route::post('/restaurant-order/pay', [PaymentGatewayController::class, 'payRestaurantOrder'])->name('restaurant.order.pay');
@@ -90,15 +88,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::post('/room-service/order', [GuestServiceController::class, 'storeRoomServiceOrder'])->name('room.service.order');
     Route::post('/facilities/book', [GuestServiceController::class, 'bookFacility'])->name('facilities.book');
-    });
 
     /* ======================================================================
        5. RECEPTIONIST / FRONT OFFICE DESK CONTROL PANEL
        ====================================================================== */
-    Route::middleware('role:receptionist,admin')->prefix('receptionist')->name('receptionist.')->group(function () {
+    Route::prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDeskController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check'); 
         Route::get('/walk-in', function() { return view('receptionist.walkin'); })->name('walkin');
+        Route::post('/walk-in/store', [FrontOfficeCheckController::class, 'storeWalkIn'])->name('walkin.store');
         
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
@@ -123,28 +121,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        6. MANAGER & EXECUTIVE STRATEGIC WORKSPACE PORTAL (READ ONLY)
        ====================================================================== */
-    Route::middleware('role:manager')->prefix('manager')->name('manager.')->group(function () {
+    Route::prefix('manager')->name('manager.')->group(function () {
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
-        Route::get('/front-desk', [HotelOperationalController::class, 'adminFrontDeskView'])->name('frontdesk');
+        Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [ExecutiveReportController::class, 'adminRestaurantView'])->name('restaurant');
-        Route::get('/facilities-wellness', [ExecutiveReportController::class, 'adminFacilitiesView'])->name('facilities');
+        Route::get('/facilities-wellness', [AdminOperationController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/finance-billing', [ExecutiveReportController::class, 'adminFinanceView'])->name('finance');
         Route::get('/reports', [ExecutiveReportController::class, 'adminReportsView'])->name('reports');
-        Route::get('/reports/export/excel', [ExecutiveReportController::class, 'exportReportsExcel'])->name('reports.export.excel');
-        Route::get('/reports/export/pdf', [ExecutiveReportController::class, 'exportReportsPdf'])->name('reports.export.pdf');
         Route::get('/users-control', [AdminOperationController::class, 'adminUserAndRoleView'])->name('userandrole');
     });
 
     /* ======================================================================
        7. BACK-OFFICE OPERATIONS HUB (ADMIN - FULL WRITE ACCESS)
        ====================================================================== */
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
-        Route::get('/front-desk', [HotelOperationalController::class, 'adminFrontDeskView'])->name('frontdesk');
+        Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [ExecutiveReportController::class, 'adminRestaurantView'])->name('restaurant');
@@ -153,7 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/users-control', [AdminOperationController::class, 'adminUserAndRoleView'])->name('userandrole');
         
         Route::get('/finance-billing', [ExecutiveReportController::class, 'adminFinanceView'])->name('finance');
-        Route::post('/finance/transaction/{id}/update', [HotelOperationalController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
+        Route::post('/finance/transaction/{id}/update', [AdminOperationController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
         
         Route::get('/reports', [ExecutiveReportController::class, 'adminReportsView'])->name('reports');
         Route::get('/reports/export/excel', [ExecutiveReportController::class, 'exportReportsExcel'])->name('reports.export.excel');
@@ -173,7 +169,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        8. HARD SECURITY POLICY: ANTI-MANAGER MODIFICATION GATEWAY
        ====================================================================== */
-    Route::middleware(['role:admin', 'deny-manager-modification'])->group(function () {
+    Route::middleware('deny-manager-modification')->group(function () {
         Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
         Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
         Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
@@ -182,8 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/room-types/{id}/update', [AdminOperationController::class, 'updateRoomType'])->name('admin.room-types.update');
         Route::delete('/admin/room-types/{id}/delete', [AdminOperationController::class, 'deleteRoomType'])->name('admin.room-types.delete');
         
-        Route::post('/reservations/{id}/update', [HotelOperationalController::class, 'adminUpdateReservation'])->name('admin.reservations.update');
-        Route::delete('/reservations/{id}/delete', [HotelOperationalController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');
+        Route::post('/reservations/{id}/update', [AdminOperationController::class, 'adminUpdateReservation'])->name('admin.reservations.update');
+        Route::delete('/reservations/{id}/delete', [AdminOperationController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');
         
         Route::post('/restaurant-order/{id}/update-status', [ExecutiveReportController::class, 'adminUpdateOrderStatus'])->name('admin.restaurant.update-status');
         Route::post('/admin/restaurant/menu/store', [AdminOperationController::class, 'adminStoreMenu'])->name('admin.restaurant.menu.store');
@@ -194,13 +190,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        9. SHARED READ-ONLY / AUDIT DATA FETCHERS
        ====================================================================== */
-    Route::middleware('role:admin,manager')->group(function () {
-        Route::get('/admin/facilities/booking/{id}/detail', [AdminOperationController::class, 'adminFacilityBookingDetail']);
-        Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
-        Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
-        Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
-        Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
-    });
+    Route::get('/admin/facilities/booking/{id}/detail', [AdminOperationController::class, 'adminFacilityBookingDetail']);
+    Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
+    Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
+    Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
+    Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
 });
 
 // Load file autentikasi bawaan

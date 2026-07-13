@@ -17,21 +17,12 @@ return [
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
-    'recaptcha' => [
-        'site_key' => env('RECAPTCHA_SITE_KEY'),
-        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
-    ],
+'recaptcha' => [
+    'site_key' => env('RECAPTCHA_SITE_KEY'),
+    'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+],
     'resend' => [
         'key' => env('RESEND_API_KEY'),
-    ],
-
-    'midtrans' => [
-        'server_key' => env('MIDTRANS_SERVER_KEY'),
-        'client_key' => env('MIDTRANS_CLIENT_KEY'),
-        'production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
-        'snap_url' => env('MIDTRANS_IS_PRODUCTION', false)
-            ? 'https://app.midtrans.com/snap/snap.js'
-            : 'https://app.sandbox.midtrans.com/snap/snap.js',
     ],
 
     'ses' => [

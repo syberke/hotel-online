@@ -38,7 +38,7 @@ class RegisteredUserController extends Controller
                 'required',
                 function ($attribute, $value, $fail) {
                     $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-                        'secret'   => config('services.recaptcha.secret_key'),
+                        'secret'   => env('RECAPTCHA_SECRET_KEY'),
                         'response' => $value,
                         'remoteip' => request()->ip(),
                     ]);

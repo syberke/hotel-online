@@ -1,14 +1,12 @@
-<nav x-data="{ open: false, scrolled: false }"
-     @scroll.window="scrolled = window.scrollY > 12"
-     :class="scrolled ? 'bg-white/95 shadow-[0_12px_35px_-22px_rgba(28,25,23,.45)] border-neutral-200/80' : 'bg-[#fffefa]/90 border-neutral-200/50'"
-     class="sticky top-0 z-50 border-b backdrop-blur-xl transition-all duration-300">
+<nav x-data="{ open: false }" class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex h-[4.75rem] justify-between">
-            <div class="flex">
+        <div class="flex justify-between h-20"> <div class="flex">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('home') }}" class="block select-none transition-transform duration-300 hover:scale-[1.04]" aria-label="Oasis Hotel home">
-                        <img src="{{ asset('logo.svg') }}" alt="Oasis Hotel" class="h-10 w-auto object-contain">
-                    </a>
+       <div class="shrink-0 flex items-center">
+    <a href="{{ route('home') }}" class="block select-none transition-transform duration-200 hover:scale-[1.02]">
+        <img src="{{ asset('logo.svg') }}" alt="Oasis Logo" class="h-11 w-auto object-contain">
+    </a>
+</div>
                 </div>
 
                 <div class="hidden sm:flex sm:space-x-8 sm:ms-12">
@@ -43,7 +41,7 @@
                         <a href="{{ route('login') }}" class="text-xs font-bold uppercase tracking-widest text-neutral-900 hover:underline transition-all">
                             Login
                         </a>
-                        <a href="{{ route('register') }}" class="oasis-button-primary px-5 py-2.5">
+                        <a href="{{ route('register') }}" class="bg-neutral-900 text-white px-5 py-2.5 rounded-none text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition-all">
                             Register
                         </a>
                     </div>
@@ -99,14 +97,7 @@
         </div>
     </div>
 
-    <div x-show="open" x-cloak
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 -translate-y-2"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 -translate-y-2"
-         class="sm:hidden bg-white/95 backdrop-blur-xl border-t border-neutral-100 shadow-xl">
+    <div :class="{ 'block': open, 'hidden': ! open }" class="hidden sm:hidden bg-white border-t border-neutral-100">
         <div class="space-y-1 pt-3 pb-4 px-3">
             <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')" class="text-xs uppercase tracking-wider font-bold py-2.5">
                 Home

@@ -5,33 +5,23 @@
         
         @include('layouts.navigation')
 
-        <div class="fixed bottom-4 right-4 z-50 rounded-full border border-white/20 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white shadow-xl"
-             style="background-color: {{ config('app.node.color') }}"
-             title="Respons ini dilayani oleh node aplikasi {{ config('app.node.name') }}">
-            <span class="mr-1 inline-block h-2 w-2 rounded-full bg-white animate-pulse"></span>
-            Served by {{ config('app.node.name') }}
-        </div>
-
-        <header class="relative min-h-[42rem] h-[88vh] bg-neutral-950 overflow-hidden">
+        <header class="relative h-[85vh] bg-neutral-950 overflow-hidden">
             <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop" 
                  alt="Oasis Hero Premium Suite" 
-                 class="w-full h-full object-cover opacity-55 scale-105 animate-[subtleZoom_18s_ease-out_forwards]">
-            <div class="absolute inset-0 bg-gradient-to-r from-neutral-950/90 via-neutral-950/45 to-transparent"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/70 via-transparent to-neutral-950/10"></div>
+                 class="w-full h-full object-cover opacity-60 scale-105 transform transition-transform duration-[10000ms]">
             
             <div class="absolute inset-0 flex flex-col justify-center px-6">
                 <div class="max-w-4xl mx-auto w-full text-white">
-                    <p class="oasis-eyebrow text-amber-300 mb-5" data-ui-reveal>A Paradigm of Refined Hospitality</p>
-                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-light tracking-[-0.04em] leading-[.94] mb-7 max-w-4xl" data-ui-reveal>
+                    <p class="text-xs uppercase tracking-[0.4em] font-bold text-amber-400 mb-4">A Paradigm of Refined Hospitality</p>
+                    <h1 class="text-5xl md:text-8xl font-light tracking-tight leading-none mb-6">
                         Where Luxury<br><span class="font-serif italic font-normal text-amber-100">Meets Serenity</span>
                     </h1>
-                    <p class="text-neutral-200/90 text-sm md:text-base max-w-xl font-medium leading-relaxed mb-9 text-pretty" data-ui-reveal>
+                    <p class="text-neutral-300 text-sm md:text-base max-w-xl font-medium leading-relaxed mb-8">
                         Experience exceptional comfort, world-class hospitality, and unforgettable stays. Designed as an architectural sanctuary for the discerning traveler.
                     </p>
-                    <div class="flex flex-col sm:flex-row gap-4" data-ui-reveal>
-                        <a href="{{ route('rooms') }}" class="inline-flex items-center justify-center gap-3 bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-[0.18em] py-4 px-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="{{ route('rooms') }}" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 transition-all text-center">
                             Explore Rooms
-                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
                         </a>
                     </div>
                 </div>
@@ -195,7 +185,7 @@
                         </div>
                     </div>
                     <div class="p-6 pt-0">
-                        <button type="button" onclick="openOrderModal({{ $menu->id }}, @js($menu->name), {{ $menu->price }})" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-3 transition-all cursor-pointer">
+                        <button type="button" onclick="openOrderModal('{{ $menu->name }}', {{ $menu->price }})" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[10px] uppercase tracking-widest py-3 transition-all cursor-pointer">
                             Order To Room
                         </button>
                     </div>
@@ -213,8 +203,7 @@
                 </div>
                 <form id="gastronomy-ajax-form" action="{{ route('restaurant.order') }}" method="POST" class="space-y-4">
                     @csrf
-                    <input type="hidden" id="selected-menu-id" name="menu_id">
-                    <input type="hidden" id="selected-menu-quantity" name="quantity" value="1">
+                    <input type="hidden" id="final-invoice-price" name="total_price">
                     <div class="flex items-center justify-between border-y border-neutral-100 py-3">
                         <span class="text-xs font-bold text-neutral-700 uppercase tracking-wider">Portion Quantity</span>
                         <div class="flex items-center border border-neutral-300">
@@ -409,8 +398,7 @@
 <script>
     const orderModalBox = document.getElementById('culinaryOrderModal');
     const foodTitleLabel = document.getElementById('modal-food-title');
-    const selectedMenuIdInput = document.getElementById('selected-menu-id');
-    const selectedMenuQuantityInput = document.getElementById('selected-menu-quantity');
+    const invoicePriceInput = document.getElementById('final-invoice-price');
     const qtyCountInput = document.getElementById('display-qty');
     const totalCostLabel = document.getElementById('display-total-cost');
     const resAlertBox = document.getElementById('modal-response-message');
@@ -419,12 +407,10 @@
 
     let rawFoodPrice = 0;
 
-    function openOrderModal(menuId, itemName, unitPrice) {
+    function openOrderModal(itemName, unitPrice) {
         rawFoodPrice = unitPrice;
-        selectedMenuIdInput.value = menuId;
         foodTitleLabel.innerText = itemName;
         qtyCountInput.value = 1;
-        selectedMenuQuantityInput.value = 1;
         recalculateInvoiceCost();
         resAlertBox.classList.add('hidden');
         orderModalBox.classList.remove('hidden');
@@ -438,13 +424,13 @@
         let targetAmount = parseInt(qtyCountInput.value) + delta;
         if (targetAmount >= 1 && targetAmount <= 10) {
             qtyCountInput.value = targetAmount;
-            selectedMenuQuantityInput.value = targetAmount;
             recalculateInvoiceCost();
         }
     }
 
     function recalculateInvoiceCost() {
         let combinedSum = rawFoodPrice * parseInt(qtyCountInput.value);
+        invoicePriceInput.value = combinedSum;
         totalCostLabel.innerText = 'Rp ' + combinedSum.toLocaleString('id-ID');
     }
 

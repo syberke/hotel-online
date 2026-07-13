@@ -7,21 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 class HousekeepingController extends Controller
 {
-    public function updateHouseStatus(Request $request)
-    {
-        $validated = $request->validate([
-            'room_id' => ['required', 'integer', 'exists:rooms,id'],
-            'status' => ['required', 'in:available,dirty,maintenance,occupied'],
-        ]);
-
-        DB::table('rooms')->where('id', $validated['room_id'])->update([
-            'status' => $validated['status'],
-            'updated_at' => now(),
-        ]);
-
-        return back()->with('success', 'Status kamar berhasil diperbarui.');
-    }
-
     public function roomAvailabilityView(Request $request)
     {
         $today = now()->format('Y-m-d');

@@ -65,7 +65,7 @@
 </style>
 
 <x-guest-dashboard-layout>
-    <script type="text/javascript" src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
 
     @if(session('success'))
         <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 text-xs font-medium uppercase tracking-wide mb-4">

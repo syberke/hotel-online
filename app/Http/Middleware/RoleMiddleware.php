@@ -11,8 +11,8 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         // Mengecek apakah user sudah login DAN role-nya ada di dalam parameter rute
-        if (!$request->user() || !in_array($request->user()->role, $roles, true)) {
-            abort(403, 'Anda tidak memiliki akses ke area ini.');
+        if (!$request->user() || !in_array($request->user()->role, $roles)) {
+            return redirect()->route('home');
         }
 
         return $next($request);

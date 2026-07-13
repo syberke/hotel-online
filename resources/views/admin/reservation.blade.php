@@ -139,7 +139,7 @@
 
                 <button type="submit" class="bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">Apply Filters</button>
                 @if(request()->anyFilled(['search', 'status', 'room_type', 'date_range']))
-                    <a href="{{ route('admin.reservation') }}" class="border border-neutral-200 text-neutral-500 hover:bg-neutral-50 px-3 py-2 text-xs font-bold uppercase transition-colors">Reset</a>
+                    <a href="{{ route('admin.reservations') }}" class="border border-neutral-200 text-neutral-500 hover:bg-neutral-50 px-3 py-2 text-xs font-bold uppercase transition-colors">Reset</a>
                 @endif
             </form>
 
