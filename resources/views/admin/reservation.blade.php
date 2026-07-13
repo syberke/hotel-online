@@ -232,7 +232,7 @@
                                         
                                         @if(auth()->user()->role !== 'manager')
                                             <button onclick="openEditStatusModal({{ $booking->id }}, '{{ $booking->status }}')" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-900 text-amber-800 transition-colors cursor-pointer flex items-center justify-center" title="Edit Status"><i class="fa-solid fa-pen text-xs"></i></button>
-                                            <form action="{{ route('admin.reservations.delete', $booking->id) }}" method="POST" class="inline m-0 p-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data manifes ini secara permanen?')">
+                                            <form action="{{ route('admin.reservations.delete', $booking->id) }}" method="POST" class="inline m-0 p-0" data-confirm="Hapus data reservasi ini secara permanen?" data-confirm-title="Hapus Reservasi">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="w-7 h-7 bg-white border border-neutral-200 hover:border-rose-600 text-rose-600 transition-colors cursor-pointer flex items-center justify-center" title="Hapus Permanen"><i class="fa-solid fa-trash text-xs"></i></button>
@@ -366,7 +366,7 @@
                         
                         @if(auth()->user()->role !== 'manager')
                             @if($selectedBooking->status !== 'cancelled')
-                                <form action="{{ route('admin.reservations.update', $selectedBooking->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this reservation?')">
+                                <form action="{{ route('admin.reservations.update', $selectedBooking->id) }}" method="POST" data-confirm="Batalkan reservasi ini?" data-confirm-title="Batalkan Reservasi">
                                     @csrf
                                     <input type="hidden" name="status" value="cancelled">
                                     <button type="submit" class="w-full bg-white border border-neutral-200 hover:bg-neutral-50 text-rose-600 font-bold text-[10px] uppercase tracking-widest py-3 transition-colors cursor-pointer">Cancel Reservation</button>

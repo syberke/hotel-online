@@ -135,7 +135,16 @@ class PublicPortalController extends Controller
         $liveAvailableCount = max(0, $totalPhysicalRooms - $occupiedCount);
         $room->available_count = $liveAvailableCount;
         
-        return view('page.rooms-detail', compact('room'));
+        $isProfileComplete = true;
+        if (Auth::check() && Auth::user()->role === 'guest') {
+            $guest = DB::table('guests')->where('email', Auth::user()->email)->first();
+            $isProfileComplete = $guest
+                && filled($guest->phone)
+                && filled($guest->identity_number)
+                && filled($guest->address);
+        }
+
+        return view('page.rooms-detail', compact('room', 'isProfileComplete'));
     }
 
  public function checkAvailability(Request $request)
@@ -147,6 +156,34 @@ class PublicPortalController extends Controller
             'guests' => 'required|string',
             'room_id' => 'nullable|integer'
         ]);
+
+        $guestRecord = null;
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            if ($user->role !== 'guest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reservasi online hanya dapat dibuat melalui akun guest.',
+                ], 403);
+            }
+
+            $guestRecord = DB::table('guests')->where('email', $user->email)->first();
+            $profileComplete = $guestRecord
+                && filled($guestRecord->phone)
+                && filled($guestRecord->identity_number)
+                && filled($guestRecord->address);
+
+            if (!$profileComplete) {
+                Session::flash('info', 'Lengkapi nomor identitas, nomor telepon aktif, dan alamat sebelum membuat reservasi.');
+
+                return response()->json([
+                    'success' => false,
+                    'redirect' => route('profile.edit'),
+                    'message' => 'Profil belum lengkap. Anda akan diarahkan ke halaman profil.',
+                ], 403);
+            }
+        }
 
         $checkIn = $request->check_in;
         $checkOut = $request->check_out;
@@ -205,30 +242,15 @@ class PublicPortalController extends Controller
         $totalPrice = $roomTypeMaster->price * $days;
 
         if (Auth::check()) {
-            $user = Auth::user();
-
-            // STRICT PROFILE GUARD GATE
-            if ($user->role === 'guest') {
-                $guestRecord = DB::table('guests')->where('email', $user->email)->first();
-
-                if (!$guestRecord || empty($guestRecord->phone) || empty($guestRecord->identity_number) || empty($guestRecord->address)) {
-                    Session::flash('info', 'Harap lengkapi nomor identitas (KTP/Passport), nomor telepon aktif, dan alamat rumah Anda terlebih dahulu sebelum membuat reservasi online.');
-                    return response()->json([
-                        'success' => false,
-                        'redirect' => route('profile.edit'),
-                        'message' => 'Profil akun belum lengkap.'
-                    ], 403);
-                }
-            }
-
-            DB::transaction(function () use ($room, $totalPrice, $checkIn, $checkOut) {
+            DB::transaction(function () use ($room, $totalPrice, $checkIn, $checkOut, $guestsCount, $guestRecord) {
                 // Simpan dengan status 'pending' (Wajib bayar dulu)
                 $bookingId = DB::table('bookings')->insertGetId([
                     'user_id'      => Auth::id(),
-                    'guest_id'     => Auth::id(), 
+                    'guest_id'     => $guestRecord->id,
                     'room_id'      => $room->id, 
                     'check_in'     => $checkIn,
                     'check_out'    => $checkOut,
+                    'guests_count' => $guestsCount,
                     'total_price'  => $totalPrice,
                     'status'       => 'pending', // KOREKSI: Set awal ke pending
                     'created_at'   => now(),

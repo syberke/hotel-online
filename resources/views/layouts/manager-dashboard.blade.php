@@ -21,6 +21,7 @@
 <body class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
 
     <x-node-badge />
+    <x-flash-dialogs />
 
     <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 h-screen sticky top-0 overflow-y-auto custom-scrollbar z-30">
         <div>

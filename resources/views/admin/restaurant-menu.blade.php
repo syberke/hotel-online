@@ -63,7 +63,7 @@
                                     @if(auth()->user()->role !== 'manager')
                                         <td class="py-3 px-4 text-center space-x-2">
                                             <button type="button" onclick="openEditModal({{ json_encode($menu) }})" class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase cursor-pointer"><i class="fa-regular fa-pen-to-square"></i> Edit</button>
-                                            <form action="{{ route('admin.restaurant.menu.delete', $menu->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus menu ini secara permanen?')">
+                                            <form action="{{ route('admin.restaurant.menu.delete', $menu->id) }}" method="POST" class="inline-block" data-confirm="Hapus menu {{ $menu->name }} secara permanen?" data-confirm-title="Hapus Menu">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="text-rose-600 hover:text-rose-800 text-xs font-bold uppercase cursor-pointer"><i class="fa-regular fa-trash-can"></i> Delete</button>
                                             </form>

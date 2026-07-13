@@ -65,7 +65,7 @@ class ReceptionistDeskController extends Controller
         $arrivalsQuery->where(function ($q) use ($search) {
             $cleanSearch = ltrim($search, '#RES-OA-');
             $q->where('bookings.id', 'like', "%{$cleanSearch}%")
-              ->orWhere('users.name', 'ILIKE', "%{$search}%")
+              ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
               ->orWhere('rooms.room_number', 'like', "%{$search}%");
         });
     }
@@ -136,7 +136,7 @@ class ReceptionistDeskController extends Controller
 
         // 1. Cari ID Type Kamar berdasarkan nama/kata kunci
         $typeMaster = DB::table('room_types')
-            ->where('name', 'ILIKE', "%{$roomType}%")
+            ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($roomType) . '%'])
             ->first();
 
         if (!$typeMaster) {
@@ -233,7 +233,7 @@ class ReceptionistDeskController extends Controller
             $query->where(function($q) use ($search) {
                 $cleanSearch = ltrim($search, '#RES-OA-');
                 $q->where('bookings.id', 'like', "%{$cleanSearch}%")
-                  ->orWhere('users.name', 'ILIKE', "%{$search}%")
+                  ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
                   ->orWhere('users.phone', 'like', "%{$search}%");
             });
         }
@@ -360,8 +360,8 @@ class ReceptionistDeskController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('users.name', 'ILIKE', "%{$search}%")
-                  ->orWhere('users.email', 'ILIKE', "%{$search}%")
+                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                  ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%'])
                   ->orWhere('users.phone', 'like', "%{$search}%");
             });
         }

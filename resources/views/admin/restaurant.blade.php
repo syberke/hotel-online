@@ -54,8 +54,10 @@
             <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
                 
                 <div class="flex text-xs font-bold uppercase tracking-wider text-neutral-400 gap-6 border-b border-neutral-100 pb-3">
-                    <a href="{{ route('admin.restaurant') }}" class="text-neutral-900 border-b-2 border-neutral-900 pb-1.5 px-0.5">Order Management</a>
-                    <a href="{{ route('admin.restaurant.menu') }}" class="hover:text-neutral-900 transition-colors pb-1.5 px-0.5">Today's Menu</a>
+                    <a href="{{ url()->current() }}" class="text-neutral-900 border-b-2 border-neutral-900 pb-1.5 px-0.5">Order Management</a>
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.restaurant.menu') }}" class="hover:text-neutral-900 transition-colors pb-1.5 px-0.5">Today's Menu</a>
+                    @endif
                 </div>
 
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
@@ -122,12 +124,11 @@
                                     </td>
                                     <td class="py-3.5 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
                                     <td class="py-3.5 px-4 text-center">
-                                        @if(auth()->user()->role !== 'manager')
-                                            <div class="flex items-center justify-center gap-1.5">
-                                               <button type="button" @click="
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button type="button" @click="
     fetch('{{ url('/admin/restaurant-order') }}/' + {{ $order->id }} + '/json-detail')
     .then(res => {
-        if (!res.ok) throw new Error('Server structure error');
+        if (!res.ok) throw new Error('Detail pesanan tidak tersedia');
         return res.json();
     })
     .then(data => {
@@ -135,23 +136,22 @@
             activeOrder = data.order;
             activeItems = data.items;
             openDetailModal = true;
+        } else {
+            throw new Error(data.message || 'Detail pesanan tidak tersedia');
         }
     })
-    .catch(err => alert('Gagal mengambil data dari server.'))" 
-    class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Review Order Items">
-    <i class="fa-solid fa-eye text-xs"></i>
-</button>
-                                                <button type="button" 
-                                                        onclick="openOrderDropdown(event, {{ $order->id }}, '{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}')"
-                                                        class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs">
-                                                    <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
-                                                </button>
-                                            </div>
-                                        @else
-                                            <button type="button" class="w-7 h-7 bg-neutral-50 border border-neutral-200 text-neutral-400 cursor-not-allowed flex items-center justify-center mx-auto" title="Read-Only View Mode">
+    .catch(err => OasisDialog.error(err.message))"
+                                                class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Lihat detail pesanan">
                                                 <i class="fa-solid fa-eye text-xs"></i>
                                             </button>
-                                        @endif
+                                            @if(auth()->user()->role !== 'manager')
+                                                <button type="button" 
+                                                        onclick="openOrderDropdown(event, {{ $order->id }}, '{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}')"
+                                                        class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs" title="Ubah status pesanan">
+                                                    <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                                                </button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -312,8 +312,10 @@
 
     <div id="order-status-dropdown" class="hidden fixed w-48 bg-white border border-neutral-200 shadow-2xl z-50 text-left font-sans text-xs">
         <div class="p-2 border-b border-neutral-100 bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Update Order <span id="drop-order-id" class="font-mono text-neutral-900"></span></div>
-        <form id="form-update-order-status" action="" method="POST" class="m-0">
+        <form id="form-update-order-status" action="" method="POST" class="m-0" data-confirm="Ubah status operasional pesanan ini?" data-confirm-title="Perbarui Status Pesanan">
             @csrf
+            <input type="hidden" name="prev_tab" value="{{ $currentTab }}">
+            <input type="hidden" name="prev_search" value="{{ request('search') }}">
             <button name="status" value="ordered" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-amber-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span> Set ordered (Pending)</button>
             <button name="status" value="preparing" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-blue-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> Set Preparing</button>
             <button name="status" value="paid" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-emerald-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Set paid (Ready)</button>

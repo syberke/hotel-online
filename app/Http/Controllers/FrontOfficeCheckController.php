@@ -34,7 +34,7 @@ class FrontOfficeCheckController extends Controller
                 $selectedBooking->room_type = $selectedBooking->room_type ?? 'Standard';
                 $selectedBooking->total_price = $selectedBooking->total_price ?? 0;
                 
-                $guestInfo = DB::table('guests')->where('email', 'ILIKE', $selectedBooking->guest_email)->first();
+                $guestInfo = DB::table('guests')->whereRaw('LOWER(email) = ?', [strtolower($selectedBooking->guest_email)])->first();
                 $selectedBooking->guest_phone = $guestInfo ? $guestInfo->phone : '—';
                 $selectedBooking->guest_address = $guestInfo ? $guestInfo->address : '—';
             }
@@ -49,8 +49,8 @@ class FrontOfficeCheckController extends Controller
             $query->where(function ($q) use ($search) {
                 $cleanSearch = ltrim($search, '#RES-OA-');
                 $q->where('bookings.id', 'like', "%{$cleanSearch}%")
-                  ->orWhere('users.name', 'ILIKE', "%{$search}%")
-                  ->orWhere('users.email', 'ILIKE', "%{$search}%");
+                  ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                  ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         } else {
             $query->whereDate('bookings.check_in', $today);
@@ -160,9 +160,9 @@ class FrontOfficeCheckController extends Controller
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('users.name', 'ILIKE', "%{$search}%")
+                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
                   ->orWhere('guests.phone', 'like', "%{$search}%")
-                  ->orWhere('users.email', 'ILIKE', "%{$search}%");
+                  ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -185,7 +185,7 @@ class FrontOfficeCheckController extends Controller
         $selectedGuest = null;
         if ($targetUser) {
             // Tarik data profil langsung dari tabel guests agar phone dan address terjamin keamanannya
-            $profileDossier = DB::table('guests')->where('email', 'ILIKE', $targetUser->email)->first();
+            $profileDossier = DB::table('guests')->whereRaw('LOWER(email) = ?', [strtolower($targetUser->email)])->first();
             
             // Tarik info booking terakhir (jika ada) untuk mengisiPlacement kamar dan tanggal stay
             $lastBookingActive = DB::table('bookings')
@@ -237,7 +237,7 @@ class FrontOfficeCheckController extends Controller
 
         if ($search) {
             $activeBookingsQuery->where(function($q) use ($search) {
-                $q->where('users.name', 'ILIKE', "%{$search}%")
+                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
                   ->orWhere('rooms.room_number', 'like', "%{$search}%")
                   ->orWhere('bookings.id', 'like', "%{$search}%");
             });
@@ -344,7 +344,7 @@ class FrontOfficeCheckController extends Controller
 
         if (!empty($search)) {
             $unassignedQuery->where(function($q) use ($search) {
-                $q->where('users.name', 'ILIKE', "%{$search}%")
+                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
                   ->orWhere('bookings.id', 'like', "%{$search}%");
             });
         }

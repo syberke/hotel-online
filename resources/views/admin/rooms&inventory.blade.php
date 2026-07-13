@@ -414,7 +414,7 @@
             <button name="status" value="maintenance" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-amber-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span> Set Out Of Order</button>
         </form>
         <div class="border-t border-neutral-100 p-1">
-            <form id="form-delete-unit" action="" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kamar ini?')" class="m-0">
+            <form id="form-delete-unit" action="" method="POST" data-confirm="Hapus unit kamar ini?" data-confirm-title="Hapus Unit Kamar" class="m-0">
                 @csrf @method('DELETE')
                 <button type="submit" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 font-bold rounded-xs flex items-center cursor-pointer"><i class="fa-regular fa-trash-can mr-2"></i> Delete Unit</button>
             </form>
@@ -570,10 +570,10 @@
 
                     modal.classList.remove('hidden');
                 } else {
-                    alert('Gagal memproses data visualisasi kamar.');
+                    OasisDialog.error('Gagal memproses data visualisasi kamar.');
                 }
             })
-            .catch(() => alert('Terjadi gangguan transmisi jaringan data.'));
+            .catch(() => OasisDialog.error('Terjadi gangguan transmisi jaringan data.'));
     }
 
     function closeManagerViewModal() {
@@ -677,8 +677,12 @@
         if (modal) modal.classList.add('hidden');
     }
 
-    function confirmDeleteRoomType(id, name) {
-        if (confirm(`Apakah Anda yakin ingin menghapus room type "${name}"?\n\nTindakan ini dapat memengaruhi relasi inventory kamar.`)) {
+    async function confirmDeleteRoomType(id, name) {
+        const confirmed = await OasisDialog.confirm(
+            `Hapus room type "${name}"? Tindakan ini dapat memengaruhi relasi inventory kamar.`,
+            'Hapus Room Type'
+        );
+        if (confirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/admin/room-types/${id}/delete`;

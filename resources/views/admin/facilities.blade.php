@@ -106,15 +106,16 @@
                                         </td>
                                         <td class="py-3.5 px-4 font-mono text-neutral-900 font-bold">{{ $book->guests_count }} Guests</td>
                                         <td class="py-3.5 px-4 text-center">
+                                            <div class="flex items-center justify-center gap-1.5">
+                                                <button type="button" onclick="viewBookingDetail({{ $book->id }})" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-amber-800 rounded-xs flex items-center justify-center cursor-pointer shadow-xs" title="Lihat detail reservasi fasilitas">
+                                                    <i class="fa-solid fa-eye text-xs"></i>
+                                                </button>
                                             @if(auth()->user()->role !== 'manager')
                                                 <button type="button" onclick="openManageBookingModal({{ $book->id }})" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-xs mx-auto flex items-center justify-center cursor-pointer shadow-xs" title="Manage Status Pipeline">
                                                     <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                                                 </button>
-                                            @else
-                                                <button type="button" onclick="viewBookingDetail({{ $book->id }})" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-50 text-amber-800 rounded-xs mx-auto flex items-center justify-center cursor-pointer shadow-xs" title="View Audit Details">
-                                                    <i class="fa-solid fa-eye text-xs"></i>
-                                                </button>
                                             @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -174,7 +175,7 @@
                                 @if(auth()->user()->role !== 'manager')
                                     <div class="pt-2 border-t border-neutral-100 flex justify-between text-[10px] font-bold uppercase tracking-wider mt-1">
                                         <button type="button" onclick="openEditFacilityModal({{ json_encode($fac) }})" class="text-blue-600 hover:text-blue-800 cursor-pointer"><i class="fa-regular fa-edit"></i> Edit</button>
-                                        <form action="{{ route('admin.facilities.delete', $fac->id) }}" method="POST" onsubmit="return confirm('Hapus area fasilitas fisik ini?')">
+                                        <form action="{{ route('admin.facilities.delete', $fac->id) }}" method="POST" data-confirm="Hapus area fasilitas {{ $fac->name }}? Data yang sudah dipakai reservasi akan tetap dilindungi sistem." data-confirm-title="Hapus Fasilitas">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="text-rose-600 hover:text-rose-800 cursor-pointer"><i class="fa-regular fa-trash-can"></i> Delete</button>
                                         </form>
@@ -259,7 +260,7 @@
                 <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Manage Status Pipeline</h4>
                 <button type="button" onclick="closeManageBookingModal()" class="text-neutral-400 hover:text-neutral-900 text-sm cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="formUpdateBookingStatus" action="" method="POST" class="space-y-4">
+            <form id="formUpdateBookingStatus" action="" method="POST" class="space-y-4" data-confirm="Perbarui status reservasi fasilitas ini?" data-confirm-title="Perbarui Status Fasilitas">
                 @csrf
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Operational Status</label>
@@ -366,7 +367,10 @@
     // Modal AJAX View Details (Manager Mode)
     function viewBookingDetail(id) {
         fetch(`/admin/facilities/booking/${id}/detail`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Detail reservasi fasilitas tidak tersedia.');
+                return response.json();
+            })
             .then(res => {
                 if(res.success) {
                     document.getElementById('det_guest_name').innerText = res.data.guest_name;
@@ -376,22 +380,29 @@
                     document.getElementById('det_notes').innerText = res.data.notes ?? 'No preferences left.';
                     document.getElementById('modalBookingDetail').classList.remove('hidden');
                 } else {
-                    alert('Gagal mengambil detail arsip.');
+                    throw new Error(res.message || 'Gagal mengambil detail reservasi.');
                 }
-            });
+            })
+            .catch(error => OasisDialog.error(error.message));
     }
 
     // Modal Update Status Pipeline (Admin Mode)
     function openManageBookingModal(id) {
         fetch(`/admin/facilities/booking/${id}/detail`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Data status fasilitas tidak tersedia.');
+                return response.json();
+            })
             .then(res => {
                 if(res.success) {
                     document.getElementById('manage_status_select').value = res.data.status;
                     document.getElementById('formUpdateBookingStatus').action = `/admin/facilities/booking/${id}/update-status`;
                     document.getElementById('modalManageBooking').classList.remove('hidden');
+                } else {
+                    throw new Error(res.message || 'Status fasilitas tidak dapat dibuka.');
                 }
-            });
+            })
+            .catch(error => OasisDialog.error(error.message));
     }
 
     function closeDetailBookingModal() { document.getElementById('modalBookingDetail').classList.add('hidden'); }
