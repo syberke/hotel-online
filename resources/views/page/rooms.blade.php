@@ -131,7 +131,7 @@
                     </aside>
             </form>
 
-           <section class="w-full min-w-0 lg:w-3/4">
+           <section id="room-results" class="w-full min-w-0 scroll-mt-28 lg:w-3/4">
     
     <div>
         
@@ -193,6 +193,7 @@
             @endforelse
 
         </div>
+        <x-catalog-pagination :paginator="$roomsLiveList" label="rooms" />
     </div>
 </section>
         </div>
@@ -237,7 +238,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
-                        @foreach($roomsLiveList as $room)
+                        @foreach($roomsComparison as $room)
                         <tr class="odd:bg-white even:bg-neutral-50/50">
                             <td class="p-4 font-bold text-neutral-900 uppercase tracking-wide">{{ $room->name }}</td>
                             <td class="p-4 font-bold text-amber-800 font-mono">Rp {{ number_format($room->price_per_night, 0, ',', '.') }} / night</td>
