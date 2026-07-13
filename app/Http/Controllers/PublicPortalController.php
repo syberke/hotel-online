@@ -33,9 +33,9 @@ class PublicPortalController extends Controller
         return view('page.home', compact('roomsLiveList', 'culinaryMenus'));
     }
 
-    public function allRoomsView()
+    public function allRoomsView(Request $request)
     {
-        $roomsLiveList = DB::table('room_types')
+        $roomsQuery = DB::table('room_types')
             ->leftJoin('rooms', function($join) {
                 $join->on('room_types.id', '=', 'rooms.room_type_id')
                     ->where('rooms.status', '=', 'available');
@@ -48,14 +48,50 @@ class PublicPortalController extends Controller
                 'room_types.foto_url',
                 DB::raw('COUNT(rooms.id) as available_count')
             )
-            ->groupBy('room_types.id', 'room_types.name', 'room_types.description', 'room_types.price', 'room_types.foto_url')
-            ->orderBy('room_types.price', 'asc')
-            ->get();
+            ->groupBy('room_types.id', 'room_types.name', 'room_types.description', 'room_types.price', 'room_types.foto_url');
 
         $allCategories = DB::table('room_types')->select('name')->get();
         $totalInventoryReady = DB::table('rooms')->where('status', 'available')->count();
 
-        return view('page.rooms', compact('roomsLiveList', 'allCategories', 'totalInventoryReady')); 
+        $selectedCategories = array_filter((array) $request->input('categories', []));
+        if ($selectedCategories !== []) {
+            $roomsQuery->whereIn('room_types.name', $selectedCategories);
+        } elseif ($request->filled('suite_type') && $request->string('suite_type')->value() !== 'All Room Types') {
+            $roomsQuery->where('room_types.name', $request->string('suite_type')->value());
+        }
+
+        match ($request->input('sort')) {
+            'Highest Price' => $roomsQuery->orderByDesc('room_types.price'),
+            'Lowest Price' => $roomsQuery->orderBy('room_types.price'),
+            default => $roomsQuery->orderBy('room_types.id'),
+        };
+
+        $roomsLiveList = $roomsQuery
+            ->paginate(8)
+            ->withQueryString()
+            ->fragment('room-results');
+
+        $roomsComparison = DB::table('room_types')
+            ->leftJoin('rooms', function($join) {
+                $join->on('room_types.id', '=', 'rooms.room_type_id')
+                    ->where('rooms.status', '=', 'available');
+            })
+            ->select(
+                'room_types.id',
+                'room_types.name',
+                'room_types.price as price_per_night',
+                DB::raw('COUNT(rooms.id) as available_count')
+            )
+            ->groupBy('room_types.id', 'room_types.name', 'room_types.price')
+            ->orderBy('room_types.price')
+            ->get();
+
+        return view('page.rooms', compact(
+            'roomsLiveList',
+            'roomsComparison',
+            'allCategories',
+            'totalInventoryReady'
+        ));
     }
 
     public function roomShow($id, Request $request)
@@ -220,15 +256,17 @@ class PublicPortalController extends Controller
     {
         $query = DB::table('restaurant_menus');
 
-        if ($request->has('category') && $request->category != 'All Menu') {
-            $query->where(function($q) use ($request) {
-                $q->where('description', 'ILIKE', '%' . $request->category . '%')
-                ->orWhere('name', 'ILIKE', '%' . $request->category . '%');
+        if ($request->filled('category') && $request->category !== 'All Menu') {
+            $category = strtolower($request->string('category')->value());
+            $query->where(function($q) use ($category) {
+                $q->whereRaw('LOWER(description) LIKE ?', ['%' . $category . '%'])
+                    ->orWhereRaw('LOWER(name) LIKE ?', ['%' . $category . '%']);
             });
         }
 
-        if ($request->has('search') && $request->search != '') {
-            $query->where('name', 'ILIKE', '%' . $request->search . '%');
+        if ($request->filled('search')) {
+            $search = strtolower($request->string('search')->value());
+            $query->whereRaw('LOWER(name) LIKE ?', ['%' . $search . '%']);
         }
 
         if ($request->has('min_price') && $request->min_price != '') {
@@ -240,18 +278,22 @@ class PublicPortalController extends Controller
         }
 
         if ($request->has('dietary') && is_array($request->dietary)) {
-            $query->where(function($q) use ($request) {
-                $q->orWhere('description', 'ILIKE', '%' . $diet . '%');
+            $dietary = array_filter($request->array('dietary'));
+            $query->where(function($q) use ($dietary) {
+                foreach ($dietary as $diet) {
+                    $q->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($diet) . '%']);
+                }
             });
         }
 
-        // 1. Eksekusi ambil data menu hasil filter
-        $culinaryMenus = $query->get();
+        $culinaryMenus = $query
+            ->orderBy('id')
+            ->paginate(8)
+            ->withQueryString()
+            ->fragment('menu-browsing-anchor');
 
-        // 2. KOREKSI SAKTI: Hitung jumlah total item menu yang berhasil ditarik
-        $totalMenuItems = $culinaryMenus->count();
+        $totalMenuItems = DB::table('restaurant_menus')->count();
 
-        // 3. Kirimkan KEDUA variabel tersebut ke dalam file Blade
         return view('page.restaurant', compact('culinaryMenus', 'totalMenuItems'));
     }
 
