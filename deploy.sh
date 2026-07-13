@@ -112,8 +112,12 @@ if [ ! -r "$DATABASE_ENV_FILE" ]; then
     deploy_group="$(id -gn)"
     printf 'MARIADB_DATABASE=oasis_hotel\n' > "$database_temp"
     printf 'MARIADB_USER=oasis_hotel\n' >> "$database_temp"
-    printf 'MARIADB_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> "$database_temp"
+    database_password="$(openssl rand -hex 32)"
+    printf 'MARIADB_PASSWORD=%s\n' "$database_password" >> "$database_temp"
     printf 'MARIADB_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> "$database_temp"
+    printf 'DB_DATABASE=oasis_hotel\n' >> "$database_temp"
+    printf 'DB_USERNAME=oasis_hotel\n' >> "$database_temp"
+    printf 'DB_PASSWORD=%s\n' "$database_password" >> "$database_temp"
     if [ "$(id -u)" -eq 0 ]; then
         install -d -m 750 -o root -g "$deploy_group" /etc/oasis-hotel
         install -m 640 -o root -g "$deploy_group" "$database_temp" "$DATABASE_ENV_FILE"
@@ -132,6 +136,23 @@ while IFS='=' read -r key value; do
             ;;
     esac
 done < "$DATABASE_ENV_FILE"
+
+# Upgrade credential file dari deployment lama agar dapat langsung dipakai
+# sebagai env_file oleh web container dan perintah docker compose manual.
+if ! grep -q '^DB_PASSWORD=' "$DATABASE_ENV_FILE"; then
+    database_temp="$(mktemp)"
+    deploy_group="$(id -gn)"
+    cp "$DATABASE_ENV_FILE" "$database_temp"
+    printf 'DB_DATABASE=%s\n' "${MARIADB_DATABASE:-oasis_hotel}" >> "$database_temp"
+    printf 'DB_USERNAME=%s\n' "${MARIADB_USER:-oasis_hotel}" >> "$database_temp"
+    printf 'DB_PASSWORD=%s\n' "$MARIADB_PASSWORD" >> "$database_temp"
+    if [ "$(id -u)" -eq 0 ]; then
+        install -m 640 -o root -g "$deploy_group" "$database_temp" "$DATABASE_ENV_FILE"
+    else
+        sudo install -m 640 -o root -g "$deploy_group" "$database_temp" "$DATABASE_ENV_FILE"
+    fi
+    rm -f "$database_temp"
+fi
 
 if grep -q '^APP_KEY=$' "$ENV_FILE"; then
     if [ ! -w "$ENV_FILE" ]; then
