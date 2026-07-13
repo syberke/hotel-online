@@ -28,12 +28,12 @@ policy `unless-stopped`. Database tidak diekspos ke host.
 
 Prasyarat: Docker Engine, Docker Compose v2, OpenSSL, dan port 8080 yang kosong.
 
-```bash
-cp .env.example .env
-```
+Jika `.env` sudah berisi koneksi Supabase, email, reCAPTCHA, dan Midtrans, file
+tersebut dapat langsung digunakan tanpa disalin atau diubah. Docker membaca
+credential saat runtime dan `.dockerignore` memastikan `.env` tidak masuk image.
 
-Ubah minimal `POSTGRES_PASSWORD` dan `DOCKER_APP_URL` pada `.env`. Isi kredensial email, reCAPTCHA, dan
-Midtrans jika fiturnya akan dipakai. Kemudian jalankan:
+Deployment default menggunakan koneksi `DB_*` yang sudah ada di `.env`.
+Kemudian jalankan:
 
 ```bash
 chmod +x deploy.sh
@@ -41,6 +41,21 @@ chmod +x deploy.sh
 ```
 
 Aplikasi tersedia di <http://localhost:8080>.
+
+### Database PostgreSQL container opsional
+
+Jika tidak ingin memakai Supabase dan ingin menjalankan PostgreSQL lokal, tambahkan
+konfigurasi berikut ke `.env`:
+
+```env
+DOCKER_DATABASE_MODE=local
+POSTGRES_DB=oasis_hotel
+POSTGRES_USER=oasis_hotel
+POSTGRES_PASSWORD=password-yang-kuat
+```
+
+Tanpa `DOCKER_DATABASE_MODE=local`, service database tidak dijalankan dan aplikasi
+tetap memakai Supabase atau database eksternal dari konfigurasi `DB_*`.
 
 ## Membuktikan load balancing
 

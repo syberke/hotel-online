@@ -1,0 +1,17 @@
+services:
+  web1:
+    environment: &local-database
+      DB_CONNECTION: pgsql
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB:-oasis_hotel}
+      DB_USERNAME: ${POSTGRES_USER:-oasis_hotel}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD for local-db mode}
+
+  web2:
+    environment:
+      <<: *local-database
+
+  web3:
+    environment:
+      <<: *local-database
