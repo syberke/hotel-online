@@ -4,13 +4,19 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class FacilitySeeder extends Seeder
 {
     public function run(): void
     {
         // Truncate aman untuk mereset id indeks tabel
-        DB::table('facilities')->truncate();
+        Schema::disableForeignKeyConstraints();
+        try {
+            DB::table('facilities')->truncate();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
 
         DB::table('facilities')->insert([
             [

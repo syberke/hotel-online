@@ -15,7 +15,6 @@ class DatabaseSeeder extends Seeder
             ReceptionistUserSeeder::class,
             GuestUserSeeder::class,
             RoomTypeSeeder::class,
-            OasisHotelSeeder::class,
             FacilitySeeder::class,
             RestaurantMenuSeeder::class
         ]);

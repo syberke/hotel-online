@@ -60,8 +60,13 @@ class RoomTypeSeeder extends Seeder
         // ======================================================================
         // STEP 2: MEMBERSIHKAN RECORD LAMA (Mencegah Constraint Conflict)
         // ======================================================================
-        DB::statement('TRUNCATE TABLE rooms RESTART IDENTITY CASCADE');
-        DB::statement('TRUNCATE TABLE room_types RESTART IDENTITY CASCADE');
+        Schema::disableForeignKeyConstraints();
+        try {
+            DB::table('rooms')->truncate();
+            DB::table('room_types')->truncate();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
 
         // ======================================================================
         // STEP 3: INSERT DATA REKORD BARU (Lengkap dengan Spesifikasi & Amenities)

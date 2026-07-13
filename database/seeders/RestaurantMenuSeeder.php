@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class RestaurantMenuSeeder extends Seeder
 {
@@ -13,7 +14,12 @@ class RestaurantMenuSeeder extends Seeder
     public function run(): void
     {
         // Bersihkan data lama menggunakan CASCADE agar aman dari foreign key di tabel detail
-        DB::statement('TRUNCATE TABLE public.restaurant_menus CASCADE');
+        Schema::disableForeignKeyConstraints();
+        try {
+            DB::table('restaurant_menus')->truncate();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
 
         // Menyuntikkan data master menu riil ke tabel restaurant_menus
         DB::table('restaurant_menus')->insert([
