@@ -182,7 +182,7 @@
                 
                 <form action="{{ route('restaurant') }}" method="GET" class="w-full lg:w-1/4">
                     <input type="hidden" name="category" value="{{ request('category', 'All Menu') }}">
-                    <aside class="w-full bg-white border border-neutral-200 p-6 rounded-none space-y-6 sticky top-28">
+                    <aside class="w-full bg-white border border-neutral-200 p-5 sm:p-6 rounded-none space-y-6 lg:sticky lg:top-28 lg:self-start">
                         <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
                             <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Search & Options</h3>
                             <a href="{{ route('restaurant') }}" class="text-[9px] uppercase tracking-wider font-bold text-neutral-400 hover:text-neutral-900 underline">Reset</a>
@@ -195,7 +195,7 @@
 
                         <div class="border-t border-neutral-100 pt-4 space-y-3">
                             <h4 class="text-[10px] font-bold uppercase tracking-wider text-neutral-700">Price Range (IDR)</h4>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[8px] font-bold uppercase text-neutral-400 block mb-1">Min Price</label>
                                     <input type="number" name="min_price" value="{{ request('min_price') }}" onchange="this.form.submit()" placeholder="Ex: 50000" class="w-full border border-neutral-300 px-2 py-1 text-xs rounded-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900">
@@ -214,8 +214,8 @@
                     </aside>
                 </form>
 
-                <section class="w-full lg:w-3/4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[960px] overflow-y-auto pr-2 custom-scrollbar" id="menu-cards-scrollbox">
+                <section class="w-full min-w-0 lg:w-3/4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="menu-cards-list">
                         
                         @forelse($culinaryMenus as $menu)
                         <div class="bg-white border border-neutral-200 rounded-none overflow-hidden group flex flex-col justify-between hover:border-neutral-400 transition-all duration-300">
