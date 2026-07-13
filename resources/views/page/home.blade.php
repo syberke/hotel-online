@@ -5,6 +5,13 @@
         
         @include('layouts.navigation')
 
+        <div class="fixed bottom-4 right-4 z-50 rounded-full border border-white/20 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white shadow-xl"
+             style="background-color: {{ config('app.node.color') }}"
+             title="Respons ini dilayani oleh node aplikasi {{ config('app.node.name') }}">
+            <span class="mr-1 inline-block h-2 w-2 rounded-full bg-white animate-pulse"></span>
+            Served by {{ config('app.node.name') }}
+        </div>
+
         <header class="relative h-[85vh] bg-neutral-950 overflow-hidden">
             <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop" 
                  alt="Oasis Hero Premium Suite" 

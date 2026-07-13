@@ -61,7 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/lang/{locale}', [PublicPortalController::class, 'changeLanguage'])->name('lang.switch');
 
     /* --- IN-HOUSE GUEST PORTAL & AJAX SERVICES --- */
-    Route::prefix('guest')->name('guest.')->group(function () {
+    Route::middleware('role:guest')->prefix('guest')->name('guest.')->group(function () {
         Route::get('/dashboard', [GuestStayController::class, 'dashboard'])->name('dashboard');
         Route::get('/my-bookings', [GuestStayController::class, 'myBookings'])->name('bookings.my');
         Route::get('/my-stay', [GuestStayController::class, 'myStay'])->name('stay.my');
@@ -92,7 +92,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        5. RECEPTIONIST / FRONT OFFICE DESK CONTROL PANEL
        ====================================================================== */
-    Route::prefix('receptionist')->name('receptionist.')->group(function () {
+    Route::middleware('role:receptionist')->prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDeskController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check'); 
         Route::get('/walk-in', function() { return view('receptionist.walkin'); })->name('walkin');
@@ -121,7 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        6. MANAGER & EXECUTIVE STRATEGIC WORKSPACE PORTAL (READ ONLY)
        ====================================================================== */
-    Route::prefix('manager')->name('manager.')->group(function () {
+    Route::middleware('role:manager')->prefix('manager')->name('manager.')->group(function () {
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
@@ -137,7 +137,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        7. BACK-OFFICE OPERATIONS HUB (ADMIN - FULL WRITE ACCESS)
        ====================================================================== */
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
@@ -169,7 +169,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        8. HARD SECURITY POLICY: ANTI-MANAGER MODIFICATION GATEWAY
        ====================================================================== */
-    Route::middleware('deny-manager-modification')->group(function () {
+    Route::middleware(['role:admin', 'deny-manager-modification'])->group(function () {
         Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
         Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
         Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
@@ -190,11 +190,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ======================================================================
        9. SHARED READ-ONLY / AUDIT DATA FETCHERS
        ====================================================================== */
-    Route::get('/admin/facilities/booking/{id}/detail', [AdminOperationController::class, 'adminFacilityBookingDetail']);
-    Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
-    Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
-    Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
-    Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
+    Route::middleware('role:admin,manager')->group(function () {
+        Route::get('/admin/facilities/booking/{id}/detail', [AdminOperationController::class, 'adminFacilityBookingDetail']);
+        Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
+        Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
+        Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
+        Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
+    });
 });
 
 // Load file autentikasi bawaan
