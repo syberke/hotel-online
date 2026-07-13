@@ -39,7 +39,8 @@ mendeteksinya otomatis jika `.env` tidak ada di folder project:
 ```bash
 sudo install -d -m 750 /etc/oasis-hotel
 sudo nano /etc/oasis-hotel/oasis.env
-sudo chown root:$(id -gn) /etc/oasis-hotel/oasis.env
+sudo chown root:$(id -gn) /etc/oasis-hotel /etc/oasis-hotel/oasis.env
+sudo chmod 750 /etc/oasis-hotel
 sudo chmod 640 /etc/oasis-hotel/oasis.env
 ```
 
