@@ -2,6 +2,8 @@ x-web: &web
   build:
     context: .
     dockerfile: Dockerfile
+    args:
+      APP_BUILD_REVISION: ${APP_BUILD_REVISION:-local}
   image: oasis-hotel-web:latest
   restart: unless-stopped
   env_file:
