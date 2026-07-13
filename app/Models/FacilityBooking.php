@@ -15,6 +15,7 @@ class FacilityBooking extends Model
         'booking_date',
         'booking_time',
         'guests_count',
+        'seating_preference',
         'status',
         'notes'
     ];

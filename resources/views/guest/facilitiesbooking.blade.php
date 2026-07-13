@@ -100,21 +100,8 @@
             invPreference: '',
             invStatus: '',
 
-            // Master data array yang disuntik langsung dari database
-            allFacilities: [
-                @foreach($facilities as $f)
-                {
-                    id: {{ $f->id }},
-                    name: '{{ addslashes($f->name) }}',
-                    description: '{{ addslashes($f->description) }}',
-                    image_url: '{{ $f->image_url }}',
-                    hours: '{{ $f->hours }}',
-                    category: '{{ $f->category ?? "Wellness" }}',
-                    access_type: '{{ $f->access_type ?? "Complimentary" }}',
-                    requires_booking: {{ $f->requires_booking ? 'true' : 'false' }}
-                },
-                @endforeach
-            ],
+            // Payload sudah dinormalisasi controller dan di-encode aman oleh Blade.
+            allFacilities: @js($facilitiesPayload),
 
             // Saringan Filter Frontend Otomatis Tanpa Reload Browser
             get filteredFacilities() {
@@ -153,6 +140,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({
@@ -308,7 +297,7 @@
                                 <p class="text-[10px] text-neutral-400 font-medium">
                                  Guests: {{ $res->guests_count }} PPL &bull; <span class="italic text-neutral-500">{{ $res->seating_preference ?? 'Standard Seating' }}</span>
                                 </p>
-                                <button type="button" @click="triggerInvoice({{ $res->id }}, '{{ addslashes($res->facility_name) }}', '{{ date('d M Y', strtotime($res->booking_date)) }}', '{{ substr($res->booking_time, 0, 5) }}', {{ $res->guests_count }}, '{{ $res->seating_preference ?? 'Standard Seating' }}', '{{ $res->status }}')" class="mt-2 text-[9px] font-bold text-amber-800 uppercase tracking-wider block hover:text-amber-950 cursor-pointer">
+                                <button type="button" @click="triggerInvoice({{ (int) $res->id }}, @js($res->facility_name), @js(date('d M Y', strtotime($res->booking_date))), @js(substr($res->booking_time, 0, 5)), {{ (int) $res->guests_count }}, @js($res->seating_preference ?? 'Standard Seating'), @js($res->status))" class="mt-2 text-[9px] font-bold text-amber-800 uppercase tracking-wider block hover:text-amber-950 cursor-pointer">
                                     <i class="fa-solid fa-receipt mr-1"></i> View Receipt
                                 </button>
                             </div>

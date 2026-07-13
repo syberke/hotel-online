@@ -175,6 +175,54 @@ class AdminOperationController extends Controller
         DB::table('facilities')->where('id', $id)->delete();
         return redirect()->back()->with('success', 'Fasilitas berhasil dihapus dari sistem inventori hotel.');
     }
+
+    public function adminDeleteRestaurantOrder($id)
+    {
+        if (auth()->user()->role === 'manager') {
+            return redirect()->back()->with('error', 'Akses ditolak: Manager hanya dapat melihat pesanan.');
+        }
+
+        $order = DB::table('restaurant_orders')->where('id', $id)->first();
+        if (!$order) {
+            return redirect()->back()->with('error', 'Pesanan tidak ditemukan.');
+        }
+
+        if ($order->status !== 'cancelled') {
+            return redirect()->back()->with('error', 'Pesanan harus dibatalkan terlebih dahulu sebelum dihapus.');
+        }
+
+        if (DB::table('payments')->where('restaurant_order_id', $id)->exists()) {
+            return redirect()->back()->with('error', 'Pesanan tidak dapat dihapus karena sudah memiliki jejak transaksi pembayaran.');
+        }
+
+        DB::transaction(function () use ($id) {
+            DB::table('restaurant_order_details')->where('restaurant_order_id', $id)->delete();
+            DB::table('restaurant_orders')->where('id', $id)->delete();
+        });
+
+        return redirect()->back()->with('success', 'Pesanan yang dibatalkan berhasil dihapus.');
+    }
+
+    public function adminDeleteFacilityBooking($id)
+    {
+        if (auth()->user()->role === 'manager') {
+            return redirect()->back()->with('error', 'Akses ditolak: Manager hanya dapat melihat reservasi fasilitas.');
+        }
+
+        $booking = DB::table('facility_bookings')->where('id', $id)->first();
+        if (!$booking) {
+            return redirect()->back()->with('error', 'Reservasi fasilitas tidak ditemukan.');
+        }
+
+        if ($booking->status !== 'cancelled') {
+            return redirect()->back()->with('error', 'Reservasi fasilitas harus dibatalkan terlebih dahulu sebelum dihapus.');
+        }
+
+        DB::table('facility_bookings')->where('id', $id)->delete();
+
+        return redirect()->back()->with('success', 'Reservasi fasilitas yang dibatalkan berhasil dihapus.');
+    }
+
        public function adminUpdateFacilityBookingStatus(Request $request, $id)
     {
         if (auth()->user()->role === 'manager') {
