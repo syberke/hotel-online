@@ -93,11 +93,35 @@ class PaymentGatewayController extends Controller
 
         public function payRestaurantOrder(Request $request)
         {
+            $validated = $request->validate([
+                'cart_data' => ['required', 'array', 'min:1', 'max:25'],
+                'cart_data.*.id' => ['required', 'integer', 'distinct'],
+                'cart_data.*.quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            ]);
+
             $guest = DB::table('guests')->where('email', auth()->user()->email)->first();
             if (!$guest) return response()->json(['success' => false, 'message' => 'Profil tidak ditemukan.'], 404);
 
-            $cartItems = $request->input('cart_data', []);
-            if (empty($cartItems)) return response()->json(['success' => false, 'message' => 'Keranjang kosong.'], 400);
+            $requestedItems = collect($validated['cart_data'])->keyBy('id');
+            $menus = DB::table('restaurant_menus')
+                ->whereIn('id', $requestedItems->keys())
+                ->get(['id', 'name', 'price'])
+                ->keyBy('id');
+
+            if ($menus->count() !== $requestedItems->count()) {
+                return response()->json(['success' => false, 'message' => 'Salah satu menu tidak tersedia.'], 422);
+            }
+
+            $cartItems = $requestedItems->map(function (array $item, int|string $id) use ($menus) {
+                $menu = $menus->get($id);
+
+                return [
+                    'id' => (int) $menu->id,
+                    'name' => $menu->name,
+                    'price' => (int) $menu->price,
+                    'quantity' => (int) $item['quantity'],
+                ];
+            })->values()->all();
 
             $subtotal = 0;
             foreach ($cartItems as $item) { $subtotal += ($item['price'] * $item['quantity']); }

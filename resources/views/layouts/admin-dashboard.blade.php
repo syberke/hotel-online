@@ -107,7 +107,7 @@
             <header class="bg-white border-b border-neutral-200/70 px-10 py-4 sticky top-0 z-20 flex justify-between items-center h-20 shrink-0">
                 <div>
                     <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">System Staff Management</span>
-                    <h1 class="text-xl font-serif text-neutral-900 font-normal tracking-wide mt-0.5">Control Center Center</h1>
+                    <h1 class="text-xl font-serif text-neutral-900 font-normal tracking-wide mt-0.5">Control Center</h1>
                 </div>
                 <div class="flex items-center space-x-6">
                     <span class="border border-amber-700/20 bg-amber-50/60 text-amber-900 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 flex items-center gap-1.5 select-none">
