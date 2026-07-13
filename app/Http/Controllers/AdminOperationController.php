@@ -140,35 +140,50 @@ class AdminOperationController extends Controller
         return redirect()->back()->with('success', 'Status transaksi finansial #TRX-' . str_pad($id, 4, '0', STR_PAD_LEFT) . ' berhasil disinkronisasi.');
     }
      public function adminUpdateReservation(Request $request, $id)
-    {
-        if (auth()->user()->role === 'manager') {
-            return redirect()->back()->with('error', 'Manager tidak memiliki akses modifikasi.');
-        }
+{
+    if (auth()->user()->role === 'manager') {
+        return redirect()->back()
+            ->with('error', 'Manager tidak memiliki akses modifikasi.');
+    }
 
-        $request->validate(['status' => 'required|string']);
-        $booking = \App\Models\Booking::findOrFail($id);
-        
-        DB::transaction(function () use ($request, $booking) {
-            $booking->status = $request->status;
-            $booking->updated_at = now();
-            $booking->save();
+    $request->validate([
+        'status' => 'required|string|in:pending,confirmed,checked_in,checked_out,cancelled'
+    ]);
 
-            if ($request->status === 'cancelled') {
-                DB::table('payments')->where('booking_id', $booking->id)->update([
+    $booking = \App\Models\Booking::findOrFail($id);
+
+    DB::transaction(function () use ($request, $booking) {
+        $booking->status = $request->status;
+        $booking->updated_at = now();
+        $booking->save();
+
+        if ($request->status === 'cancelled') {
+            DB::table('payments')
+                ->where('booking_id', $booking->id)
+                ->update([
                     'payment_status' => 'failed',
                     'note' => 'Dibatalkan oleh Admin Kantor',
                     'updated_at' => now()
                 ]);
-            } elseif ($request->status === 'confirmed' || $request->status === 'checked_in') {
-                DB::table('payments')->where('booking_id', $booking->id)->update([
+        } elseif (
+            $request->status === 'confirmed'
+            || $request->status === 'checked_in'
+        ) {
+            DB::table('payments')
+                ->where('booking_id', $booking->id)
+                ->update([
                     'payment_status' => 'paid',
                     'updated_at' => now()
                 ]);
-            }
-        });
+        }
+    });
 
-        return redirect()->fullUrlWithQuery(['selected_id' => $booking->id])->with('success', 'Manifes status berhasil diperbarui.');
-    }
+    return redirect()
+        ->route('admin.reservation', [
+            'selected_id' => $booking->id
+        ])
+        ->with('success', 'Manifes status berhasil diperbarui.');
+}
         public function adminDeleteReservation($id)
     {
         if (auth()->user()->role === 'manager') {
@@ -180,7 +195,7 @@ class AdminOperationController extends Controller
             DB::table('bookings')->where('id', $id)->delete();
         });
 
-        return redirect()->route('admin.reservations')->with('success', 'Manifes arsip pemesanan berhasil dihapus dari sistem.');
+        return redirect()->route('admin.reservation')->with('success', 'Manifes arsip pemesanan berhasil dihapus dari sistem.');
     }
       public function adminDetailReservation($id)
     {
