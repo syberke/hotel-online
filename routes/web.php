@@ -128,7 +128,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [ExecutiveReportController::class, 'adminRestaurantView'])->name('restaurant');
-        Route::get('/facilities-wellness', [AdminOperationController::class, 'adminFacilitiesView'])->name('facilities');
+        Route::get('/facilities-wellness', [ExecutiveReportController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/finance-billing', [ExecutiveReportController::class, 'adminFinanceView'])->name('finance');
         Route::get('/reports', [ExecutiveReportController::class, 'adminReportsView'])->name('reports');
         Route::get('/users-control', [AdminOperationController::class, 'adminUserAndRoleView'])->name('userandrole');

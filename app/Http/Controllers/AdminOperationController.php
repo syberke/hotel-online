@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\DB;
 
 class AdminOperationController extends Controller
 {
+    public function adminFacilitiesView(Request $request)
+    {
+        return app(ExecutiveReportController::class)->adminFacilitiesView($request);
+    }
+
     public function adminStoreRoom(Request $request)
     {
         if (auth()->user()->role === 'manager') {
@@ -102,11 +107,16 @@ class AdminOperationController extends Controller
             'image_url'   => 'nullable|url'
         ]);
 
+        $existingFacility = DB::table('facilities')->where('id', $id)->first();
+        if (!$existingFacility) {
+            return redirect()->back()->with('error', 'Fasilitas tidak ditemukan.');
+        }
+
         DB::table('facilities')->where('id', $id)->update([
             'name'       => $request->name,
             'category'   => $request->category,
             'hours'      => $request->hours,
-            'image_url'  => $request->image_url,
+            'image_url'  => $request->image_url ?: $existingFacility->image_url,
             'updated_at' => now()
         ]);
 
@@ -146,6 +156,19 @@ class AdminOperationController extends Controller
             return redirect()->back()->with('error', 'Manager tidak memiliki akses modifikasi data.');
         }
 
+        $facility = DB::table('facilities')->where('id', $id)->first();
+        if (!$facility) {
+            return redirect()->back()->with('error', 'Fasilitas tidak ditemukan.');
+        }
+
+        $hasBookings = DB::table('facility_bookings')
+            ->where('facility_name', $facility->name)
+            ->exists();
+
+        if ($hasBookings) {
+            return redirect()->back()->with('error', 'Fasilitas tidak dapat dihapus karena sudah memiliki riwayat reservasi.');
+        }
+
         DB::table('facilities')->where('id', $id)->delete();
         return redirect()->back()->with('success', 'Fasilitas berhasil dihapus dari sistem inventori hotel.');
     }
@@ -173,7 +196,7 @@ class AdminOperationController extends Controller
         $query = DB::table('restaurant_menus');
 
         if ($request->filled('search')) {
-            $query->where('name', 'ILIKE', '%' . $request->search . '%');
+            $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($request->search) . '%']);
         }
 
         $menus = $query->orderBy('name', 'asc')->paginate(10)->withQueryString();
@@ -219,11 +242,16 @@ class AdminOperationController extends Controller
             'foto_url'    => 'nullable|url'
         ]);
 
+        $existingMenu = DB::table('restaurant_menus')->where('id', $id)->first();
+        if (!$existingMenu) {
+            return redirect()->back()->with('error', 'Menu tidak ditemukan.');
+        }
+
         DB::table('restaurant_menus')->where('id', $id)->update([
             'name'        => $request->name,
             'price'       => $request->price,
             'description' => $request->description,
-            'foto_url'    => $request->foto_url,
+            'foto_url'    => $request->foto_url ?: $existingMenu->foto_url,
             'updated_at'  => now()
         ]);
 
@@ -279,9 +307,10 @@ class AdminOperationController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('name', 'ILIKE', "%{$search}%")
-                ->orWhere('email', 'ILIKE', "%{$search}%")
-                ->orWhere('role', 'ILIKE', "%{$search}%");
+                $needle = '%' . strtolower($search) . '%';
+                $q->whereRaw('LOWER(name) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(email) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(role) LIKE ?', [$needle]);
             });
         }
 
@@ -511,7 +540,7 @@ class AdminOperationController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('rooms.room_number', 'like', "%{$search}%")
-                ->orWhere('room_types.name', 'ILIKE', "%{$search}%");
+                ->orWhereRaw('LOWER(room_types.name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
