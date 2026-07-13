@@ -47,6 +47,15 @@ sudo chmod 640 /etc/oasis-hotel/oasis.env
 File tersebut tidak berada di repository dan tidak masuk ke Docker image. Untuk
 lokasi custom, jalankan `OASIS_ENV_FILE=/lokasi/rahasia.env ./deploy.sh`.
 
+Jika belum ada environment, cukup jalankan `./deploy.sh`. Script akan meminta
+seluruh isi `.env` melalui input terminal yang disembunyikan, membuat APP_KEY
+jika kosong, dan menyimpannya ke lokasi permanen tersebut. Untuk mengganti
+environment di kemudian hari, jalankan:
+
+```bash
+./deploy.sh --setup-env
+```
+
 Deployment default menggunakan koneksi `DB_*` yang sudah ada di `.env`.
 Kemudian jalankan:
 
