@@ -167,28 +167,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/users/{id}/delete', [AdminOperationController::class, 'adminDeleteUser'])->name('users.delete');
     });
 
-    /* ======================================================================
-       8. HARD SECURITY POLICY: ANTI-MANAGER MODIFICATION GATEWAY
-       ====================================================================== */
-    Route::middleware('deny-manager-modification')->group(function () {
-        Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
-        Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
-        Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
-        
-        Route::post('/admin/room-types/store', [AdminOperationController::class, 'storeRoomType'])->name('admin.room-types.store');
-        Route::post('/admin/room-types/{id}/update', [AdminOperationController::class, 'updateRoomType'])->name('admin.room-types.update');
-        Route::delete('/admin/room-types/{id}/delete', [AdminOperationController::class, 'deleteRoomType'])->name('admin.room-types.delete');
-        
-        Route::post('/reservations/{id}/update', [AdminOperationController::class, 'adminUpdateReservation'])->name('admin.reservations.update');
-        Route::delete('/reservations/{id}/delete', [AdminOperationController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');
-        
-        Route::post('/restaurant-order/{id}/update-status', [ExecutiveReportController::class, 'adminUpdateOrderStatus'])->name('admin.restaurant.update-status');
-        Route::delete('/admin/restaurant-order/{id}/delete', [AdminOperationController::class, 'adminDeleteRestaurantOrder'])->name('admin.restaurant.order.delete');
-        Route::delete('/admin/facilities/booking/{id}/delete', [AdminOperationController::class, 'adminDeleteFacilityBooking'])->name('admin.facilities.booking.delete');
-        Route::post('/admin/restaurant/menu/store', [AdminOperationController::class, 'adminStoreMenu'])->name('admin.restaurant.menu.store');
-        Route::post('/admin/restaurant/menu/{id}/update', [AdminOperationController::class, 'adminUpdateMenu'])->name('admin.restaurant.menu.update');
-        Route::delete('/admin/restaurant/menu/{id}/delete', [AdminOperationController::class, 'adminDeleteMenu'])->name('admin.restaurant.menu.delete');
-    });
+/* ======================================================================
+   8. HARD SECURITY POLICY: ANTI-MANAGER MODIFICATION GATEWAY
+   ====================================================================== */
+Route::middleware('deny-manager-modification')->group(function () {
+    Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
+    Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
+    Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
+    
+    Route::post('/admin/room-types/store', [AdminOperationController::class, 'storeRoomType'])->name('admin.room-types.store');
+    Route::post('/admin/room-types/{id}/update', [AdminOperationController::class, 'updateRoomType'])->name('admin.room-types.update');
+    Route::delete('/admin/room-types/{id}/delete', [AdminOperationController::class, 'deleteRoomType'])->name('admin.room-types.delete');
+    
+    // PERBAIKAN: Menambahkan prefix 'admin' agar sesuai dengan URL aksi di Blade
+    Route::post('/admin/reservations/{id}/update', [AdminOperationController::class, 'adminUpdateReservation'])->name('admin.reservations.update');
+    Route::delete('/admin/reservations/{id}/delete', [AdminOperationController::class, 'adminDeleteReservation'])->name('admin.reservations.delete');
+    
+    // PERBAIKAN: Menambahkan prefix 'admin' agar tidak 404
+    Route::post('/admin/restaurant-order/{id}/update-status', [ExecutiveReportController::class, 'adminUpdateOrderStatus'])->name('admin.restaurant.update-status');
+    Route::delete('/admin/restaurant-order/{id}/delete', [AdminOperationController::class, 'adminDeleteRestaurantOrder'])->name('admin.restaurant.order.delete');
+    
+    Route::delete('/admin/facilities/booking/{id}/delete', [AdminOperationController::class, 'adminDeleteFacilityBooking'])->name('admin.facilities.booking.delete');
+    Route::post('/admin/restaurant/menu/store', [AdminOperationController::class, 'adminStoreMenu'])->name('admin.restaurant.menu.store');
+    Route::post('/admin/restaurant/menu/{id}/update', [AdminOperationController::class, 'adminUpdateMenu'])->name('admin.restaurant.menu.update');
+    Route::delete('/admin/restaurant/menu/{id}/delete', [AdminOperationController::class, 'adminDeleteMenu'])->name('admin.restaurant.menu.delete');
+});
 
     /* ======================================================================
        9. SHARED READ-ONLY / AUDIT DATA FETCHERS

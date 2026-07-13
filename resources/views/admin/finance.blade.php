@@ -17,7 +17,7 @@
             <div class="mt-2">
                 <span class="text-lg font-bold text-neutral-900 block font-mono">Rp {{ number_format($stats['total_revenue'], 0, ',', '.') }}</span>
                 <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 mt-1">
-                    <i class="fa-solid fa-arrow-up text-[8px]"></i> 18.7% <span class="text-neutral-400 font-normal">Live DB</span>
+                    <i class="fa-solid fa-arrow-up text-[8px]"></i> Live <span class="text-neutral-400 font-normal">DB Core</span>
                 </span>
             </div>
         </div>
@@ -70,7 +70,9 @@
                     <line x1="0" y1="20" x2="600" y2="20" stroke="#f4f4f5" stroke-width="1" />
                     <line x1="0" y1="60" x2="600" y2="60" stroke="#f4f4f5" stroke-width="1" />
                     <line x1="0" y1="100" x2="600" y2="100" stroke="#f4f4f5" stroke-width="1" />
-                    <path d="M {{ $polylineCoordinates }}" fill="none" stroke="#059669" stroke-width="2.5" />
+                    @if(!empty($polylineCoordinates))
+                        <path d="M {{ $polylineCoordinates }}" fill="none" stroke="#059669" stroke-width="2.5" />
+                    @endif
                 </svg>
                 <div class="flex justify-between text-[9px] text-neutral-400 font-mono font-bold pt-2 border-t border-neutral-100">
                     @foreach($chartLabels as $label)
@@ -88,10 +90,17 @@
                 <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
                     <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
                         <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e5e7eb" stroke-width="4"></circle>
+                        @php 
+                            $roomOffset = 100 - $shares['room'];
+                            $fbOffset = 100 - ($shares['room'] + $shares['fb']);
+                        @endphp
+                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="{{ $shares['room'] }} 100" stroke-dashoffset="0"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="{{ $shares['fb'] }} 100" stroke-dashoffset="-{{ $shares['room'] }}"></circle>
+                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="#9333ea" stroke-width="4" stroke-dasharray="{{ $shares['other'] }} 100" stroke-dashoffset="-{{ $shares['room'] + $shares['fb'] }}"></circle>
                     </svg>
                     <div class="absolute text-center">
-                        <span class="text-xs font-bold text-neutral-900 font-mono block">Category</span>
-                        <span class="text-[7px] text-neutral-400 uppercase tracking-wider font-bold block mt-0.5">Shares</span>
+                        <span class="text-[9px] font-bold text-neutral-900 uppercase font-sans block">Share</span>
+                        <span class="text-[7px] text-neutral-400 uppercase tracking-wider font-bold block mt-0.5">Ratio</span>
                     </div>
                 </div>
                 <div class="space-y-1.5 w-full text-[10px] font-semibold text-neutral-500">
@@ -159,14 +168,14 @@
                                 <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">Rp {{ number_format($trx->amount, 0, ',', '.') }}</td>
                                 <td class="py-3.5 px-3 uppercase text-[11px] font-semibold text-neutral-700 font-sans">{{ str_replace('_', ' ', $trx->payment_method) }}</td>
                                 <td class="py-3.5 px-4">
-    @if($trx->payment_status === 'paid' || (isset($trx->b_status) && $trx->b_status === 'confirmed'))
-        <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Paid </span>
-    @elseif($trx->payment_status === 'pending')
-        <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Pending</span>
-    @else
-        <span class="bg-red-50 text-red-800 border border-red-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Failed</span>
-    @endif
-</td>
+                                    @if($trx->payment_status === 'paid' || $trx->payment_status === 'success')
+                                        <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Paid</span>
+                                    @elseif($trx->payment_status === 'pending')
+                                        <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Pending</span>
+                                    @else
+                                        <span class="bg-red-50 text-red-800 border border-red-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Failed</span>
+                                    @endif
+                                </td>
                                 <td class="py-3.5 px-3 text-center">
                                     @if(auth()->user()->role !== 'manager')
                                         <button type="button" onclick="openManageTrxModal({{ $trx->id }})" class="text-neutral-500 hover:text-neutral-900 cursor-pointer flex items-center justify-center mx-auto w-6 h-6 border border-neutral-200 bg-white shadow-xs" title="Manage Status Pipeline"><i class="fa-solid fa-ellipsis-vertical"></i></button>
@@ -203,31 +212,20 @@
                     <div class="flex justify-between items-center"><span><i class="fa-solid fa-building-columns text-neutral-400 w-5"></i> Bank Transfer</span><span class="font-mono text-neutral-900">Rp {{ number_format($methodBreakdown['transfer']['amount'], 0, ',', '.') }} <span class="text-[9px] text-neutral-400 font-normal">({{ $methodBreakdown['transfer']['pct'] }}%)</span></span></div>
                 </div>
             </div>
-
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <div class="lg:col-span-2 bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
             <div class="flex justify-between items-center border-b border-neutral-100 pb-4 mb-4">
-                <div>
-                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Expense Overview Allocation</h3>
-                </div>
+                <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Expense Overview Allocation</h3>
                 <span class="text-md font-bold font-mono text-neutral-900">Rp {{ number_format($stats['expenses'], 0, ',', '.') }}</span>
             </div>
             
             <div class="space-y-4 flex-1 flex flex-col justify-center">
                 <div class="space-y-1">
-                    <div class="flex justify-between text-xs font-semibold text-neutral-700"><span>Payroll & Staff Salaries</span><span class="font-mono text-neutral-900">44.5%</span></div>
-                    <div class="w-full h-1.5 bg-neutral-100 overflow-hidden"><div class="h-full bg-neutral-900" style="width: 44.5%"></div></div>
-                </div>
-                <div class="space-y-1">
-                    <div class="flex justify-between text-xs font-semibold text-neutral-700"><span>Property Utilities (Water/Electricity)</span><span class="font-mono text-neutral-900">18.6%</span></div>
-                    <div class="w-full h-1.5 bg-neutral-100 overflow-hidden"><div class="h-full bg-neutral-900" style="width: 18.6%"></div></div>
-                </div>
-                <div class="space-y-1">
-                    <div class="flex justify-between text-xs font-semibold text-neutral-700"><span>Hotel Maintenance & Repairs</span><span class="font-mono text-neutral-900">13.1%</span></div>
-                    <div class="w-full h-1.5 bg-neutral-100 overflow-hidden"><div class="h-full bg-neutral-900" style="width: 13.1%"></div></div>
+                    <div class="flex justify-between text-xs font-semibold text-neutral-700"><span>Operational & System Outflow</span><span class="font-mono text-neutral-900">100%</span></div>
+                    <div class="w-full h-1.5 bg-neutral-100 overflow-hidden"><div class="h-full bg-neutral-900" style="width: 100%"></div></div>
                 </div>
             </div>
         </div>
@@ -243,9 +241,7 @@
                     </svg>
                 </div>
                 <div class="space-y-1 w-full text-[10px] font-semibold text-neutral-500">
-                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>Payroll</span><span class="text-neutral-800 font-mono">44.5%</span></div>
-                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-amber-500 inline-block mr-1.5"></span>Utilities</span><span class="text-neutral-800 font-mono">18.6%</span></div>
-                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-emerald-500 inline-block mr-1.5"></span>Maint.</span><span class="text-neutral-800 font-mono">13.1%</span></div>
+                    <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>Operational Costs</span><span class="text-neutral-800 font-mono">100%</span></div>
                 </div>
             </div>
         </div>
@@ -277,10 +273,10 @@
                 @csrf
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Payment Status Level</label>
-                    <select name="payment_status" id="select_trx_status" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold">
-                        <option value="paid">Paid / Complete (Settlement)</option>
-                        <option value="pending">Pending / Waiting Payment</option>
-                        <option value="failed">Failed / Voided / Refunded</option>
+                    <select name="payment_status" id="select_trx_status" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold text-neutral-800">
+                        <option value="paid">paid</option>
+                        <option value="pending">pending</option>
+                        <option value="failed">failed</option>
                     </select>
                 </div>
                 <button type="submit" class="w-full bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 cursor-pointer mt-2">Force Sync Status</button>
@@ -303,7 +299,7 @@
                     document.getElementById('lbl_trx_note').innerText = res.data.note ?? 'None recorded.';
                     
                     const statusLbl = document.getElementById('lbl_trx_status');
-                    statusLbl.className = res.data.payment_status === 'paid' ? 'text-emerald-600 font-bold uppercase' : 'text-amber-600 font-bold uppercase';
+                    statusLbl.className = (res.data.payment_status === 'paid' || res.data.payment_status === 'success') ? 'text-emerald-600 font-bold uppercase' : 'text-amber-600 font-bold uppercase';
                     
                     document.getElementById('modalTrxDetail').classList.remove('hidden');
                 }
@@ -315,7 +311,7 @@
             .then(response => response.json())
             .then(res => {
                 if(res.success) {
-                    document.getElementById('select_trx_status').value = res.data.payment_status;
+                    document.getElementById('select_trx_status').value = String(res.data.payment_status).toLowerCase();
                     document.getElementById('formUpdateTrxStage').action = `/admin/finance/transaction/${id}/update`;
                     document.getElementById('modalManageTrx').classList.remove('hidden');
                 }
