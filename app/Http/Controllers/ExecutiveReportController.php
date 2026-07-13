@@ -296,8 +296,9 @@ class ExecutiveReportController extends Controller
                 $cleanId = ltrim($search, '#OA-');
                 $q->where('id', 'like', "%{$cleanId}%")
                 ->orWhereHas('user', function($userQuery) use ($search) {
-                    $userQuery->where('name', 'ILIKE', "%{$search}%")
-                                ->orWhere('email', 'ILIKE', "%{$search}%");
+                    $needle = '%' . strtolower($search) . '%';
+                    $userQuery->whereRaw('LOWER(name) LIKE ?', [$needle])
+                                ->orWhereRaw('LOWER(email) LIKE ?', [$needle]);
                 });
             });
         }
@@ -399,7 +400,7 @@ class ExecutiveReportController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('restaurant_orders.id', 'like', "%{$search}%")
-                ->orWhere('guests.name', 'ILIKE', "%{$search}%")
+                ->orWhereRaw('LOWER(guests.name) LIKE ?', ['%' . strtolower($search) . '%'])
                 ->orWhere('rooms.room_number', 'like', "%{$search}%");
             });
         }
@@ -491,7 +492,8 @@ class ExecutiveReportController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('restaurant_orders.id', 'like', "%{$search}%")->orWhere('guests.name', 'ILIKE', "%{$search}%");
+                $q->where('restaurant_orders.id', 'like', "%{$search}%")
+                    ->orWhereRaw('LOWER(guests.name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -555,8 +557,7 @@ class ExecutiveReportController extends Controller
         });
 
         // Ambil parameter kueri halaman sebelumnya untuk mempertahankan state baris yang sedang aktif diurus
-        return redirect()->to(route('admin.roomservice', [
-            'selected_id' => $id,
+        return redirect()->to(route('admin.restaurant', [
             'tab' => $request->input('prev_tab', 'all'),
             'search' => $request->input('prev_search', '')
         ]))->with('success', 'Status manifests pesanan #RS-' . str_pad($id, 4, '0', STR_PAD_LEFT) . ' berhasil diperbarui.');
@@ -690,8 +691,8 @@ class ExecutiveReportController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('payments.id', 'like', "%{$search}%")
-                ->orWhere('users.name', 'ILIKE', "%{$search}%")
-                ->orWhere('payments.payment_method', 'ILIKE', "%{$search}%");
+                ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                ->orWhereRaw('LOWER(payments.payment_method) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -1140,8 +1141,8 @@ class ExecutiveReportController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('facility_bookings.id', 'like', "%{$search}%")
-                ->orWhere('users.name', 'ILIKE', "%{$search}%")
-                ->orWhere('facility_bookings.facility_name', 'ILIKE', "%{$search}%");
+                ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                ->orWhereRaw('LOWER(facility_bookings.facility_name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -1153,7 +1154,7 @@ class ExecutiveReportController extends Controller
         // ======================================================================
         // 3. MASTER PHYSICAL FACILITIES STATUS GRID MATRIX
         // ======================================================================
-        $facilitiesGrid = DB::table('facilities')->take(4)->get();
+        $facilitiesGrid = DB::table('facilities')->orderBy('name')->get();
         
         // Pasangkan kalkulasi presentase pemakaian dinamis per unit area hari ini
         foreach ($facilitiesGrid as $fac) {

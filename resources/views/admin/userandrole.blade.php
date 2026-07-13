@@ -104,7 +104,7 @@
                                         @if(auth()->user()->role !== 'manager')
                                             <button type="button" onclick="openEditUserModal({{ $u->id }})" class="text-blue-600 hover:text-blue-800 cursor-pointer font-bold uppercase text-[10px]"><i class="fa-regular fa-edit"></i> Edit</button>
                                             @if($u->id != auth()->id())
-                                                <form action="{{ route('admin.users.delete', $u->id) }}" method="POST" onsubmit="return confirm('Hapus user staf ini secara permanen?')">
+                                                <form action="{{ route('admin.users.delete', $u->id) }}" method="POST" data-confirm="Hapus user staf ini secara permanen?" data-confirm-title="Hapus Akun Staf">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="text-rose-600 hover:text-rose-800 cursor-pointer font-bold uppercase text-[10px]"><i class="fa-regular fa-trash-can"></i> Del</button>
                                                 </form>
@@ -270,7 +270,7 @@
                     document.getElementById('formEditUser').action = `/admin/users/${id}/update`;
                     document.getElementById('modalEditUser').classList.remove('hidden');
                 } else {
-                    alert('Gagal mengambil manifes kredensial akun.');
+                    OasisDialog.error('Gagal mengambil manifes kredensial akun.');
                 }
             });
     }

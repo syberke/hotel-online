@@ -28,6 +28,7 @@
 <body class="antialiased h-full bg-[#f5f5f3] text-neutral-900 m-0 p-0 font-sans">
 
     <x-node-badge />
+    <x-flash-dialogs />
 
     <div class="h-screen w-full bg-[#f5f5f3] text-neutral-900 flex overflow-hidden relative selection:bg-amber-100 selection:text-amber-900">
 

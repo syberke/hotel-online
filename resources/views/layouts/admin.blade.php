@@ -27,6 +27,7 @@
 <body class="antialiased min-h-screen bg-[#f5f5f3] text-neutral-900 m-0 p-0">
 
     <x-node-badge />
+    <x-flash-dialogs />
 
     {{ $slot }}
 

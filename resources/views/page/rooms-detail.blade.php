@@ -206,6 +206,16 @@
 
                             <div id="validation-message-box" class="hidden text-[11px] font-bold uppercase tracking-wider p-3 rounded-none"></div>
 
+                            @auth
+                                @if(auth()->user()->role === 'guest' && !$isProfileComplete)
+                                    <div class="border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
+                                        Lengkapi identitas, telepon, dan alamat di
+                                        <a href="{{ route('profile.edit') }}" class="font-bold underline">profil Anda</a>
+                                        sebelum melakukan reservasi.
+                                    </div>
+                                @endif
+                            @endauth
+
                             <div id="booking-action-container">
                                 <button type="button" id="submit-booking-btn" data-state="check" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
                                     <span>Check Availability</span>
@@ -287,6 +297,14 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(data => {
                 btn.disabled = false;
+
+                if (data.redirect) {
+                    OasisDialog.info(data.message || 'Lengkapi profil terlebih dahulu.').then(() => {
+                        window.location.href = data.redirect;
+                    });
+                    return;
+                }
+
                 msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
 
                 if (data.available) {
@@ -310,6 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(() => {
                 btn.disabled = false;
                 btn.querySelector('span').innerText = "Check Availability";
+                OasisDialog.error('Ketersediaan kamar belum dapat diperiksa. Silakan coba kembali.');
             });
 
         } else if (state === 'book') {
@@ -349,6 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(() => {
                 btn.disabled = false;
                 btn.querySelector('span').innerText = "Check Availability";
+                OasisDialog.error('Reservasi belum dapat diproses. Silakan coba kembali.');
             });
         }
     });

@@ -146,7 +146,7 @@
 
             submitBooking() {
                 if (!this.bookingTime) {
-                    alert('Please select a preferred time slot.');
+                    OasisDialog.info('Silakan pilih waktu kunjungan terlebih dahulu.');
                     return;
                 }
                 
@@ -260,7 +260,7 @@
                         
                         <div class="p-5 pt-0">
                             <div class="grid grid-cols-4 gap-2">
-                                <button type="button" @click="f.requires_booking ? triggerBooking(f.id, f.name) : alert('Fasilitas ini bersifat terbuka gratis. Anda bisa langsung berkunjung sesuai jam operasional tanpa registrasi slot.')" class="col-span-3 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors text-center cursor-pointer">
+                                <button type="button" @click="f.requires_booking ? triggerBooking(f.id, f.name) : OasisDialog.info('Fasilitas ini terbuka gratis. Anda dapat langsung berkunjung sesuai jam operasional tanpa registrasi slot.')" class="col-span-3 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors text-center cursor-pointer">
                                     <span x-text="f.requires_booking ? 'Reserve Slot' : 'Walk-in Entrance'"></span>
                                 </button>
                                 <a :href="'mailto:concierge@oasisresort.com?subject=Inquiry Facilities: ' + f.name" class="border border-neutral-200 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 flex items-center justify-center py-2.5 transition-colors">
