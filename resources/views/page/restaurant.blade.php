@@ -263,6 +263,7 @@
                         @endforelse
 
                     </div>
+                    <x-catalog-pagination :paginator="$culinaryMenus" label="menu items" />
                 </section>
             </div>
         </section>
@@ -418,27 +419,6 @@
 </x-guest-layout>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        if (localStorage.getItem('restaurant_scroll_y')) {
-            window.scrollTo(0, parseInt(localStorage.getItem('restaurant_scroll_y')));
-            localStorage.removeItem('restaurant_scroll_y');
-        }
-        
-        const scrollBox = document.getElementById('menu-cards-scrollbox');
-        if (scrollBox && localStorage.getItem('menu_box_scroll_top')) {
-            scrollBox.scrollTop = parseInt(localStorage.getItem('menu_box_scroll_top'));
-            localStorage.removeItem('menu_box_scroll_top');
-        }
-    });
-
-    window.addEventListener("beforeunload", function() {
-        localStorage.setItem('restaurant_scroll_y', window.scrollY);
-        const scrollBox = document.getElementById('menu-cards-scrollbox');
-        if (scrollBox) {
-            localStorage.setItem('menu_box_scroll_top', scrollBox.scrollTop);
-        }
-    });
-
     // RESERVASI MEJA RESTORAN AJAX HANDLING
     document.addEventListener('DOMContentLoaded', function () {
         const tableForm = document.getElementById('restaurant-table-form');
