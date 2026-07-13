@@ -23,11 +23,13 @@ printf '   OASIS HOTEL & RESORT - WEB CLUSTER DEPLOYMENT                 \n'
 printf '=======================================================================\n'
 
 echo "🧱 Menyiapkan 3 node web Apache + load balancer Nginx"
-echo "🗄️ Database PostgreSQL akan dipasang sebagai service terpisah"
+echo "🗄️ Database mengikuti mode yang dikonfigurasi di .env"
 echo "🌐 Akses: http://localhost:8080"
 
 if [ ! -f .env ]; then
     cp .env.example .env
+    echo "❌ File .env baru dibuat. Isi konfigurasi aplikasi terlebih dahulu, lalu jalankan ulang ./deploy.sh." >&2
+    exit 1
 fi
 
 if grep -q '^APP_KEY=$' .env; then
@@ -35,15 +37,24 @@ if grep -q '^APP_KEY=$' .env; then
     sed -i "s|^APP_KEY=$|APP_KEY=${APP_KEY}|" .env
 fi
 
-POSTGRES_PASSWORD_VALUE="$(sed -n 's/^POSTGRES_PASSWORD=//p' .env | tail -n 1)"
 DOCKER_APP_URL_VALUE="$(sed -n 's/^DOCKER_APP_URL=//p' .env | tail -n 1)"
-if [ -z "$POSTGRES_PASSWORD_VALUE" ] || [ "$POSTGRES_PASSWORD_VALUE" = "change-this-strong-password" ]; then
-    echo "❌ Ubah POSTGRES_PASSWORD di .env sebelum deployment." >&2
-    exit 1
+DOCKER_DATABASE_MODE="$(sed -n 's/^DOCKER_DATABASE_MODE=//p' .env | tail -n 1)"
+DOCKER_DATABASE_MODE="${DOCKER_DATABASE_MODE:-external}"
+
+if [ "$DOCKER_DATABASE_MODE" = "local" ]; then
+    POSTGRES_PASSWORD_VALUE="$(sed -n 's/^POSTGRES_PASSWORD=//p' .env | tail -n 1)"
+    if [ -z "$POSTGRES_PASSWORD_VALUE" ] || [ "$POSTGRES_PASSWORD_VALUE" = "change-this-strong-password" ]; then
+        echo "❌ Mode local-db membutuhkan POSTGRES_PASSWORD yang kuat di .env." >&2
+        exit 1
+    fi
+    COMPOSE_BIN+=( -f docker-compose.yaml -f docker-compose.local-db.yaml --profile local-db )
+    echo "🗄️ Mode database: PostgreSQL container lokal"
+else
+    echo "☁️ Mode database: eksternal dari konfigurasi DB_* di .env"
 fi
 
 "${COMPOSE_BIN[@]}" down --remove-orphans || true
-"${COMPOSE_BIN[@]}" up -d --build
+"${COMPOSE_BIN[@]}" up -d --build --wait
 "${COMPOSE_BIN[@]}" exec -T web1 php artisan migrate --force
 "${COMPOSE_BIN[@]}" ps
 
