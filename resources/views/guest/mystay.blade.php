@@ -583,7 +583,7 @@
         @endif
     </div>
 
-    <script src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
     <script>
         function triggerMidtransPayment(bookingId) {
             const payButton = document.getElementById('pay-button');

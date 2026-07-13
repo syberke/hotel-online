@@ -18,7 +18,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
     </style>
 </head>
-<body class="dashboard-shell min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
+<body class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
 
     <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 h-screen sticky top-0 overflow-y-auto custom-scrollbar z-30">
         <div>
@@ -38,43 +38,43 @@
 
                 <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Management & Front Desk</span>
                 
-                <a href="{{ route('manager.reservation') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.reservation') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.reservation') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.reservation') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-calendar-check text-sm w-5"></i> Reservations
                 </a>
                 
-                <a href="{{ route('manager.frontdesk') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.frontdesk') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.frontdesk') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.frontdesk') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-bell-concierge text-sm w-5"></i> Front Desk (Active Stays)
                 </a>
                 
-                <a href="{{ route('manager.rooms') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.rooms') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.rooms') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.rooms') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-bed text-sm w-5"></i> Rooms & Inventory
                 </a>
 
                 <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">In-House Services</span>
                 
-                <a href="{{ route('manager.roomservice') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.roomservice') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.roomservice') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.roomservice') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-bowl-food text-sm w-5"></i> Room Service Orders
                 </a>
                 
-                <a href="{{ route('manager.restaurant') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.restaurant') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.restaurant') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.restaurant') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-utensils text-sm w-5"></i> Restaurant Gastronomy
                 </a>
                 
-                <a href="{{ route('manager.facilities') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.facilities') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.facilities') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.facilities') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-spa text-sm w-5"></i> Facilities & Wellness
                 </a>
 
                 <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Reports & Controls</span>
                 
-                <a href="{{ route('manager.finance') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.finance') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.finance') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.finance') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-file-invoice-dollar text-sm w-5"></i> Finance & Billing Matrix
                 </a>
                 
-                <a href="{{ route('manager.reports') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.reports') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.reports') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.reports') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-chart-line text-sm w-5"></i> Operational Reports
                 </a>
                 
-                <a href="{{ route('manager.userandrole') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('manager.userandrole') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
+                <a href="{{ route('admin.userandrole') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ Request::routeIs('admin.userandrole') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
                     <i class="fa-solid fa-users-gear text-sm w-5"></i> User & Role Control
                 </a>
                 

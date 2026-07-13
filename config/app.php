@@ -54,11 +54,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'node' => [
-        'name' => env('APP_NODE_NAME', 'Local'),
-        'color' => env('APP_NODE_COLOR', '#0f766e'),
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

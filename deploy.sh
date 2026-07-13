@@ -24,26 +24,13 @@ printf '=======================================================================\
 
 echo "🧱 Menyiapkan 3 node web Apache + load balancer Nginx"
 echo "🗄️ Database PostgreSQL akan dipasang sebagai service terpisah"
-echo "🌐 Akses: http://localhost:8080"
+echo "🌐 Akses: http://localhost:8080 dan https://localhost:8443"
 
-if [ ! -f .env ]; then
-    cp .env.example .env
-fi
-
-if grep -q '^APP_KEY=$' .env; then
-    APP_KEY="base64:$(openssl rand -base64 32)"
-    sed -i "s|^APP_KEY=$|APP_KEY=${APP_KEY}|" .env
-fi
-
-if grep -q '^DB_PASSWORD=change-this-strong-password$' .env; then
-    echo "❌ Ubah DB_PASSWORD di .env sebelum deployment." >&2
-    exit 1
-fi
+echo "🔐 Menggunakan sertifikat TLS lokal untuk HTTPS"
 
 "${COMPOSE_BIN[@]}" down --remove-orphans || true
 "${COMPOSE_BIN[@]}" up -d --build
-"${COMPOSE_BIN[@]}" exec -T web1 php artisan migrate --force
 
 echo "✅ Stack deployment selesai"
 echo "🔍 Coba akses beberapa kali untuk melihat pembagian traffic antar node"
-echo "   for i in 1 2 3 4 5 6; do curl -sI http://localhost:8080 | grep X-App-Node; done"
+echo "   curl -k https://localhost:8443"

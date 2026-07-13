@@ -21,8 +21,6 @@ class AdminDashboardLayout extends Component
      */
     public function render(): View|Closure|string
     {
-        return auth()->user()?->role === 'manager'
-            ? view('layouts.manager-dashboard')
-            : view('layouts.admin-dashboard');
+        return view('components.admin-dashboard-layout');
     }
 }
