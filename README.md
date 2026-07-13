@@ -64,6 +64,11 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
+Script otomatis menjalankan migrasi, seeding kondisional, optimasi cache, serta
+verifikasi endpoint. Untuk menjalankan setiap tahap secara manual, termasuk
+pembuatan credential MariaDB, build, migrate, seed, dan troubleshooting, baca
+[Panduan Deployment Docker](docs/DEPLOYMENT.md).
+
 Aplikasi tersedia di <http://localhost:8080>.
 
 ### Database MariaDB
