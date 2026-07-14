@@ -1,4 +1,4 @@
-name: PHP Syntax Check
+name: Laravel Dynamic Data Validation
 
 on:
   pull_request:
@@ -8,8 +8,9 @@ on:
       - fix/dynamic-data
 
 jobs:
-  php-syntax:
+  laravel-validation:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,6 +19,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_sqlite, zip
           coverage: none
 
       - name: Validate Composer metadata
@@ -27,3 +29,32 @@ jobs:
         run: |
           find app bootstrap config database routes -type f -name '*.php' -print0 \
             | xargs -0 -n1 php -l
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare Laravel test environment
+        run: |
+          cp .env.example .env
+          mkdir -p database storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
+          touch database/database.sqlite
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=true/' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i "s#^DB_DATABASE=.*#DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite#" .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          sed -i 's/^MAIL_MAILER=.*/MAIL_MAILER=array/' .env
+          php artisan key:generate --force
+
+      - name: Validate migrations and routes
+        run: |
+          php artisan migrate --force
+          php artisan route:list
+
+      - name: Compile Blade views
+        run: php artisan view:cache
+
+      - name: Run Laravel feature tests
+        run: php artisan test --stop-on-failure
