@@ -74,15 +74,17 @@ class RoomTypeSeeder extends Seeder
         ];
 
         foreach ($rooms as $room) {
-            DB::table('rooms')->updateOrInsert(
-                ['room_number' => $room['room_number']],
-                [
-                    'room_type_id' => $typeIds[$room['type']],
-                    'status' => 'available',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
+            if (DB::table('rooms')->where('room_number', $room['room_number'])->exists()) {
+                continue;
+            }
+
+            DB::table('rooms')->insert([
+                'room_number' => $room['room_number'],
+                'room_type_id' => $typeIds[$room['type']],
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 }
