@@ -183,9 +183,9 @@ class ReceptionistFrontDeskFlowTest extends TestCase
 
         $filteredResponse = $this->get(route('receptionist.guests', ['guest_tab' => 'checked_out']));
         $filteredResponse->assertStatus(200);
-        dump($filteredResponse->getContent());
         $filteredResponse->assertSee('Checked-out Guest');
-        $filteredResponse->assertDontSee('In House Guest');
+        $filteredResponse->assertSee('checkedout@example.com');
+        $filteredResponse->assertDontSee('inhouse@example.com');
     }
 
     public function test_admin_and_manager_dashboards_expose_real_quick_action_links(): void
