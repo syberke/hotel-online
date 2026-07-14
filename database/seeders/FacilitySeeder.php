@@ -4,21 +4,12 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class FacilitySeeder extends Seeder
 {
     public function run(): void
     {
-        // Truncate aman untuk mereset id indeks tabel
-        Schema::disableForeignKeyConstraints();
-        try {
-            DB::table('facilities')->truncate();
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
-
-        DB::table('facilities')->insert([
+        $facilities = [
             [
                 'name' => 'Infinity Pool',
                 'description' => 'Oceanfront architectural pool outfitted with private service cabanas and elite panoramic sunset viewpoints.',
@@ -28,8 +19,7 @@ class FacilitySeeder extends Seeder
                 'category' => 'Pools & Beach',
                 'access_type' => 'Premium Access',
                 'hourly_capacity' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'price_per_person' => 0,
             ],
             [
                 'name' => 'Luxury Spa & Wellness',
@@ -39,9 +29,8 @@ class FacilitySeeder extends Seeder
                 'requires_booking' => true,
                 'category' => 'Wellness',
                 'access_type' => 'Premium Access',
-                'hourly_capacity' => 4, // <--- Max 4 Orang Per Jam
-                'created_at' => now(),
-                'updated_at' => now(),
+                'hourly_capacity' => 4,
+                'price_per_person' => 250000,
             ],
             [
                 'name' => 'Elite Fitness Center',
@@ -52,8 +41,7 @@ class FacilitySeeder extends Seeder
                 'category' => 'Sports & Fitness',
                 'access_type' => 'Premium Access',
                 'hourly_capacity' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'price_per_person' => 0,
             ],
             [
                 'name' => 'Fine Dining Restaurant',
@@ -63,9 +51,8 @@ class FacilitySeeder extends Seeder
                 'requires_booking' => true,
                 'category' => 'Dining',
                 'access_type' => 'Premium Access',
-                'hourly_capacity' => 100, // <--- Max 100 Orang Per Jam
-                'created_at' => now(),
-                'updated_at' => now(),
+                'hourly_capacity' => 100,
+                'price_per_person' => 0,
             ],
             [
                 'name' => 'Executive Lounge Access',
@@ -75,9 +62,8 @@ class FacilitySeeder extends Seeder
                 'requires_booking' => true,
                 'category' => 'Business',
                 'access_type' => 'Premium Access',
-                'hourly_capacity' => 20, // <--- Max 20 Orang Per Jam
-                'created_at' => now(),
-                'updated_at' => now(),
+                'hourly_capacity' => 20,
+                'price_per_person' => 150000,
             ],
             [
                 'name' => 'Private Beach Access',
@@ -88,9 +74,15 @@ class FacilitySeeder extends Seeder
                 'category' => 'Pools & Beach',
                 'access_type' => 'Premium Access',
                 'hourly_capacity' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        ]);
+                'price_per_person' => 0,
+            ],
+        ];
+
+        foreach ($facilities as $facility) {
+            DB::table('facilities')->updateOrInsert(
+                ['name' => $facility['name']],
+                $facility + ['updated_at' => now(), 'created_at' => now()]
+            );
+        }
     }
 }
