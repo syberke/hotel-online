@@ -10,6 +10,7 @@ use App\Http\Controllers\PaymentGatewayController;
 use App\Http\Controllers\RestaurantOrderController;
 use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\FrontOfficeCheckController;
+use App\Http\Controllers\FrontOfficeFlowController;
 use App\Http\Controllers\HousekeepingController;
 use App\Http\Controllers\AdminOperationController;
 use App\Http\Controllers\AdminControlController;
@@ -78,8 +79,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::match(['get', 'post'], '/check-out', [FrontOfficeCheckController::class, 'processCheckOut'])->name('checkout');
         Route::post('/check-out/process', [FrontOfficeCheckController::class, 'processCheckOut'])->name('checkout.process');
         Route::get('/folio', [FrontOfficeCheckController::class, 'receptionistFolioView'])->name('folio');
-        Route::match(['get', 'post'], '/payments', [FrontOfficeCheckController::class, 'processPayment'])->name('payments');
-        Route::post('/payments/process', [FrontOfficeCheckController::class, 'processPayment'])->name('payments.process');
+        Route::match(['get', 'post'], '/payments', [FrontOfficeFlowController::class, 'processPayment'])->name('payments');
+        Route::post('/payments/process', [FrontOfficeFlowController::class, 'processPayment'])->name('payments.process');
         Route::get('/reservations', [ReceptionistDeskController::class, 'receptionistReservationsView'])->name('reservations');
         Route::get('/guests', [ReceptionistDeskController::class, 'receptionistGuestsView'])->name('guests');
         Route::get('/guest-history', [ReceptionistDeskController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
