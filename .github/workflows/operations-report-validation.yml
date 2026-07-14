@@ -1,0 +1,150 @@
+name: Operations and Report Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - fix/operations-reports-polish
+      - main
+
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: oasis_test
+          POSTGRES_USER: oasis
+          POSTGRES_PASSWORD: oasis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U oasis -d oasis_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_pgsql, zip
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies and assets
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Prepare PostgreSQL environment
+        run: |
+          cp .env.example .env
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=true/' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_PORT=.*/DB_PORT=5432/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=oasis_test/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=oasis/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=oasis/' .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          php artisan key:generate --force
+
+      - name: Migrate seed and verify PostgreSQL enum types
+        env:
+          PGPASSWORD: oasis
+        run: |
+          php artisan migrate:fresh --seed --force
+          psql -h 127.0.0.1 -U oasis -d oasis_test -c "SELECT t.typname, string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder) AS enum_values FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname IN ('user_role_enum','user_account_status_enum','room_status_enum','restaurant_order_status_enum','facility_booking_status_enum') GROUP BY t.typname ORDER BY t.typname;"
+          psql -h 127.0.0.1 -U oasis -d oasis_test -Atc "SELECT data_type, udt_name FROM information_schema.columns WHERE table_name='users' AND column_name='account_status';" | grep 'USER-DEFINED|user_account_status_enum'
+
+      - name: Validate routes Blade and feature flow
+        run: |
+          php artisan route:list >/dev/null
+          php artisan view:cache
+          php artisan test tests/Feature/OperationsReportPolishTest.php --stop-on-failure
+
+  mariadb:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: oasis_test
+          MARIADB_USER: oasis
+          MARIADB_PASSWORD: oasis
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mariadb-admin ping -h localhost -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_mysql, zip
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies and assets
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Prepare MariaDB environment
+        run: |
+          cp .env.example .env
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=true/' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=oasis_test/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=oasis/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=oasis/' .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          php artisan key:generate --force
+
+      - name: Migrate seed and verify MariaDB enum columns
+        run: |
+          php artisan migrate:fresh --seed --force
+          mariadb -h 127.0.0.1 -uoasis -poasis oasis_test -e "SHOW COLUMNS FROM users LIKE 'role'; SHOW COLUMNS FROM users LIKE 'account_status'; SHOW COLUMNS FROM rooms LIKE 'status'; SHOW COLUMNS FROM restaurant_orders LIKE 'status'; SHOW COLUMNS FROM facility_bookings LIKE 'status';"
+          mariadb -h 127.0.0.1 -uoasis -poasis oasis_test -N -B -e "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='oasis_test' AND TABLE_NAME='users' AND COLUMN_NAME='account_status';" | grep "enum('active','inactive')"
+
+      - name: Validate routes Blade and feature flow
+        run: |
+          php artisan route:list >/dev/null
+          php artisan view:cache
+          php artisan test tests/Feature/OperationsReportPolishTest.php --stop-on-failure
