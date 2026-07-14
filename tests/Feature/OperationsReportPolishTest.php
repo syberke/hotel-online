@@ -55,6 +55,19 @@ class OperationsReportPolishTest extends TestCase
         $response->assertSee('725.000');
     }
 
+    public function test_live_operational_searches_work_on_numeric_ids(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'account_status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.finance', ['search' => '1']))->assertOk();
+        $this->actingAs($admin)->get(route('admin.restaurant', ['search' => '1']))->assertOk();
+        $this->actingAs($admin)->get(route('admin.facilities', ['search' => '1']))->assertOk();
+    }
+
     public function test_receptionist_reservation_page_contains_front_desk_action_workflow(): void
     {
         $receptionist = User::factory()->create([
@@ -68,6 +81,8 @@ class OperationsReportPolishTest extends TestCase
             'account_status' => 'active',
             'email_verified_at' => now(),
         ]);
+
+        $guestRecordId = DB::table('guests')->where('email', $guest->email)->value('id');
 
         $roomTypeId = DB::table('room_types')->insertGetId([
             'name' => 'Action Test Room',
@@ -87,7 +102,7 @@ class OperationsReportPolishTest extends TestCase
 
         DB::table('bookings')->insert([
             'user_id' => $guest->id,
-            'guest_id' => $guest->id,
+            'guest_id' => $guestRecordId,
             'room_id' => $roomId,
             'check_in' => now()->toDateString(),
             'check_out' => now()->addDay()->toDateString(),
@@ -127,6 +142,7 @@ class OperationsReportPolishTest extends TestCase
         $response->assertSee("Today's Menu");
         $response->assertSee("Today's Menu Master Data");
         $response->assertSee('Inline Menu Test');
+        $response->assertSee('Save');
     }
 
     public function test_manager_module_page_has_excel_and_pdf_reports(): void
