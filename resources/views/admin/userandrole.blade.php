@@ -32,7 +32,7 @@
             </div>
         </div>
         <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Inactive Roles</span>
+            <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Inactive Accounts</span>
             <div class="flex items-baseline justify-between mt-2">
                 <span class="text-3xl font-light font-serif text-neutral-400">{{ $stats['inactive'] }}</span>
             </div>
@@ -46,21 +46,20 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-8 items-start w-full">
-        
         <div class="xl:col-span-2 bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
                 <div>
                     <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Users Management</h3>
-                    <span class="text-[9px] text-neutral-400 block mt-0.5">Manage all system users and their database roles access.</span>
+                    <span class="text-[9px] text-neutral-400 block mt-0.5">Role menentukan portal akses. Account status menentukan apakah akun boleh login.</span>
                 </div>
-                
+
                 <form action="{{ url()->current() }}" method="GET" class="flex items-center gap-3 w-full md:w-auto">
                     <div class="relative flex-1 md:flex-none md:min-w-[200px]">
                         <i class="fa-solid fa-magnifying-glass text-neutral-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or role..." class="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
                     </div>
                     <button type="submit" class="bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer">Filter</button>
-                    
+
                     @if(auth()->user()->role !== 'manager')
                         <button type="button" onclick="openAddUserModal()" class="bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"><i class="fa-solid fa-plus text-[10px]"></i> Add User</button>
                     @endif
@@ -73,13 +72,15 @@
                         <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
                             <th class="py-3 px-4 font-semibold">User Identification</th>
                             <th class="py-3 px-4 font-semibold">Email</th>
-                            <th class="py-3 px-4 font-semibold">System Role Mapping</th>
+                            <th class="py-3 px-4 font-semibold">System Role</th>
+                            <th class="py-3 px-4 font-semibold">Account Status</th>
                             <th class="py-3 px-4 font-semibold">Creation Date</th>
-                            <th class="py-3 px-4 text-center font-semibold">Actions Matrix</th>
+                            <th class="py-3 px-4 text-center font-semibold">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
                         @foreach($users as $u)
+                            @php($accountStatus = $u->account_status ?? 'active')
                             <tr class="hover:bg-neutral-50/40 transition-colors">
                                 <td class="py-3.5 px-4 flex items-center gap-3">
                                     <div class="w-7 h-7 bg-neutral-100 border text-neutral-700 text-[10px] font-bold uppercase flex items-center justify-center font-sans">
@@ -87,7 +88,7 @@
                                     </div>
                                     <div>
                                         <span class="font-bold text-neutral-900 block flex items-center gap-1.5">
-                                            {{ $u->name }} 
+                                            {{ $u->name }}
                                             @if($u->id == auth()->id())
                                                 <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[8px] px-1 py-0.1 uppercase font-mono scale-90">You</span>
                                             @endif
@@ -97,6 +98,11 @@
                                 <td class="py-3.5 px-4 font-mono text-neutral-500">{{ $u->email }}</td>
                                 <td class="py-3.5 px-4">
                                     <span class="bg-purple-50 text-purple-800 border border-purple-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">{{ $u->role }}</span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="{{ $accountStatus === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-100' : 'bg-rose-50 text-rose-800 border-rose-100' }} border text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">
+                                        {{ $accountStatus }}
+                                    </span>
                                 </td>
                                 <td class="py-3.5 px-4 font-mono text-neutral-400">{{ date('d M Y', strtotime($u->created_at ?? now())) }}</td>
                                 <td class="py-3.5 px-4">
@@ -122,9 +128,7 @@
 
             <div class="flex justify-between items-center text-[11px] text-neutral-400 pt-1 font-medium">
                 <span>Showing entries {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} results</span>
-                <div class="font-sans text-neutral-800">
-                    {{ $users->links() }}
-                </div>
+                <div class="font-sans text-neutral-800">{{ $users->links() }}</div>
             </div>
         </div>
 
@@ -133,7 +137,7 @@
                 <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
                     <div>
                         <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Roles Inventory</h3>
-                        <span class="text-[9px] text-neutral-400 block mt-0.5">Summary of total system users per structural assignment.</span>
+                        <span class="text-[9px] text-neutral-400 block mt-0.5">Active system users per structural role.</span>
                     </div>
                 </div>
 
@@ -149,7 +153,7 @@
                             @foreach($rolesCount as $rc)
                                 <tr>
                                     <td class="py-2.5 font-bold text-neutral-900 uppercase font-sans text-[10px]"><i class="fa-solid fa-shield-halved mr-1.5 text-neutral-400"></i> {{ $rc->role }}</td>
-                                    <td class="font-mono text-right font-bold text-neutral-900">{{ $rc->total }} Staf</td>
+                                    <td class="font-mono text-right font-bold text-neutral-900">{{ $rc->total }} Users</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -159,9 +163,7 @@
 
             <div class="bg-white border border-neutral-200 p-6 shadow-sm space-y-4">
                 <div class="flex justify-between items-center border-b border-neutral-100 pb-3">
-                    <div>
-                        <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Module Protections Blueprint</h3>
-                    </div>
+                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Module Protections Blueprint</h3>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center text-neutral-500 font-medium">
                     <div class="bg-neutral-50 border p-2 flex flex-col items-center justify-center">
@@ -178,7 +180,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -202,14 +203,23 @@
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Password Assignment</label>
                     <input type="password" name="password" required class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50">
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">System Role Tier</label>
-                    <select name="role" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold uppercase">
-                        <option value="admin">Admin / Full Control</option>
-                        <option value="manager">Manager / Audit Portal</option>
-                        <option value="receptionist">Receptionist</option>
-                        <option value="guest">Standard Guest</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">System Role</label>
+                        <select name="role" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold uppercase">
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="receptionist">Receptionist</option>
+                            <option value="guest">Guest</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Account Status</label>
+                        <select name="account_status" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold uppercase">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 cursor-pointer mt-2">Publish User Credentials</button>
             </form>
@@ -229,21 +239,30 @@
                     <input type="text" name="name" id="edit_user_name" required class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Email (Read-Only Matrix)</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Email (Read-Only)</label>
                     <input type="email" id="edit_user_email" readonly class="w-full px-3 py-2 text-xs border border-neutral-200 bg-neutral-100 text-neutral-400 font-mono outline-none cursor-not-allowed">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Force New Password (Leave empty to keep current)</label>
                     <input type="password" name="password" placeholder="••••••••" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50">
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">System Role Tier</label>
-                    <select name="role" id="edit_user_role" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold uppercase">
-                        <option value="admin">Admin / Full Control</option>
-                        <option value="manager">Manager / Audit Portal</option>
-                        <option value="receptionist">Receptionist</option>
-                        <option value="guest">Standard Guest</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">System Role</label>
+                        <select name="role" id="edit_user_role" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold uppercase">
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="receptionist">Receptionist</option>
+                            <option value="guest">Guest</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Account Status</label>
+                        <select name="account_status" id="edit_user_account_status" class="w-full px-3 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 bg-neutral-50/50 font-semibold uppercase">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-neutral-950 hover:bg-neutral-900 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 cursor-pointer mt-2">Sync Access Modifications</button>
             </form>
@@ -253,11 +272,15 @@
 </x-admin-dashboard-layout>
 
 <script type="text/javascript">
-    function openAddUserModal() { document.getElementById('modalAddUser').classList.remove('hidden'); }
-    function closeAddUserModal() { document.getElementById('modalAddUser').classList.add('hidden'); }
+    function openAddUserModal() {
+        document.getElementById('modalAddUser').classList.remove('hidden');
+    }
+
+    function closeAddUserModal() {
+        document.getElementById('modalAddUser').classList.add('hidden');
+    }
 
     function openEditUserModal(id) {
-        // Tarik data riil dari database via rute AJAX Fetch
         fetch(`/admin/users/${id}/json-detail`)
             .then(response => response.json())
             .then(res => {
@@ -265,15 +288,17 @@
                     document.getElementById('edit_user_name').value = res.data.name;
                     document.getElementById('edit_user_email').value = res.data.email;
                     document.getElementById('edit_user_role').value = res.data.role;
-                    
-                    // Set rute action form secara dinamis
+                    document.getElementById('edit_user_account_status').value = res.data.account_status || 'active';
                     document.getElementById('formEditUser').action = `/admin/users/${id}/update`;
                     document.getElementById('modalEditUser').classList.remove('hidden');
                 } else {
                     OasisDialog.error('Gagal mengambil manifes kredensial akun.');
                 }
-            });
+            })
+            .catch(() => OasisDialog.error('Gagal menghubungi ledger akun.'));
     }
 
-    function closeEditUserModal() { document.getElementById('modalEditUser').classList.add('hidden'); }
+    function closeEditUserModal() {
+        document.getElementById('modalEditUser').classList.add('hidden');
+    }
 </script>
