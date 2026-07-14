@@ -1,0 +1,54 @@
+name: Database Schema Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - fix/simple-database-schema
+
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, pdo_sqlite, zip
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare SQLite environment
+        run: |
+          cp .env.example .env
+          mkdir -p database storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
+          touch database/database.sqlite
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i "s#^DB_DATABASE=.*#DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite#" .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
+          php artisan key:generate --force
+
+      - name: Migrate and seed
+        run: php artisan migrate:fresh --seed --force
+
+      - name: Verify simplified tables
+        run: |
+          php artisan tinker --execute="
+            foreach (['roles','permissions','model_has_roles','model_has_permissions','role_has_permissions','jobs','job_batches','failed_jobs'] as \$table) {
+                throw_if(Schema::hasTable(\$table), new Exception(\$table.' should not exist'));
+            }
+            foreach (['users','guests','rooms','room_types','bookings','payments','restaurant_orders','restaurant_order_details','restaurant_menus','facilities','facility_bookings','sessions','cache','cache_locks'] as \$table) {
+                throw_unless(Schema::hasTable(\$table), new Exception(\$table.' is required'));
+            }
+          "
+
+      - name: Validate routes
+        run: php artisan route:list >/dev/null
