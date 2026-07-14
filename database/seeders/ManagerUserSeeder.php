@@ -10,7 +10,7 @@ class ManagerUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'manager@hotel.com'],
             [
                 'name' => 'Hotel Manager',
