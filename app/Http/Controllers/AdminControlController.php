@@ -114,14 +114,21 @@ class AdminControlController extends AdminOperationController
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        if ((int) auth()->id() === (int) $id && ($validated['account_status'] ?? 'active') === 'inactive') {
+        $currentUser = DB::table('users')->where('id', $id)->first();
+        if (!$currentUser) {
+            return redirect()->back()->with('error', 'Akun tidak ditemukan.');
+        }
+
+        $accountStatus = $validated['account_status'] ?? $currentUser->account_status ?? 'active';
+
+        if ((int) auth()->id() === (int) $id && $accountStatus === 'inactive') {
             return redirect()->back()->with('error', 'Akun yang sedang digunakan tidak dapat dinonaktifkan.');
         }
 
         $updateData = [
             'name' => $validated['name'],
             'role' => $validated['role'],
-            'account_status' => $validated['account_status'] ?? 'active',
+            'account_status' => $accountStatus,
             'updated_at' => now(),
         ];
 
