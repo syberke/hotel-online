@@ -22,14 +22,23 @@ jobs:
           extensions: mbstring, bcmath, intl, gd, pdo_sqlite, zip
           coverage: none
 
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
       - name: Validate Composer metadata and PHP syntax
         run: |
           composer validate --no-check-publish --quiet
           find app bootstrap config database routes -type f -name '*.php' -print0 \
             | xargs -0 -n1 php -l >/dev/null
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress --quiet
+      - name: Install application dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress --quiet
+          npm ci --no-audit --no-fund --silent
+          npm run build --silent
 
       - name: Prepare Laravel test environment
         run: |
