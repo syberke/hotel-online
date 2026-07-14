@@ -2,34 +2,58 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use App\Observers\UserObserver;
 use App\Models\User;
+use App\Observers\UserObserver;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-      User::observe(UserObserver::class);
-// 1. Registrasi Komponen Guest (Bawaan Kode Kamu)
-        Blade::component('layouts.guest-dashboard', 'guest-dashboard-layout');
+        User::observe(UserObserver::class);
 
-        // 2. REGISTRASI KOMPONEN ADMIN (Tambahkan Dua Baris Ini)
+        Blade::component('layouts.guest-dashboard', 'guest-dashboard-layout');
         Blade::component('layouts.admin', 'admin-layout');
         Blade::component('layouts.admin-dashboard', 'admin-dashboard-layout');
         Blade::component('layouts.manager-dashboard', 'manager-dashboard-layout');
-           Blade::component('layouts.receptionist-dashboard', 'receptionist-dashboard-layout');
-        
+        Blade::component('layouts.receptionist-dashboard', 'receptionist-dashboard-layout');
+
+        View::composer('admin.finance', function ($view) {
+            $expenseBreakdown = DB::table('expenses')
+                ->select('category', DB::raw('SUM(amount) as amount'))
+                ->groupBy('category')
+                ->orderByDesc('amount')
+                ->get();
+
+            $totalExpenses = (float) $expenseBreakdown->sum('amount');
+            $expenseBreakdown = $expenseBreakdown->map(function ($row) use ($totalExpenses) {
+                $row->pct = $totalExpenses > 0
+                    ? round(((float) $row->amount / $totalExpenses) * 100, 1)
+                    : 0;
+                return $row;
+            });
+
+            $recentExpenses = DB::table('expenses')
+                ->leftJoin('users', 'expenses.created_by', '=', 'users.id')
+                ->select('expenses.*', 'users.name as creator_name')
+                ->orderByDesc('expenses.expense_date')
+                ->orderByDesc('expenses.id')
+                ->limit(10)
+                ->get();
+
+            $view->with(compact('expenseBreakdown', 'recentExpenses'));
+        });
+
+        View::composer('page.contact', function ($view) {
+            $view->with('hotelContact', config('hotel.contact'));
+        });
     }
 }
