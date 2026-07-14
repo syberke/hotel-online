@@ -8,47 +8,47 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): View
     {
         return view('auth.register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     */
     public function store(Request $request): RedirectResponse
     {
-        // Validasi utama beserta Google reCAPTCHA v2 native
-        $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'g-recaptcha-response' => [
+        ];
+
+        if (!app()->environment('testing')) {
+            $rules['g-recaptcha-response'] = [
                 'required',
                 function ($attribute, $value, $fail) {
-                    $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-                        'secret'   => env('RECAPTCHA_SECRET_KEY'),
-                        'response' => $value,
-                        'remoteip' => request()->ip(),
-                    ]);
+                    $response = Http::asForm()
+                        ->timeout(10)
+                        ->post('https://www.google.com/recaptcha/api/siteverify', [
+                            'secret' => config('services.recaptcha.secret', env('RECAPTCHA_SECRET_KEY')),
+                            'response' => $value,
+                            'remoteip' => request()->ip(),
+                        ]);
 
-                    if (!$response->json('success')) {
+                    if (!$response->successful() || !$response->json('success')) {
                         $fail('Verifikasi robot gagal, silakan centang ulang kotak reCAPTCHA.');
                     }
                 },
-            ],
-        ], [
+            ];
+        }
+
+        $validated = $request->validate($rules, [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Alamat email wajib diisi.',
             'email.email' => 'Format alamat email tidak valid.',
@@ -58,40 +58,37 @@ class RegisteredUserController extends Controller
             'g-recaptcha-response.required' => 'Silakan centang verifikasi robot reCAPTCHA.',
         ]);
 
-        $user = DB::transaction(function () use ($request) {
-            
-            // 1. Buat data dasar otentikasi di tabel public.users
+        $user = DB::transaction(function () use ($validated) {
             $newUser = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
                 'role' => 'guest',
             ]);
 
-            // 2. Tugaskan peran Spatie Roles Engine jika digunakan
-            if (method_exists($newUser, 'assignRole')) {
+            if (
+                method_exists($newUser, 'assignRole')
+                && DB::table('roles')->where('name', 'guest')->where('guard_name', 'web')->exists()
+            ) {
                 $newUser->assignRole('guest');
             }
 
-            // 3. SINKRONISASI PINTAR: Gunakan updateOrInsert agar tidak memicu Unique Violation Error
             DB::table('guests')->updateOrInsert(
-                ['email' => $request->email], // Kondisi pengecekan keunikan data
+                ['email' => $newUser->email],
                 [
-                    'name' => $request->name,
-                    'password' => Hash::make($request->password),
+                    'name' => $newUser->name,
+                    'password' => $newUser->password,
                     'phone' => '-',
                     'identity_number' => '-',
                     'address' => '-',
-                    'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]
             );
 
             return $newUser;
-    });
+        });
 
         event(new Registered($user));
-
         Auth::login($user);
 
         return redirect()->route('dashboard');
