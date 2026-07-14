@@ -108,6 +108,10 @@
                 @if(request()->routeIs('admin.facilities') && isset($facilityPricingRows))
                     @include('admin.partials.facility-pricing')
                 @endif
+
+                @if(request()->routeIs('admin.reservation'))
+                    @include('admin.partials.reservation-live-sync')
+                @endif
             </div>
         </div>
     </div>
