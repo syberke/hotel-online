@@ -89,10 +89,25 @@
         </div>
     </div>
 
-    @if(request()->routeIs('guest.stay.my') && !config('hotel.smart_lock.simulation_enabled'))
+    @if(request()->routeIs('guest.stay.my'))
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const configuredCheckInTime = @json(date('h:i A', strtotime(config('hotel.checkin_time'))));
+                const simulationEnabled = @json((bool) config('hotel.smart_lock.simulation_enabled'));
+
+                const syncStayPolicy = () => {
+                    document.querySelectorAll('span').forEach((span) => {
+                        const parentText = span.parentElement?.textContent ?? '';
+                        if (parentText.includes('Check-in Window:') && span.textContent.includes(',')) {
+                            const dateLabel = span.textContent.split(',')[0].trim();
+                            span.textContent = `${dateLabel}, ${configuredCheckInTime}`;
+                        }
+                    });
+                };
+
                 const disableSimulationControls = () => {
+                    if (simulationEnabled) return;
+
                     document.querySelectorAll('button').forEach((button) => {
                         const label = button.textContent.trim();
                         if (label.includes('Simulate Successful NFC Tap')) {
@@ -101,14 +116,21 @@
                     });
 
                     document.querySelectorAll('[x-text]').forEach((node) => {
-                        if (node.textContent.includes('Testing Mode Enabled')) {
-                            node.textContent = 'NFC Hardware Unavailable';
+                        const expression = node.getAttribute('x-text') ?? '';
+                        if (expression.includes('bypass testing') || node.textContent.includes('Testing Mode Enabled')) {
+                            node.textContent = 'NFC hardware is unavailable on this device. Software unlock simulation is disabled.';
+                            node.removeAttribute('x-text');
                         }
                     });
                 };
 
-                disableSimulationControls();
-                new MutationObserver(disableSimulationControls).observe(document.body, {
+                const syncDynamicStayUi = () => {
+                    syncStayPolicy();
+                    disableSimulationControls();
+                };
+
+                syncDynamicStayUi();
+                new MutationObserver(syncDynamicStayUi).observe(document.body, {
                     childList: true,
                     subtree: true,
                 });
