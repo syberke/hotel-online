@@ -65,19 +65,35 @@ jobs:
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
           php artisan key:generate --force
 
-      - name: Migrate seed and verify PostgreSQL enum types
-        env:
-          PGPASSWORD: oasis
-        run: |
-          php artisan migrate:fresh --seed --force
-          psql -h 127.0.0.1 -U oasis -d oasis_test -c "SELECT t.typname, string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder) AS enum_values FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname IN ('user_role_enum','user_account_status_enum','room_status_enum','restaurant_order_status_enum','facility_booking_status_enum') GROUP BY t.typname ORDER BY t.typname;"
-          psql -h 127.0.0.1 -U oasis -d oasis_test -Atc "SELECT data_type, udt_name FROM information_schema.columns WHERE table_name='users' AND column_name='account_status';" | grep 'USER-DEFINED|user_account_status_enum'
+      - name: Migrate and seed PostgreSQL
+        run: php artisan migrate:fresh --seed --force
 
-      - name: Validate routes Blade and feature flow
+      - name: Validate routes and Blade
         run: |
           php artisan route:list >/dev/null
           php artisan view:cache
-          php artisan test tests/Feature/OperationsReportPolishTest.php --stop-on-failure
+
+      - name: Run PostgreSQL enum and feature validation
+        id: postgres_tests
+        continue-on-error: true
+        run: |
+          php artisan test \
+            tests/Feature/EnumDatabaseCompatibilityTest.php \
+            tests/Feature/OperationsReportPolishTest.php \
+            --stop-on-failure > postgres-test-output.txt 2>&1
+
+      - name: Upload PostgreSQL test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operations-test-postgres
+          path: postgres-test-output.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Fail PostgreSQL validation when tests fail
+        if: steps.postgres_tests.outcome == 'failure'
+        run: exit 1
 
   mariadb:
     runs-on: ubuntu-latest
@@ -137,14 +153,32 @@ jobs:
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
           php artisan key:generate --force
 
-      - name: Migrate seed and verify MariaDB enum columns
-        run: |
-          php artisan migrate:fresh --seed --force
-          mariadb -h 127.0.0.1 -uoasis -poasis oasis_test -e "SHOW COLUMNS FROM users LIKE 'role'; SHOW COLUMNS FROM users LIKE 'account_status'; SHOW COLUMNS FROM rooms LIKE 'status'; SHOW COLUMNS FROM restaurant_orders LIKE 'status'; SHOW COLUMNS FROM facility_bookings LIKE 'status';"
-          mariadb -h 127.0.0.1 -uoasis -poasis oasis_test -N -B -e "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='oasis_test' AND TABLE_NAME='users' AND COLUMN_NAME='account_status';" | grep "enum('active','inactive')"
+      - name: Migrate and seed MariaDB
+        run: php artisan migrate:fresh --seed --force
 
-      - name: Validate routes Blade and feature flow
+      - name: Validate routes and Blade
         run: |
           php artisan route:list >/dev/null
           php artisan view:cache
-          php artisan test tests/Feature/OperationsReportPolishTest.php --stop-on-failure
+
+      - name: Run MariaDB enum and feature validation
+        id: mariadb_tests
+        continue-on-error: true
+        run: |
+          php artisan test \
+            tests/Feature/EnumDatabaseCompatibilityTest.php \
+            tests/Feature/OperationsReportPolishTest.php \
+            --stop-on-failure > mariadb-test-output.txt 2>&1
+
+      - name: Upload MariaDB test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operations-test-mariadb
+          path: mariadb-test-output.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Fail MariaDB validation when tests fail
+        if: steps.mariadb_tests.outcome == 'failure'
+        run: exit 1
