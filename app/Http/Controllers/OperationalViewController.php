@@ -9,51 +9,25 @@ class OperationalViewController extends ExecutiveReportController
 {
     public function adminFinanceView(Request $request)
     {
-        $roomRevenue = DB::table('payments')
-            ->whereNotNull('booking_id')
-            ->where('payment_status', 'paid')
-            ->sum('amount') ?: 0;
-
-        $fbRevenue = DB::table('payments')
-            ->whereNotNull('restaurant_order_id')
-            ->where('payment_status', 'paid')
-            ->sum('amount') ?: 0;
-
-        $otherRevenue = DB::table('payments')
+        $roomRevenue = $this->paidRevenueFor('booking_id');
+        $fbRevenue = $this->paidRevenueFor('restaurant_order_id');
+        $otherRevenue = (float) (DB::table('payments')
             ->whereNull('booking_id')
             ->whereNull('restaurant_order_id')
             ->where('payment_status', 'paid')
-            ->sum('amount') ?: 0;
-
+            ->sum('amount') ?: 0);
         $totalRevenue = $roomRevenue + $fbRevenue + $otherRevenue;
-        $totalExpenses = 0;
 
         $stats = [
             'total_revenue' => $totalRevenue,
             'room_revenue' => $roomRevenue,
             'fb_revenue' => $fbRevenue,
             'other_revenue' => $otherRevenue,
-            'expenses' => $totalExpenses,
-            'net_profit' => $totalRevenue - $totalExpenses,
+            'expenses' => 0,
+            'net_profit' => $totalRevenue,
         ];
 
-        $chartData = [];
-        $chartLabels = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $chartLabels[] = $date->format('d M');
-            $chartData[] = DB::table('payments')
-                ->where('payment_status', 'paid')
-                ->whereDate('created_at', $date->toDateString())
-                ->sum('amount') ?: 0;
-        }
-
-        $maxRevenue = max($chartData) ?: 1;
-        $points = [];
-        foreach ($chartData as $index => $value) {
-            $points[] = ($index * 100) . ',' . (120 - (($value / $maxRevenue) * 80));
-        }
-        $polylineCoordinates = implode(' ', $points);
+        [$chartLabels, $polylineCoordinates] = $this->paymentTrend();
 
         $shares = $totalRevenue > 0 ? [
             'room' => round(($roomRevenue / $totalRevenue) * 100, 1),
@@ -74,11 +48,13 @@ class OperationalViewController extends ExecutiveReportController
             );
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('payments.id', 'like', "%{$search}%")
-                    ->orWhereRaw('LOWER(COALESCE(users.name, restaurant_guests.name, ?)) LIKE ?', ['outside customer', '%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(payments.payment_method) LIKE ?', ['%' . strtolower($search) . '%']);
+            $needle = '%' . strtolower($request->search) . '%';
+            $idSearchSql = $this->idLikeSql('payments.id');
+
+            $query->where(function ($q) use ($needle, $idSearchSql) {
+                $q->whereRaw($idSearchSql, [$needle])
+                    ->orWhereRaw("LOWER(COALESCE(users.name, restaurant_guests.name, 'outside customer')) LIKE ?", [$needle])
+                    ->orWhereRaw('LOWER(payments.payment_method) LIKE ?', [$needle]);
             });
         }
 
@@ -99,15 +75,14 @@ class OperationalViewController extends ExecutiveReportController
             return $transaction;
         });
 
-        $methods = ['credit_card', 'cash', 'transfer', 'e_wallet'];
         $methodBreakdown = [];
-        $paidRevenue = DB::table('payments')->where('payment_status', 'paid')->sum('amount') ?: 0;
+        $paidRevenue = (float) (DB::table('payments')->where('payment_status', 'paid')->sum('amount') ?: 0);
 
-        foreach ($methods as $method) {
-            $amount = DB::table('payments')
+        foreach (['credit_card', 'cash', 'transfer', 'e_wallet'] as $method) {
+            $amount = (float) (DB::table('payments')
                 ->where('payment_method', $method)
                 ->where('payment_status', 'paid')
-                ->sum('amount') ?: 0;
+                ->sum('amount') ?: 0);
 
             $methodBreakdown[$method] = [
                 'amount' => $amount,
@@ -128,21 +103,16 @@ class OperationalViewController extends ExecutiveReportController
     public function adminRestaurantView(Request $request)
     {
         $today = now()->toDateString();
-
-        $totalOrdersCount = DB::table('restaurant_orders')->count();
-        $activeOrdersCount = DB::table('restaurant_orders')->whereIn('status', ['ordered', 'preparing'])->count();
-        $completedOrdersCount = DB::table('restaurant_orders')->where('status', 'paid')->count();
-        $totalRevenueSum = DB::table('payments')
-            ->whereNotNull('restaurant_order_id')
-            ->where('payment_status', 'paid')
-            ->sum('amount') ?: 0;
+        $totalOrders = DB::table('restaurant_orders')->count();
+        $completedOrders = DB::table('restaurant_orders')->where('status', 'paid')->count();
+        $restaurantRevenue = $this->paidRevenueFor('restaurant_order_id');
 
         $stats = [
-            'total' => $totalOrdersCount,
-            'active' => $activeOrdersCount,
-            'completed' => $completedOrdersCount,
-            'revenue' => $totalRevenueSum,
-            'avg_value' => $completedOrdersCount > 0 ? $totalRevenueSum / $completedOrdersCount : 0,
+            'total' => $totalOrders,
+            'active' => DB::table('restaurant_orders')->whereIn('status', ['ordered', 'preparing'])->count(),
+            'completed' => $completedOrders,
+            'revenue' => $restaurantRevenue,
+            'avg_value' => $completedOrders > 0 ? $restaurantRevenue / $completedOrders : 0,
         ];
 
         $query = DB::table('restaurant_orders')
@@ -157,7 +127,12 @@ class OperationalViewController extends ExecutiveReportController
                     ->where('bookings.check_out', '>=', $today);
             })
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
-            ->select('restaurant_orders.*', 'guests.name as guest_name', 'guests.phone as guest_phone', 'rooms.room_number');
+            ->select(
+                'restaurant_orders.*',
+                'guests.name as guest_name',
+                'guests.phone as guest_phone',
+                'rooms.room_number'
+            );
 
         $currentTab = $request->get('tab', 'all');
         if ($currentTab === 'dine_in') {
@@ -167,33 +142,21 @@ class OperationalViewController extends ExecutiveReportController
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('restaurant_orders.id', 'like', "%{$search}%")
-                    ->orWhereRaw('LOWER(guests.name) LIKE ?', ['%' . strtolower($search) . '%']);
+            $needle = '%' . strtolower($request->search) . '%';
+            $idSearchSql = $this->idLikeSql('restaurant_orders.id');
+
+            $query->where(function ($q) use ($needle, $idSearchSql) {
+                $q->whereRaw($idSearchSql, [$needle])
+                    ->orWhereRaw('LOWER(guests.name) LIKE ?', [$needle]);
             });
         }
 
-        $orders = $query->orderByDesc('restaurant_orders.created_at')->paginate(5)->withQueryString();
+        $orders = $query
+            ->orderByDesc('restaurant_orders.created_at')
+            ->paginate(5)
+            ->withQueryString();
 
-        $chartData = [];
-        $chartLabels = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $chartLabels[] = $date->format('d M');
-            $chartData[] = DB::table('payments')
-                ->whereNotNull('restaurant_order_id')
-                ->where('payment_status', 'paid')
-                ->whereDate('created_at', $date->toDateString())
-                ->sum('amount') ?: 0;
-        }
-
-        $maxRevenue = max($chartData) ?: 1;
-        $points = [];
-        foreach ($chartData as $index => $value) {
-            $points[] = ($index * 100) . ',' . (130 - (($value / $maxRevenue) * 100));
-        }
-        $polylineCoordinates = implode(' ', $points);
+        [$chartLabels, $polylineCoordinates] = $this->paymentTrend('restaurant_order_id');
 
         $statusCounts = [
             'completed' => DB::table('restaurant_orders')->where('status', 'paid')->count(),
@@ -234,38 +197,36 @@ class OperationalViewController extends ExecutiveReportController
     public function adminFacilitiesView(Request $request)
     {
         $today = now()->toDateString();
-
+        $totalFacilities = DB::table('facilities')->count();
         $totalBookings = DB::table('facility_bookings')->count();
         $todayBookings = DB::table('facility_bookings')->whereDate('booking_date', $today)->count();
-        $totalFacilitiesCount = DB::table('facilities')->count();
+        $facilitiesGrid = DB::table('facilities')->orderBy('name')->get();
+        $capacityByName = $facilitiesGrid->pluck('hourly_capacity', 'name');
 
-        $todaySessionRows = DB::table('facility_bookings')
+        $todaySessions = DB::table('facility_bookings')
             ->whereDate('booking_date', $today)
             ->where('status', 'confirmed')
             ->select('facility_name', 'booking_time', DB::raw('SUM(guests_count) as booked_guests'))
             ->groupBy('facility_name', 'booking_time')
             ->get();
 
-        $capacityByName = DB::table('facilities')->pluck('hourly_capacity', 'name');
         $utilizationSamples = [];
-        foreach ($todaySessionRows as $session) {
+        foreach ($todaySessions as $session) {
             $capacity = (int) ($capacityByName[$session->facility_name] ?? 0);
             if ($capacity > 0) {
                 $utilizationSamples[] = min(100, ((int) $session->booked_guests / $capacity) * 100);
             }
         }
 
-        $utilizationRate = count($utilizationSamples) > 0
-            ? round(array_sum($utilizationSamples) / count($utilizationSamples), 1)
-            : 0;
-
         $stats = [
             'total_bookings' => $totalBookings,
             'today_bookings' => $todayBookings,
-            'active_fac' => $totalFacilitiesCount,
-            'total_fac' => $totalFacilitiesCount,
+            'active_fac' => $totalFacilities,
+            'total_fac' => $totalFacilities,
             'revenue' => 0,
-            'utilization' => $utilizationRate,
+            'utilization' => $utilizationSamples === []
+                ? 0
+                : round(array_sum($utilizationSamples) / count($utilizationSamples), 1),
         ];
 
         $query = DB::table('facility_bookings')
@@ -277,13 +238,20 @@ class OperationalViewController extends ExecutiveReportController
                     ->where('bookings.check_out', '>=', $today);
             })
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
-            ->select('facility_bookings.*', 'users.name as guest_name', 'users.phone as guest_phone', 'rooms.room_number');
+            ->select(
+                'facility_bookings.*',
+                'users.name as guest_name',
+                'users.phone as guest_phone',
+                'rooms.room_number'
+            );
 
         $currentTab = $request->get('tab', 'all');
         if ($currentTab === 'upcoming') {
-            $query->whereDate('facility_bookings.booking_date', '>', $today)->where('facility_bookings.status', 'confirmed');
+            $query->whereDate('facility_bookings.booking_date', '>', $today)
+                ->where('facility_bookings.status', 'confirmed');
         } elseif ($currentTab === 'in_progress') {
-            $query->whereDate('facility_bookings.booking_date', $today)->where('facility_bookings.status', 'confirmed');
+            $query->whereDate('facility_bookings.booking_date', $today)
+                ->where('facility_bookings.status', 'confirmed');
         } elseif ($currentTab === 'completed') {
             $query->where('facility_bookings.status', 'completed');
         } elseif ($currentTab === 'cancelled') {
@@ -291,11 +259,13 @@ class OperationalViewController extends ExecutiveReportController
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('facility_bookings.id', 'like', "%{$search}%")
-                    ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(facility_bookings.facility_name) LIKE ?', ['%' . strtolower($search) . '%']);
+            $needle = '%' . strtolower($request->search) . '%';
+            $idSearchSql = $this->idLikeSql('facility_bookings.id');
+
+            $query->where(function ($q) use ($needle, $idSearchSql) {
+                $q->whereRaw($idSearchSql, [$needle])
+                    ->orWhereRaw('LOWER(users.name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(facility_bookings.facility_name) LIKE ?', [$needle]);
             });
         }
 
@@ -305,26 +275,18 @@ class OperationalViewController extends ExecutiveReportController
             ->paginate(5)
             ->withQueryString();
 
-        $facilitiesGrid = DB::table('facilities')->orderBy('name')->get();
-        $allFacilityBookings = DB::table('facility_bookings')->count();
-
         foreach ($facilitiesGrid as $facility) {
-            $bookedGuests = DB::table('facility_bookings')
+            $todayRows = DB::table('facility_bookings')
                 ->where('facility_name', $facility->name)
                 ->whereDate('booking_date', $today)
-                ->where('status', 'confirmed')
-                ->sum('guests_count') ?: 0;
+                ->where('status', 'confirmed');
 
-            $slots = DB::table('facility_bookings')
-                ->where('facility_name', $facility->name)
-                ->whereDate('booking_date', $today)
-                ->where('status', 'confirmed')
-                ->distinct()
-                ->count('booking_time');
-
+            $bookedGuests = (int) ($todayRows->sum('guests_count') ?: 0);
+            $slotCount = (clone $todayRows)->distinct()->count('booking_time');
             $capacity = (int) $facility->hourly_capacity;
-            $facility->computed_util = ($capacity > 0 && $slots > 0)
-                ? min(100, round(($bookedGuests / ($capacity * $slots)) * 100, 1))
+
+            $facility->computed_util = $capacity > 0 && $slotCount > 0
+                ? min(100, round(($bookedGuests / ($capacity * $slotCount)) * 100, 1))
                 : 0;
         }
 
@@ -339,8 +301,8 @@ class OperationalViewController extends ExecutiveReportController
         $chartShares = [];
         foreach ($facilitiesGrid as $facility) {
             $count = DB::table('facility_bookings')->where('facility_name', $facility->name)->count();
-            $chartShares[$facility->name] = $allFacilityBookings > 0
-                ? round(($count / $allFacilityBookings) * 100, 1)
+            $chartShares[$facility->name] = $totalBookings > 0
+                ? round(($count / $totalBookings) * 100, 1)
                 : 0;
         }
 
@@ -365,5 +327,50 @@ class OperationalViewController extends ExecutiveReportController
             'chartShares',
             'popularFacilities'
         ));
+    }
+
+    private function paidRevenueFor(string $foreignKey): float
+    {
+        return (float) (DB::table('payments')
+            ->whereNotNull($foreignKey)
+            ->where('payment_status', 'paid')
+            ->sum('amount') ?: 0);
+    }
+
+    private function paymentTrend(?string $foreignKey = null): array
+    {
+        $labels = [];
+        $values = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $labels[] = $date->format('d M');
+
+            $query = DB::table('payments')
+                ->where('payment_status', 'paid')
+                ->whereDate('created_at', $date->toDateString());
+
+            if ($foreignKey !== null) {
+                $query->whereNotNull($foreignKey);
+            }
+
+            $values[] = (float) ($query->sum('amount') ?: 0);
+        }
+
+        $maxRevenue = max($values) ?: 1;
+        $points = [];
+
+        foreach ($values as $index => $value) {
+            $points[] = ($index * 100) . ',' . (120 - (($value / $maxRevenue) * 80));
+        }
+
+        return [$labels, implode(' ', $points)];
+    }
+
+    private function idLikeSql(string $qualifiedColumn): string
+    {
+        return DB::connection()->getDriverName() === 'pgsql'
+            ? "CAST({$qualifiedColumn} AS TEXT) LIKE ?"
+            : "CAST({$qualifiedColumn} AS CHAR) LIKE ?";
     }
 }
