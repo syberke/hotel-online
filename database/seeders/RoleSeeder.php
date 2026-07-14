@@ -2,26 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
+
 class RoleSeeder extends Seeder
 {
-public function run(): void
-{
-    Role::firstOrCreate([
-        'name' => 'guest'
-    ]);
-
-    Role::firstOrCreate([
-        'name' => 'receptionist'
-    ]);
-
-    Role::firstOrCreate([
-        'name' => 'manager'
-    ]);
-    Role::firstOrCreate([
-        'name' => 'admin'
-    ]);
-}
+    public function run(): void
+    {
+        // Role sekarang dibatasi langsung oleh enum users.role.
+        // Seeder ini dipertahankan agar referensi lama tidak error saat dipanggil manual.
+    }
 }

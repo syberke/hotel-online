@@ -187,7 +187,7 @@ if "${COMPOSE_BIN[@]}" exec -T web1 php -r '
     $app = require "bootstrap/app.php";
     $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-    $requiredTables = ["users", "roles", "room_types", "rooms", "facilities", "restaurant_menus"];
+    $requiredTables = ["users", "room_types", "rooms", "facilities", "restaurant_menus"];
     foreach ($requiredTables as $table) {
         if (!Illuminate\Support\Facades\Schema::hasTable($table)
             || !Illuminate\Support\Facades\DB::table($table)->exists()) {

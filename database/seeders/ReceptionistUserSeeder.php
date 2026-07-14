@@ -10,18 +10,14 @@ class ReceptionistUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $receptionist = User::firstOrCreate(
-            [
-                'email' => 'receptionist@hotel.com'
-            ],
+        User::firstOrCreate(
+            ['email' => 'receptionist@hotel.com'],
             [
                 'name' => 'Receptionist',
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
-                   'role' => 'receptionist', 
+                'role' => 'receptionist',
             ]
         );
-
-        $receptionist->assignRole('receptionist');
     }
 }

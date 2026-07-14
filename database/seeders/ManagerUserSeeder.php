@@ -10,18 +10,14 @@ class ManagerUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $manager = User::firstOrCreate(
-            [
-                'email' => 'manager@hotel.com'
-            ],
+        User::firstOrCreate(
+            ['email' => 'manager@hotel.com'],
             [
                 'name' => 'Hotel Manager',
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
-                   'role' => 'manager', 
+                'role' => 'manager',
             ]
         );
-
-        $manager->assignRole('manager');
     }
 }
