@@ -12,21 +12,11 @@ use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\DynamicFrontOfficeCheckController;
 use App\Http\Controllers\HousekeepingController;
 use App\Http\Controllers\DynamicAdminOperationController;
-use App\Http\Controllers\DynamicExecutiveReportController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\DynamicExecutiveReportController;
 
-/*
-|--------------------------------------------------------------------------
-| 1. EXTERNAL INTEGRATION & WEBHOOKS (Bypass Auth Protection)
-|--------------------------------------------------------------------------
-*/
 Route::post('/midtrans/callback', [PaymentGatewayController::class, 'handleMidtransCallback']);
 
-/*
-|--------------------------------------------------------------------------
-| 2. PUBLIC & GLOBAL PORTAL ROUTES (Accessible Without Login)
-|--------------------------------------------------------------------------
-*/
 Route::get('/', [PublicPortalController::class, 'index'])->name('home');
 Route::get('/rooms', [PublicPortalController::class, 'allRoomsView'])->name('rooms');
 Route::get('/rooms/{id}', [PublicPortalController::class, 'roomShow'])->name('rooms.show');
@@ -34,23 +24,13 @@ Route::post('/rooms/check', [PublicPortalController::class, 'checkAvailability']
 Route::get('/restaurant', [PublicPortalController::class, 'restaurantIndex'])->name('restaurant');
 Route::get('/restaurant/menu/{id}', [PublicPortalController::class, 'menuShow'])->name('restaurant.detail');
 Route::get('/facilities', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities');
-Route::get('/contact', [PublicPortalController::class, 'contact'])->name('contact');
+Route::get('/contact', function () { return view('page.contact-dynamic'); })->name('contact');
 
-/*
-|--------------------------------------------------------------------------
-| 3. AUTHENTICATION AUTOMATIC ROLE REDIRECTOR
-|--------------------------------------------------------------------------
-*/
 Route::get('/dashboard', function () {
     $role = auth()->user()->role ?: 'guest';
     return redirect()->route($role . '.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-/*
-|--------------------------------------------------------------------------
-| 4. PROTECTED SYSTEM ZONE
-|--------------------------------------------------------------------------
-*/
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -73,21 +53,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/my-bookings/get-snap-token', [PaymentGatewayController::class, 'getSnapToken'])->name('bookings.pay');
     Route::post('/my-bookings/payment-success', [PaymentGatewayController::class, 'localPaymentSuccess'])->name('bookings.payment.success');
     Route::get('/room-order/{id}/details', [PaymentGatewayController::class, 'getRoomInvoiceDetails'])->name('room.invoice.details');
-
     Route::post('/restaurant/order', [GuestServiceController::class, 'placeGastronomyOrder'])->name('restaurant.order');
     Route::post('/restaurant-order/pay', [PaymentGatewayController::class, 'payRestaurantOrder'])->name('restaurant.order.pay');
     Route::post('/restaurant-order/settle', [PaymentGatewayController::class, 'settleRestaurantOrder'])->name('restaurant.order.settle');
     Route::post('/restaurant-order/{id}/cancel', [PaymentGatewayController::class, 'cancelRestaurantOrder'])->name('restaurant.order.cancel');
     Route::post('/restaurant-order/{id}/re-token', [PaymentGatewayController::class, 'reTokenPendingOrder'])->name('restaurant.order.retoken');
     Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
-
     Route::post('/room-service/order', [GuestServiceController::class, 'storeRoomServiceOrder'])->name('room.service.order');
     Route::post('/facilities/book', [GuestFacilityController::class, 'store'])->name('facilities.book');
 
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDeskController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
-        Route::get('/walk-in', function () { return view('receptionist.walkin'); })->name('walkin');
+        Route::get('/walk-in', function() { return view('receptionist.walkin'); })->name('walkin');
         Route::post('/walk-in/store', [DynamicFrontOfficeCheckController::class, 'storeWalkIn'])->name('walkin.store');
         Route::get('/check-in', [DynamicFrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [DynamicFrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
@@ -129,21 +107,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/restaurant/menu', [DynamicAdminOperationController::class, 'adminTodaysMenuView'])->name('restaurant.menu');
         Route::get('/facilities-wellness', [DynamicExecutiveReportController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/users-control', [DynamicAdminOperationController::class, 'adminUserAndRoleView'])->name('userandrole');
-
         Route::get('/finance-billing', [DynamicExecutiveReportController::class, 'adminFinanceView'])->name('finance');
         Route::post('/finance/transaction/{id}/update', [DynamicAdminOperationController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
         Route::post('/finance/expenses/store', [ExpenseController::class, 'store'])->name('finance.expenses.store');
         Route::delete('/finance/expenses/{id}', [ExpenseController::class, 'destroy'])->name('finance.expenses.delete');
-
         Route::get('/reports', [DynamicExecutiveReportController::class, 'adminReportsView'])->name('reports');
         Route::get('/reports/export/excel', [DynamicExecutiveReportController::class, 'exportReportsExcel'])->name('reports.export.excel');
         Route::get('/reports/export/pdf', [DynamicExecutiveReportController::class, 'exportReportsPdf'])->name('reports.export.pdf');
-
         Route::post('/facilities/store', [DynamicAdminOperationController::class, 'adminStoreFacility'])->name('facilities.store');
         Route::post('/facilities/{id}/update', [DynamicAdminOperationController::class, 'adminUpdateFacility'])->name('facilities.update');
         Route::delete('/facilities/{id}/delete', [DynamicAdminOperationController::class, 'adminDeleteFacility'])->name('facilities.delete');
         Route::post('/facilities/booking/{id}/update-status', [DynamicAdminOperationController::class, 'adminUpdateFacilityBookingStatus'])->name('facilities.booking.update-status');
-
         Route::post('/users/store', [DynamicAdminOperationController::class, 'adminStoreUser'])->name('users.store');
         Route::get('/users/{id}/json-detail', [DynamicAdminOperationController::class, 'adminUserJsonDetail'])->name('users.json');
         Route::post('/users/{id}/update', [DynamicAdminOperationController::class, 'adminUpdateUser'])->name('users.update');
