@@ -35,6 +35,8 @@ class GuestFacilityController extends Controller
             'category' => (string) ($facility->category ?? 'Wellness'),
             'access_type' => (string) ($facility->access_type ?? 'Complimentary'),
             'requires_booking' => (bool) ($facility->requires_booking ?? false),
+            'price_per_person' => (float) ($facility->price_per_person ?? 0),
+            'hourly_capacity' => (int) ($facility->hourly_capacity ?? 0),
         ])->values();
 
         return view('guest.facilitiesbooking', compact('myReservations', 'facilities', 'facilitiesPayload'));
@@ -66,12 +68,32 @@ class GuestFacilityController extends Controller
             ], 422);
         }
 
+        $currentGuests = DB::table('facility_bookings')
+            ->where('facility_name', $facility->name)
+            ->whereDate('booking_date', $validated['booking_date'])
+            ->whereTime('booking_time', $validated['booking_time'])
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->sum('guests_count') ?: 0;
+
+        $capacity = (int) ($facility->hourly_capacity ?? 0);
+        if ($capacity > 0 && ($currentGuests + $validated['guests_count']) > $capacity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kapasitas pada jam tersebut tidak mencukupi. Pilih waktu lain atau kurangi jumlah tamu.',
+            ], 422);
+        }
+
+        $unitPrice = (float) ($facility->price_per_person ?? 0);
+        $totalPrice = $unitPrice * (int) $validated['guests_count'];
+
         FacilityBooking::create([
             'user_id' => $request->user()->id,
             'facility_name' => $facility->name,
             'booking_date' => $validated['booking_date'],
             'booking_time' => $validated['booking_time'],
             'guests_count' => $validated['guests_count'],
+            'unit_price' => $unitPrice,
+            'total_price' => $totalPrice,
             'seating_preference' => $validated['seating_preference'] ?? 'No Preference',
             'notes' => $validated['notes'] ?? null,
             'status' => 'confirmed',
@@ -80,6 +102,7 @@ class GuestFacilityController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Fasilitas berhasil dipesan!',
+            'total_price' => $totalPrice,
         ]);
     }
 }
