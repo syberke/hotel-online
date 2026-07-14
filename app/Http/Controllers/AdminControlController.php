@@ -36,10 +36,14 @@ class AdminControlController extends AdminOperationController
 
         if ($request->filled('search')) {
             $needle = '%' . strtolower($request->search) . '%';
-            $query->where(function ($q) use ($needle) {
+            $roleSearchSql = DB::connection()->getDriverName() === 'pgsql'
+                ? 'LOWER(role::text) LIKE ?'
+                : 'LOWER(role) LIKE ?';
+
+            $query->where(function ($q) use ($needle, $roleSearchSql) {
                 $q->whereRaw('LOWER(name) LIKE ?', [$needle])
                     ->orWhereRaw('LOWER(email) LIKE ?', [$needle])
-                    ->orWhereRaw('LOWER(role::text) LIKE ?', [$needle]);
+                    ->orWhereRaw($roleSearchSql, [$needle]);
             });
         }
 
