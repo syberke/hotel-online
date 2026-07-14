@@ -10,7 +10,7 @@ class GuestUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'guest@hotel.com'],
             [
                 'name' => 'Guest Demo Oasis',
