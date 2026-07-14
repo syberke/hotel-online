@@ -22,16 +22,14 @@ jobs:
           extensions: mbstring, bcmath, intl, gd, pdo_sqlite, zip
           coverage: none
 
-      - name: Validate Composer metadata
-        run: composer validate --no-check-publish
-
-      - name: Lint application PHP
+      - name: Validate Composer metadata and PHP syntax
         run: |
+          composer validate --no-check-publish --quiet
           find app bootstrap config database routes -type f -name '*.php' -print0 \
-            | xargs -0 -n1 php -l
+            | xargs -0 -n1 php -l >/dev/null
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --quiet
 
       - name: Prepare Laravel test environment
         run: |
@@ -46,15 +44,13 @@ jobs:
           sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
           sed -i 's/^MAIL_MAILER=.*/MAIL_MAILER=array/' .env
-          php artisan key:generate --force
+          php artisan key:generate --force --quiet
 
-      - name: Validate migrations and routes
+      - name: Validate migrations routes and Blade compilation
         run: |
-          php artisan migrate --force
-          php artisan route:list
-
-      - name: Compile Blade views
-        run: php artisan view:cache
+          php artisan migrate --force --quiet
+          php artisan route:list >/dev/null
+          php artisan view:cache --quiet
 
       - name: Run Laravel feature tests
         run: php artisan test --stop-on-failure
