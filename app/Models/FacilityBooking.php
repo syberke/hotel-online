@@ -15,9 +15,16 @@ class FacilityBooking extends Model
         'booking_date',
         'booking_time',
         'guests_count',
+        'unit_price',
+        'total_price',
         'seating_preference',
         'status',
-        'notes'
+        'notes',
+    ];
+
+    protected $casts = [
+        'unit_price' => 'decimal:2',
+        'total_price' => 'decimal:2',
     ];
 
     public function user()
