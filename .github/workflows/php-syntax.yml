@@ -53,4 +53,19 @@ jobs:
           php artisan view:cache --quiet
 
       - name: Run Laravel feature tests
-        run: php artisan test --stop-on-failure
+        id: laravel_tests
+        continue-on-error: true
+        run: php artisan test --stop-on-failure > test-output.txt 2>&1
+
+      - name: Upload feature test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-test-output
+          path: test-output.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Fail validation when feature tests fail
+        if: steps.laravel_tests.outcome == 'failure'
+        run: exit 1
