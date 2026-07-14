@@ -139,8 +139,8 @@ class OperationsReportPolishTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.restaurant', ['view' => 'menu']));
 
         $response->assertOk();
-        $response->assertSee("Today's Menu");
-        $response->assertSee("Today's Menu Master Data");
+        $response->assertSee("Today's Menu", false);
+        $response->assertSee("Today's Menu Master Data", false);
         $response->assertSee('Inline Menu Test');
         $response->assertSee('Save');
     }
