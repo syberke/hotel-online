@@ -16,6 +16,7 @@ use App\Http\Controllers\AdminOperationController;
 use App\Http\Controllers\AdminControlController;
 use App\Http\Controllers\ExecutiveReportController;
 use App\Http\Controllers\OperationalViewController;
+use App\Http\Controllers\LiveReportViewController;
 use App\Http\Controllers\ManagerReportController;
 
 Route::post('/midtrans/callback', [PaymentGatewayController::class, 'handleMidtransCallback']);
@@ -98,7 +99,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
         Route::get('/facilities-wellness', [OperationalViewController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
-        Route::get('/reports', [ExecutiveReportController::class, 'adminReportsView'])->name('reports');
+        Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
         Route::get('/users-control', [AdminControlController::class, 'adminUserAndRoleView'])->name('userandrole');
 
         Route::redirect('/reports/export/excel', '/manager/report-export/reports/excel')->name('reports.export.excel');
@@ -123,7 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/users-control', [AdminControlController::class, 'adminUserAndRoleView'])->name('userandrole');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::post('/finance/transaction/{id}/update', [AdminOperationController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
-        Route::get('/reports', [ExecutiveReportController::class, 'adminReportsView'])->name('reports');
+        Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
         Route::redirect('/reports/export/excel', '/admin/report-export/reports/excel')->name('reports.export.excel');
         Route::redirect('/reports/export/pdf', '/admin/report-export/reports/pdf')->name('reports.export.pdf');
         Route::get('/report-export/{section}/excel', [ManagerReportController::class, 'excel'])
