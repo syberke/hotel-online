@@ -10,7 +10,7 @@ class ReceptionistUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'receptionist@hotel.com'],
             [
                 'name' => 'Receptionist',
