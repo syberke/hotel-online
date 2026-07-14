@@ -10,13 +10,19 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
-            AdminUserSeeder::class,
-            ManagerUserSeeder::class,
-            ReceptionistUserSeeder::class,
-            GuestUserSeeder::class,
+            BootstrapAdminSeeder::class,
             RoomTypeSeeder::class,
             FacilitySeeder::class,
-            RestaurantMenuSeeder::class
+            RestaurantMenuSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing']) || filter_var(env('SEED_DEMO_DATA', false), FILTER_VALIDATE_BOOL)) {
+            $this->call([
+                AdminUserSeeder::class,
+                ManagerUserSeeder::class,
+                ReceptionistUserSeeder::class,
+                GuestUserSeeder::class,
+            ]);
+        }
     }
 }
