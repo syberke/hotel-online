@@ -16,20 +16,13 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): View
     {
         return view('auth.register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     */
     public function store(Request $request): RedirectResponse
     {
-        // Validasi utama beserta Google reCAPTCHA v2 native
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
@@ -59,8 +52,6 @@ class RegisteredUserController extends Controller
         ]);
 
         $user = DB::transaction(function () use ($request) {
-            
-            // 1. Buat data dasar otentikasi di tabel public.users
             $newUser = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -68,30 +59,23 @@ class RegisteredUserController extends Controller
                 'role' => 'guest',
             ]);
 
-            // 2. Tugaskan peran Spatie Roles Engine jika digunakan
-            if (method_exists($newUser, 'assignRole')) {
-                $newUser->assignRole('guest');
-            }
-
-            // 3. SINKRONISASI PINTAR: Gunakan updateOrInsert agar tidak memicu Unique Violation Error
             DB::table('guests')->updateOrInsert(
-                ['email' => $request->email], // Kondisi pengecekan keunikan data
+                ['email' => $request->email],
                 [
                     'name' => $request->name,
-                    'password' => Hash::make($request->password),
+                    'password' => $newUser->password,
                     'phone' => '-',
                     'identity_number' => '-',
                     'address' => '-',
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]
             );
 
             return $newUser;
-    });
+        });
 
         event(new Registered($user));
-
         Auth::login($user);
 
         return redirect()->route('dashboard');
