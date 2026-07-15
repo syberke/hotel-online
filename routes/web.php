@@ -11,6 +11,7 @@ use App\Http\Controllers\RestaurantOrderController;
 use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\ReceptionistReservationController;
 use App\Http\Controllers\ReceptionistDashboardController;
+use App\Http\Controllers\ReceptionistGuestHistoryController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\FrontOfficeFlowController;
 use App\Http\Controllers\RoomLifecycleController;
@@ -23,7 +24,7 @@ use App\Http\Controllers\OperationalViewController;
 use App\Http\Controllers\CoreDashboardController;
 use App\Http\Controllers\CoreFacilityViewController;
 use App\Http\Controllers\LiveReportViewController;
-use App\Http\Controllers\ManagerReportController;
+use App\Http\Controllers\CoreManagerReportController;
 
 Route::post('/midtrans/callback', [PaymentGatewayController::class, 'handleMidtransCallback']);
 
@@ -90,7 +91,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/payments/process', [FrontOfficeFlowController::class, 'processPayment'])->name('payments.process');
         Route::get('/reservations', [ReceptionistReservationController::class, 'receptionistReservationsView'])->name('reservations');
         Route::get('/guests', [FrontOfficeCheckController::class, 'receptionistGuestsView'])->name('guests');
-        Route::get('/guest-history', [ReceptionistDeskController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
+        Route::get('/guest-history', [ReceptionistGuestHistoryController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
         Route::get('/room-availability', [CoreHousekeepingController::class, 'roomAvailabilityView'])->name('roomavailability');
         Route::get('/house-status', [CoreHousekeepingController::class, 'houseStatusView'])->name('housestatus');
         Route::post('/house-status/update', [CoreHousekeepingController::class, 'updateHouseStatus'])->name('housestatus.update');
@@ -110,10 +111,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::redirect('/reports/export/excel', '/manager/report-export/reports/excel')->name('reports.export.excel');
         Route::redirect('/reports/export/pdf', '/manager/report-export/reports/pdf')->name('reports.export.pdf');
-        Route::get('/report-export/{section}/excel', [ManagerReportController::class, 'excel'])
+        Route::get('/report-export/{section}/excel', [CoreManagerReportController::class, 'excel'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.excel');
-        Route::get('/report-export/{section}/pdf', [ManagerReportController::class, 'pdf'])
+        Route::get('/report-export/{section}/pdf', [CoreManagerReportController::class, 'pdf'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.pdf');
     });
@@ -133,10 +134,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
         Route::redirect('/reports/export/excel', '/admin/report-export/reports/excel')->name('reports.export.excel');
         Route::redirect('/reports/export/pdf', '/admin/report-export/reports/pdf')->name('reports.export.pdf');
-        Route::get('/report-export/{section}/excel', [ManagerReportController::class, 'excel'])
+        Route::get('/report-export/{section}/excel', [CoreManagerReportController::class, 'excel'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.excel');
-        Route::get('/report-export/{section}/pdf', [ManagerReportController::class, 'pdf'])
+        Route::get('/report-export/{section}/pdf', [CoreManagerReportController::class, 'pdf'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.pdf');
 
