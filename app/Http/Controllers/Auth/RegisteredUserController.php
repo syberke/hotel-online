@@ -23,25 +23,32 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'g-recaptcha-response' => [
+        ];
+
+        if (!app()->environment(['local', 'testing'])) {
+            $rules['g-recaptcha-response'] = [
                 'required',
                 function ($attribute, $value, $fail) {
-                    $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-                        'secret'   => env('RECAPTCHA_SECRET_KEY'),
-                        'response' => $value,
-                        'remoteip' => request()->ip(),
-                    ]);
+                    $response = Http::asForm()
+                        ->timeout(10)
+                        ->post('https://www.google.com/recaptcha/api/siteverify', [
+                            'secret' => env('RECAPTCHA_SECRET_KEY'),
+                            'response' => $value,
+                            'remoteip' => request()->ip(),
+                        ]);
 
-                    if (!$response->json('success')) {
+                    if (!$response->successful() || !$response->json('success')) {
                         $fail('Verifikasi robot gagal, silakan centang ulang kotak reCAPTCHA.');
                     }
                 },
-            ],
-        ], [
+            ];
+        }
+
+        $request->validate($rules, [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Alamat email wajib diisi.',
             'email.email' => 'Format alamat email tidak valid.',
