@@ -7,6 +7,32 @@ use Illuminate\Support\Facades\DB;
 
 class OperationalViewController extends ExecutiveReportController
 {
+    public function adminDashboardView()
+    {
+        $view = parent::adminDashboardView();
+        $data = $view->getData();
+
+        $restaurantRevenue = $this->paidRevenueFor('restaurant_order_id');
+        $data['deptRevenue'] = [
+            'room_service' => 0,
+            'restaurant' => $restaurantRevenue,
+            'spa' => 0,
+        ];
+
+        $data['deptShares'] = $restaurantRevenue > 0
+            ? ['room_service' => 0, 'restaurant' => 100, 'spa' => 0]
+            : ['room_service' => 0, 'restaurant' => 0, 'spa' => 0];
+
+        $data['hkStatus'] = [
+            'clean' => DB::table('rooms')->where('status', 'available')->count(),
+            'dirty' => DB::table('rooms')->where('status', 'dirty')->count(),
+            'inspected' => 0,
+            'oos' => DB::table('rooms')->where('status', 'maintenance')->count(),
+        ];
+
+        return view($view->name(), $data);
+    }
+
     public function adminFinanceView(Request $request)
     {
         $roomRevenue = $this->paidRevenueFor('booking_id');
@@ -97,6 +123,126 @@ class OperationalViewController extends ExecutiveReportController
             'shares',
             'transactions',
             'methodBreakdown'
+        ));
+    }
+
+    public function adminFrontDeskView(Request $request)
+    {
+        $today = now()->toDateString();
+
+        $arrivalsCount = DB::table('bookings')
+            ->whereDate('check_in', $today)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+        $departuresCount = DB::table('bookings')
+            ->whereDate('check_out', $today)
+            ->where('status', 'checked_in')
+            ->count();
+        $checkedInCount = DB::table('bookings')->where('status', 'checked_in')->count();
+
+        $totalRooms = DB::table('rooms')->count();
+        $availableRooms = DB::table('rooms')->where('status', 'available')->count();
+        $outOfOrderRooms = DB::table('rooms')->where('status', 'maintenance')->count();
+        $occupiedRooms = DB::table('rooms')->where('status', 'occupied')->count();
+        $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100, 1) : 0;
+
+        $query = DB::table('bookings')
+            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->select(
+                'bookings.*',
+                'users.name as guest_name',
+                'users.email as guest_email',
+                'rooms.room_number',
+                'room_types.name as room_type'
+            );
+
+        $currentTab = $request->get('tab', 'all');
+        if ($currentTab === 'arrivals') {
+            $query->whereDate('bookings.check_in', $today)
+                ->whereIn('bookings.status', ['pending', 'confirmed']);
+        } elseif ($currentTab === 'in_house') {
+            $query->where('bookings.status', 'checked_in');
+        } elseif ($currentTab === 'departures') {
+            $query->whereDate('bookings.check_out', $today)
+                ->where('bookings.status', 'checked_in');
+        } else {
+            $query->where(function ($q) use ($today) {
+                $q->whereDate('bookings.check_in', $today)
+                    ->orWhereDate('bookings.check_out', $today)
+                    ->orWhere('bookings.status', 'checked_in');
+            });
+        }
+
+        if ($request->filled('search')) {
+            $needle = '%' . strtolower($request->search) . '%';
+            $idSearchSql = $this->idLikeSql('bookings.id');
+
+            $query->where(function ($q) use ($needle, $idSearchSql) {
+                $q->whereRaw($idSearchSql, [$needle])
+                    ->orWhereRaw('LOWER(users.name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(users.email) LIKE ?', [$needle]);
+            });
+        }
+
+        $todayReservations = $query
+            ->orderByDesc('bookings.created_at')
+            ->paginate(5, ['*'], 'resv_page')
+            ->withQueryString();
+
+        $inHouseGuests = DB::table('bookings')
+            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', function ($join) {
+                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
+            })
+            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->where('bookings.status', 'checked_in')
+            ->select(
+                'bookings.*',
+                'users.name as guest_name',
+                'guests.phone as guest_phone',
+                'guests.foto_url as guest_avatar',
+                'rooms.room_number',
+                'room_types.name as room_type'
+            )
+            ->orderBy('rooms.room_number')
+            ->paginate(5, ['*'], 'guest_page')
+            ->withQueryString();
+
+        $asideArrivals = DB::table('bookings')
+            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', function ($join) {
+                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
+            })
+            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->whereDate('bookings.check_in', $today)
+            ->whereIn('bookings.status', ['pending', 'confirmed'])
+            ->select(
+                'bookings.*',
+                'users.name as guest_name',
+                'guests.foto_url as guest_avatar',
+                'room_types.name as room_type'
+            )
+            ->orderBy('bookings.check_in')
+            ->take(5)
+            ->get();
+
+        return view('admin.frontdesk', compact(
+            'arrivalsCount',
+            'departuresCount',
+            'checkedInCount',
+            'availableRooms',
+            'occupancyRate',
+            'totalRooms',
+            'outOfOrderRooms',
+            'occupiedRooms',
+            'todayReservations',
+            'inHouseGuests',
+            'asideArrivals',
+            'currentTab'
         ));
     }
 
