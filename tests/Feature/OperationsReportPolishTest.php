@@ -189,9 +189,22 @@ class OperationsReportPolishTest extends TestCase
             $response = $this->actingAs($manager)->get(route($routeName));
 
             $response->assertOk();
-            $response->assertSee('Manager Report Export');
-            $response->assertSee(route('manager.section-report.excel', ['section' => $section]), false);
-            $response->assertSee(route('manager.section-report.pdf', ['section' => $section]), false);
+            $html = $response->getContent();
+            $this->assertStringContainsString(
+                'Manager Report Export',
+                $html,
+                "Manager report toolbar missing on route {$routeName}"
+            );
+            $this->assertStringContainsString(
+                route('manager.section-report.excel', ['section' => $section]),
+                $html,
+                "Excel report link missing on route {$routeName}"
+            );
+            $this->assertStringContainsString(
+                route('manager.section-report.pdf', ['section' => $section]),
+                $html,
+                "PDF report link missing on route {$routeName}"
+            );
         }
     }
 
