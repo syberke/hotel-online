@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - fix/operations-reports-polish
+      - fix/core-schema-enums
       - main
 
 jobs:
@@ -81,6 +82,7 @@ jobs:
         run: |
           php artisan test \
             tests/Feature/OperationsReportPolishTest.php \
+            tests/Feature/CoreSchemaWorkflowTest.php \
             --stop-on-failure > postgres-test-output.txt 2>&1
 
       - name: Upload PostgreSQL test output
@@ -170,6 +172,7 @@ jobs:
         run: |
           php artisan test \
             tests/Feature/OperationsReportPolishTest.php \
+            tests/Feature/CoreSchemaWorkflowTest.php \
             --stop-on-failure > mariadb-test-output.txt 2>&1
 
       - name: Upload MariaDB test output

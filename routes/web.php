@@ -9,15 +9,22 @@ use App\Http\Controllers\GuestFacilityController;
 use App\Http\Controllers\PaymentGatewayController;
 use App\Http\Controllers\RestaurantOrderController;
 use App\Http\Controllers\ReceptionistDeskController;
+use App\Http\Controllers\ReceptionistReservationController;
+use App\Http\Controllers\ReceptionistDashboardController;
+use App\Http\Controllers\ReceptionistGuestHistoryController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\FrontOfficeFlowController;
-use App\Http\Controllers\HousekeepingController;
+use App\Http\Controllers\RoomLifecycleController;
+use App\Http\Controllers\CoreHousekeepingController;
 use App\Http\Controllers\AdminOperationController;
 use App\Http\Controllers\AdminControlController;
+use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\ExecutiveReportController;
 use App\Http\Controllers\OperationalViewController;
+use App\Http\Controllers\CoreDashboardController;
+use App\Http\Controllers\CoreFacilityViewController;
 use App\Http\Controllers\LiveReportViewController;
-use App\Http\Controllers\ManagerReportController;
+use App\Http\Controllers\CoreManagerReportController;
 
 Route::post('/midtrans/callback', [PaymentGatewayController::class, 'handleMidtransCallback']);
 
@@ -69,7 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/facilities/book', [GuestFacilityController::class, 'store'])->name('facilities.book');
 
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
-        Route::get('/dashboard', [ReceptionistDeskController::class, 'receptionistDashboardView'])->name('dashboard');
+        Route::get('/dashboard', [ReceptionistDashboardController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
         Route::get('/walk-in', function () { return view('receptionist.walkin'); })->name('walkin');
         Route::post('/walk-in/store', [FrontOfficeCheckController::class, 'storeWalkIn'])->name('walkin.store');
@@ -77,60 +84,60 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
         Route::match(['get', 'post'], '/room-assignment', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment');
         Route::post('/room-assignment/assign', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment.assign');
-        Route::match(['get', 'post'], '/check-out', [FrontOfficeCheckController::class, 'processCheckOut'])->name('checkout');
-        Route::post('/check-out/process', [FrontOfficeCheckController::class, 'processCheckOut'])->name('checkout.process');
+        Route::match(['get', 'post'], '/check-out', [RoomLifecycleController::class, 'processCheckOut'])->name('checkout');
+        Route::post('/check-out/process', [RoomLifecycleController::class, 'processCheckOut'])->name('checkout.process');
         Route::get('/folio', [FrontOfficeCheckController::class, 'receptionistFolioView'])->name('folio');
         Route::match(['get', 'post'], '/payments', [FrontOfficeFlowController::class, 'processPayment'])->name('payments');
         Route::post('/payments/process', [FrontOfficeFlowController::class, 'processPayment'])->name('payments.process');
-        Route::get('/reservations', [ReceptionistDeskController::class, 'receptionistReservationsView'])->name('reservations');
-        Route::get('/guests', [ReceptionistDeskController::class, 'receptionistGuestsView'])->name('guests');
-        Route::get('/guest-history', [ReceptionistDeskController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
-        Route::get('/room-availability', [HousekeepingController::class, 'roomAvailabilityView'])->name('roomavailability');
-        Route::get('/house-status', [HousekeepingController::class, 'houseStatusView'])->name('housestatus');
-        Route::post('/house-status/update', [HousekeepingController::class, 'updateHouseStatus'])->name('housestatus.update');
+        Route::get('/reservations', [ReceptionistReservationController::class, 'receptionistReservationsView'])->name('reservations');
+        Route::get('/guests', [FrontOfficeCheckController::class, 'receptionistGuestsView'])->name('guests');
+        Route::get('/guest-history', [ReceptionistGuestHistoryController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
+        Route::get('/room-availability', [CoreHousekeepingController::class, 'roomAvailabilityView'])->name('roomavailability');
+        Route::get('/house-status', [CoreHousekeepingController::class, 'houseStatusView'])->name('housestatus');
+        Route::post('/house-status/update', [CoreHousekeepingController::class, 'updateHouseStatus'])->name('housestatus.update');
     });
 
     Route::prefix('manager')->name('manager.')->group(function () {
-        Route::get('/dashboard', [OperationalViewController::class, 'adminDashboardView'])->name('dashboard');
-        Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
+        Route::get('/dashboard', [CoreDashboardController::class, 'adminDashboardView'])->name('dashboard');
+        Route::get('/reservations', [AdminReservationController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [OperationalViewController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
-        Route::get('/facilities-wellness', [OperationalViewController::class, 'adminFacilitiesView'])->name('facilities');
+        Route::get('/facilities-wellness', [CoreFacilityViewController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
         Route::get('/users-control', [AdminControlController::class, 'adminUserAndRoleView'])->name('userandrole');
 
         Route::redirect('/reports/export/excel', '/manager/report-export/reports/excel')->name('reports.export.excel');
         Route::redirect('/reports/export/pdf', '/manager/report-export/reports/pdf')->name('reports.export.pdf');
-        Route::get('/report-export/{section}/excel', [ManagerReportController::class, 'excel'])
+        Route::get('/report-export/{section}/excel', [CoreManagerReportController::class, 'excel'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.excel');
-        Route::get('/report-export/{section}/pdf', [ManagerReportController::class, 'pdf'])
+        Route::get('/report-export/{section}/pdf', [CoreManagerReportController::class, 'pdf'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.pdf');
     });
 
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', [OperationalViewController::class, 'adminDashboardView'])->name('dashboard');
-        Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
+        Route::get('/dashboard', [CoreDashboardController::class, 'adminDashboardView'])->name('dashboard');
+        Route::get('/reservations', [AdminReservationController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [OperationalViewController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
         Route::redirect('/restaurant/menu', '/admin/restaurant-gastronomy?view=menu')->name('restaurant.menu');
-        Route::get('/facilities-wellness', [OperationalViewController::class, 'adminFacilitiesView'])->name('facilities');
+        Route::get('/facilities-wellness', [CoreFacilityViewController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/users-control', [AdminControlController::class, 'adminUserAndRoleView'])->name('userandrole');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::post('/finance/transaction/{id}/update', [AdminOperationController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
         Route::redirect('/reports/export/excel', '/admin/report-export/reports/excel')->name('reports.export.excel');
         Route::redirect('/reports/export/pdf', '/admin/report-export/reports/pdf')->name('reports.export.pdf');
-        Route::get('/report-export/{section}/excel', [ManagerReportController::class, 'excel'])
+        Route::get('/report-export/{section}/excel', [CoreManagerReportController::class, 'excel'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.excel');
-        Route::get('/report-export/{section}/pdf', [ManagerReportController::class, 'pdf'])
+        Route::get('/report-export/{section}/pdf', [CoreManagerReportController::class, 'pdf'])
             ->where('section', 'overview|reservations|frontdesk|rooms|roomservice|restaurant|facilities|finance|reports|users')
             ->name('section-report.pdf');
 
@@ -146,8 +153,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware('deny-manager-modification')->group(function () {
-        Route::post('/rooms/store', [AdminOperationController::class, 'adminStoreRoom'])->name('rooms.store');
-        Route::post('/rooms/{id}/update-status', [AdminOperationController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
+        Route::post('/rooms/store', [RoomLifecycleController::class, 'adminStoreRoom'])->name('rooms.store');
+        Route::post('/rooms/{id}/update-status', [RoomLifecycleController::class, 'adminUpdateRoomStatus'])->name('rooms.update-status');
         Route::delete('/rooms/{id}/delete', [AdminOperationController::class, 'adminDeleteRoom'])->name('rooms.destroy');
         Route::post('/admin/room-types/store', [AdminOperationController::class, 'storeRoomType'])->name('admin.room-types.store');
         Route::post('/admin/room-types/{id}/update', [AdminOperationController::class, 'updateRoomType'])->name('admin.room-types.update');
@@ -162,7 +169,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/admin/restaurant/menu/{id}/delete', [AdminOperationController::class, 'adminDeleteMenu'])->name('admin.restaurant.menu.delete');
     });
 
-    Route::get('/admin/facilities/booking/{id}/detail', [AdminOperationController::class, 'adminFacilityBookingDetail']);
+    Route::get('/admin/facilities/booking/{id}/detail', [CoreFacilityViewController::class, 'adminFacilityBookingDetail']);
     Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
     Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
     Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
