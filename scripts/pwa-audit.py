@@ -1,6 +1,8 @@
 import json
 import os
+import signal
 import sys
+import time
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -8,11 +10,34 @@ from playwright.sync_api import sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080").rstrip("/") + "/"
 ARTIFACT_DIR = Path(os.environ.get("PWA_ARTIFACT_DIR", "pwa-audit-artifacts"))
+SERVER_PID_FILE = os.environ.get("APP_SERVER_PID_FILE")
 ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def fail(message: str) -> None:
     raise AssertionError(message)
+
+
+def stop_application_server() -> int:
+    if not SERVER_PID_FILE:
+        fail("APP_SERVER_PID_FILE is required for a real offline audit")
+
+    pid_path = Path(SERVER_PID_FILE)
+    if not pid_path.exists():
+        fail(f"application server PID file does not exist: {pid_path}")
+
+    pid = int(pid_path.read_text(encoding="utf-8").strip())
+    os.kill(pid, signal.SIGTERM)
+
+    for _ in range(30):
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return pid
+        time.sleep(0.1)
+
+    os.kill(pid, signal.SIGKILL)
+    return pid
 
 
 def main() -> int:
@@ -70,31 +95,35 @@ def main() -> int:
             check("rooms responds online", rooms_response is not None and rooms_response.status == 200, rooms_response.status if rooms_response else None)
             page.wait_for_timeout(1200)
 
-            cached_private = page.evaluate(
-                """async () => Boolean(await caches.match('/admin/dashboard'))"""
-            )
+            cached_rooms = page.evaluate("""async () => Boolean(await caches.match('/rooms'))""")
+            cached_contact = page.evaluate("""async () => Boolean(await caches.match('/contact'))""")
+            cached_private = page.evaluate("""async () => Boolean(await caches.match('/admin/dashboard'))""")
+            check("visited rooms page cached", cached_rooms, cached_rooms)
+            check("unvisited contact page not cached", not cached_contact, cached_contact)
             check("private admin page not cached", not cached_private, cached_private)
 
-            context.set_offline(True)
+            stopped_pid = stop_application_server()
+            results["server_stopped_pid"] = stopped_pid
+            page.wait_for_timeout(750)
+
             offline_rooms = page.goto(urljoin(BASE_URL, "rooms"), wait_until="domcontentloaded", timeout=30_000)
             page.wait_for_timeout(500)
             offline_rooms_text = page.locator("body").inner_text()
-            check("visited public page works offline", offline_rooms is not None and offline_rooms.status == 200, offline_rooms.status if offline_rooms else None)
+            check("visited public page works with server stopped", offline_rooms is not None and offline_rooms.status == 200, offline_rooms.status if offline_rooms else None)
             check("visited public page uses cached page", "Connection unavailable" not in offline_rooms_text, offline_rooms_text[:120])
 
             offline_contact = page.goto(urljoin(BASE_URL, "contact"), wait_until="domcontentloaded", timeout=30_000)
             page.wait_for_timeout(300)
             offline_contact_text = page.locator("body").inner_text()
-            check("uncached public page gets offline fallback", offline_contact is not None and offline_contact.status == 200, offline_contact.status if offline_contact else None)
+            check("uncached public page gets fallback with server stopped", offline_contact is not None and offline_contact.status == 200, offline_contact.status if offline_contact else None)
             check("offline fallback visible", "Connection unavailable" in offline_contact_text, offline_contact_text[:120])
 
             offline_private = page.goto(urljoin(BASE_URL, "admin/dashboard"), wait_until="domcontentloaded", timeout=30_000)
             page.wait_for_timeout(300)
             offline_private_text = page.locator("body").inner_text()
-            check("private portal gets offline fallback", offline_private is not None and offline_private.status == 200, offline_private.status if offline_private else None)
+            check("private portal gets fallback with server stopped", offline_private is not None and offline_private.status == 200, offline_private.status if offline_private else None)
             check("private portal is not exposed from cache", "Connection unavailable" in offline_private_text, offline_private_text[:120])
 
-            context.set_offline(False)
             check("no uncaught page errors", not page_errors, page_errors)
 
             page.screenshot(path=str(ARTIFACT_DIR / "offline-fallback-mobile.png"), full_page=True)
