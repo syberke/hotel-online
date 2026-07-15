@@ -4,9 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{{ config('app.name', 'Oasis Hotel Portal') }}</title>
+    <title>{{ config('app.name', 'Oasis Hotel Portal') }}</title>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <x-pwa-head />
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet">
@@ -16,7 +17,7 @@
 
     <style>
         [x-cloak] { display: none !important; }
-        
+
         html, body {
             background-color: #f5f5f3 !important;
             margin: 0;
@@ -25,11 +26,9 @@
     </style>
 </head>
 <body class="antialiased min-h-screen bg-[#f5f5f3] text-neutral-900 m-0 p-0">
-
     <x-node-badge />
     <x-flash-dialogs />
 
     {{ $slot }}
-
 </body>
 </html>
