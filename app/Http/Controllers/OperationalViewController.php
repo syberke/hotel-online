@@ -181,6 +181,10 @@ class OperationalViewController extends ExecutiveReportController
         $menus = DB::table('restaurant_menus')->orderBy('name')->get();
         $mainTab = $request->get('view', 'orders');
 
+        if ($mainTab === 'menu') {
+            return view('admin.restaurant-menu-tab', compact('menus'));
+        }
+
         return view('admin.restaurant', compact(
             'stats',
             'orders',
