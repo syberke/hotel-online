@@ -13,20 +13,19 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-        \App\Http\Middleware\SetLocale::class,
-    ]);
-        // 1. Mendaftarkan alias middleware custom milikmu
+            \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\RolePathGuard::class,
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'deny-manager-modification' => \App\Http\Middleware\DenyManagerModification::class,
         ]);
 
-        // 2. PERBAIKAN: Mengecualikan rute callback Midtrans dari pemeriksaan CSRF bawaan Laravel 11
         $middleware->validateCsrfTokens(except: [
             '/midtrans/callback',
         ]);
     })
-    
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson() || $request->wantsJson(),
