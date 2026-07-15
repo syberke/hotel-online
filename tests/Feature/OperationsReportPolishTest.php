@@ -29,6 +29,7 @@ class OperationsReportPolishTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Inactive Accounts');
+        $response->assertSee('Account Status');
         $response->assertSee('1');
     }
 
@@ -51,6 +52,7 @@ class OperationsReportPolishTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.finance'));
 
         $response->assertOk();
+        $response->assertSee('Recent Transactions Ledger');
         $response->assertSee('Pending');
         $response->assertSee('725.000');
     }
@@ -120,6 +122,22 @@ class OperationsReportPolishTest extends TestCase
         $response->assertSee('booking_id', false);
     }
 
+    public function test_admin_facilities_page_exposes_add_facility_action(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'account_status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.facilities'));
+
+        $response->assertOk();
+        $response->assertSee('Add Facility');
+        $response->assertSee('openCreateFacilityModal()', false);
+        $response->assertSee(route('admin.facilities.store'), false);
+    }
+
     public function test_restaurant_menu_is_available_as_inline_tab(): void
     {
         $admin = User::factory()->create([
@@ -139,13 +157,14 @@ class OperationsReportPolishTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.restaurant', ['view' => 'menu']));
 
         $response->assertOk();
+        $response->assertSee('Menu & Order Control');
         $response->assertSee("Today's Menu", false);
         $response->assertSee("Today's Menu Master Data", false);
         $response->assertSee('Inline Menu Test');
         $response->assertSee('Save');
     }
 
-    public function test_manager_module_page_has_excel_and_pdf_reports(): void
+    public function test_every_manager_module_page_has_excel_and_pdf_reports(): void
     {
         $manager = User::factory()->create([
             'role' => 'manager',
@@ -153,12 +172,27 @@ class OperationsReportPolishTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        $response = $this->actingAs($manager)->get(route('manager.finance'));
+        $modules = [
+            'manager.dashboard' => 'overview',
+            'manager.reservation' => 'reservations',
+            'manager.frontdesk' => 'frontdesk',
+            'manager.rooms' => 'rooms',
+            'manager.roomservice' => 'roomservice',
+            'manager.restaurant' => 'restaurant',
+            'manager.facilities' => 'facilities',
+            'manager.finance' => 'finance',
+            'manager.reports' => 'reports',
+            'manager.userandrole' => 'users',
+        ];
 
-        $response->assertOk();
-        $response->assertSee('Manager Report Export');
-        $response->assertSee(route('manager.section-report.excel', ['section' => 'finance']), false);
-        $response->assertSee(route('manager.section-report.pdf', ['section' => 'finance']), false);
+        foreach ($modules as $routeName => $section) {
+            $response = $this->actingAs($manager)->get(route($routeName));
+
+            $response->assertOk();
+            $response->assertSee('Manager Report Export');
+            $response->assertSee(route('manager.section-report.excel', ['section' => $section]), false);
+            $response->assertSee(route('manager.section-report.pdf', ['section' => $section]), false);
+        }
     }
 
     public function test_report_pdf_is_a_real_pdf_response(): void
