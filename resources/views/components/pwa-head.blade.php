@@ -5,3 +5,4 @@
 <meta name="apple-mobile-web-app-title" content="Oasis">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/oasis-pwa.svg" type="image/svg+xml">
+<script src="/pwa.js" defer></script>
