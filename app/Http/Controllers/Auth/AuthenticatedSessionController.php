@@ -19,7 +19,7 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        if (!app()->environment('testing')) {
+        if (!app()->environment(['local', 'testing'])) {
             $request->validate([
                 'g-recaptcha-response' => [
                     'required',
