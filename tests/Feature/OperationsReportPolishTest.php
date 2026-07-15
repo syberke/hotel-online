@@ -66,6 +66,7 @@ class OperationsReportPolishTest extends TestCase
         ]);
 
         $this->actingAs($admin)->get(route('admin.finance', ['search' => '1']))->assertOk();
+        $this->actingAs($admin)->get(route('admin.frontdesk', ['search' => '1']))->assertOk();
         $this->actingAs($admin)->get(route('admin.restaurant', ['search' => '1']))->assertOk();
         $this->actingAs($admin)->get(route('admin.facilities', ['search' => '1']))->assertOk();
     }
@@ -166,26 +167,9 @@ class OperationsReportPolishTest extends TestCase
 
     public function test_every_manager_module_page_has_excel_and_pdf_reports(): void
     {
-        $manager = User::factory()->create([
-            'role' => 'manager',
-            'account_status' => 'active',
-            'email_verified_at' => now(),
-        ]);
+        $manager = $this->createManager();
 
-        $modules = [
-            'manager.dashboard' => 'overview',
-            'manager.reservation' => 'reservations',
-            'manager.frontdesk' => 'frontdesk',
-            'manager.rooms' => 'rooms',
-            'manager.roomservice' => 'roomservice',
-            'manager.restaurant' => 'restaurant',
-            'manager.facilities' => 'facilities',
-            'manager.finance' => 'finance',
-            'manager.reports' => 'reports',
-            'manager.userandrole' => 'users',
-        ];
-
-        foreach ($modules as $routeName => $section) {
+        foreach ($this->managerModules() as $routeName => $section) {
             $response = $this->actingAs($manager)->get(route($routeName));
 
             $response->assertOk();
@@ -208,37 +192,58 @@ class OperationsReportPolishTest extends TestCase
         }
     }
 
-    public function test_report_pdf_is_a_real_pdf_response(): void
+    public function test_every_manager_report_section_exports_real_excel_and_pdf_files(): void
     {
-        $manager = User::factory()->create([
-            'role' => 'manager',
-            'account_status' => 'active',
-            'email_verified_at' => now(),
-        ]);
+        $manager = $this->createManager();
 
-        $response = $this->actingAs($manager)
-            ->get(route('manager.section-report.pdf', ['section' => 'reports']));
+        foreach (array_values($this->managerModules()) as $section) {
+            $excel = $this->actingAs($manager)
+                ->get(route('manager.section-report.excel', ['section' => $section]));
+            $excel->assertOk();
+            $this->assertStringContainsString(
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                (string) $excel->headers->get('content-type'),
+                "Excel content type invalid for section {$section}"
+            );
 
-        $response->assertOk();
-        $this->assertStringStartsWith('application/pdf', (string) $response->headers->get('content-type'));
-        $this->assertStringStartsWith('%PDF-1.4', $response->getContent());
+            $pdf = $this->actingAs($manager)
+                ->get(route('manager.section-report.pdf', ['section' => $section]));
+            $pdf->assertOk();
+            $this->assertStringStartsWith(
+                'application/pdf',
+                (string) $pdf->headers->get('content-type'),
+                "PDF content type invalid for section {$section}"
+            );
+            $this->assertStringStartsWith(
+                '%PDF-1.4',
+                $pdf->getContent(),
+                "PDF binary header invalid for section {$section}"
+            );
+        }
     }
 
-    public function test_report_excel_download_uses_spreadsheet_content_type(): void
+    private function createManager(): User
     {
-        $manager = User::factory()->create([
+        return User::factory()->create([
             'role' => 'manager',
             'account_status' => 'active',
             'email_verified_at' => now(),
         ]);
+    }
 
-        $response = $this->actingAs($manager)
-            ->get(route('manager.section-report.excel', ['section' => 'finance']));
-
-        $response->assertOk();
-        $this->assertStringContainsString(
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            (string) $response->headers->get('content-type')
-        );
+    private function managerModules(): array
+    {
+        return [
+            'manager.dashboard' => 'overview',
+            'manager.reservation' => 'reservations',
+            'manager.frontdesk' => 'frontdesk',
+            'manager.rooms' => 'rooms',
+            'manager.roomservice' => 'roomservice',
+            'manager.restaurant' => 'restaurant',
+            'manager.facilities' => 'facilities',
+            'manager.finance' => 'finance',
+            'manager.reports' => 'reports',
+            'manager.userandrole' => 'users',
+        ];
     }
 }
