@@ -64,20 +64,39 @@ ROLE_CASES = {
     },
 }
 
+REPRESENTATIVE_ROUTES = {
+    "/",
+    "/login",
+    "/guest/dashboard",
+    "/receptionist/dashboard",
+    "/manager/dashboard",
+    "/admin/dashboard",
+}
+
 
 def safe_name(value: str) -> str:
     return "".join(ch if ch.isalnum() else "-" for ch in value).strip("-")[:120]
 
 
+def capture(page, route: str, viewport_name: str, scope: str, suffix: str = "") -> None:
+    filename = f"{viewport_name}-{scope}-{safe_name(route)}{suffix}.png"
+    page.screenshot(path=str(ARTIFACT_DIR / filename), full_page=True)
+
+
 def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
     url = urljoin(BASE_URL, route.lstrip("/"))
     page_errors: list[str] = []
-    page.on("pageerror", lambda error: page_errors.append(str(error)))
+
+    def record_page_error(error) -> None:
+        page_errors.append(str(error))
+
+    page.on("pageerror", record_page_error)
 
     try:
         response = page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         page.wait_for_timeout(750)
     except PlaywrightTimeoutError as exc:
+        page.remove_listener("pageerror", record_page_error)
         return {"scope": scope, "viewport": viewport_name, "route": route, "ok": False, "failures": [f"navigation timeout: {exc}"]}
 
     status = response.status if response else 0
@@ -87,12 +106,30 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
             const html = document.documentElement;
             const body = document.body;
             const scrollWidth = Math.max(html.scrollWidth, body ? body.scrollWidth : 0);
+            const visibleAsides = [...document.querySelectorAll('aside')]
+                .map((aside) => {
+                    const rect = aside.getBoundingClientRect();
+                    const style = getComputedStyle(aside);
+                    const sibling = aside.nextElementSibling;
+                    const siblingRect = sibling ? sibling.getBoundingClientRect() : null;
+                    return {
+                        width: rect.width,
+                        height: rect.height,
+                        display: style.display,
+                        visibility: style.visibility,
+                        siblingWidth: siblingRect ? siblingRect.width : 0,
+                    };
+                })
+                .filter((aside) => aside.width > 0 && aside.height > 0 && aside.display !== 'none' && aside.visibility !== 'hidden');
+
+            const widestAside = visibleAsides.sort((a, b) => b.width - a.width)[0] || null;
             return {
                 width: window.innerWidth,
                 scrollWidth,
                 overflowX: Math.max(0, scrollWidth - window.innerWidth),
                 viewportMeta: document.querySelector('meta[name="viewport"]')?.getAttribute('content') || '',
                 title: document.title,
+                widestAside,
             };
         }
         """
@@ -108,15 +145,21 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
     if "width=device-width" not in metrics["viewportMeta"]:
         failures.append("missing responsive viewport meta")
 
-    ok = not failures
-    if not ok:
-        screenshot = ARTIFACT_DIR / f"{viewport_name}-{scope}-{safe_name(route)}.png"
-        page.screenshot(path=str(screenshot), full_page=True)
+    aside = metrics.get("widestAside")
+    if metrics["width"] <= 480 and aside and aside["width"] >= 180 and aside["siblingWidth"] < metrics["width"] * 0.7:
+        failures.append(
+            f"desktop sidebar remains visible on mobile ({aside['width']:.0f}px sidebar, {aside['siblingWidth']:.0f}px content)"
+        )
 
+    ok = not failures
+    if route in REPRESENTATIVE_ROUTES or not ok:
+        capture(page, route, viewport_name, scope, "" if ok else "-failed")
+
+    page.remove_listener("pageerror", record_page_error)
     return {"scope": scope, "viewport": viewport_name, "route": route, "status": status, "ok": ok, "failures": failures, "metrics": metrics}
 
 
-def login(page, role: str, case: dict) -> tuple[bool, str]:
+def login(page, role: str, case: dict, viewport_name: str) -> tuple[bool, str]:
     email = os.environ.get(case["email_env"], "")
     password = os.environ.get(case["password_env"], "")
     if not email or not password:
@@ -128,11 +171,13 @@ def login(page, role: str, case: dict) -> tuple[bool, str]:
     page.locator('button[type="submit"]').click()
     try:
         page.wait_for_load_state("domcontentloaded", timeout=30_000)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(750)
     except PlaywrightTimeoutError:
         pass
 
     current_path = page.evaluate("() => window.location.pathname")
+    if not current_path.startswith(case["expected_prefix"]):
+        capture(page, "/login", viewport_name, role, "-login-failed")
     return current_path.startswith(case["expected_prefix"]), current_path
 
 
@@ -152,7 +197,7 @@ def main() -> int:
             for role, case in ROLE_CASES.items():
                 context = browser.new_context(viewport=viewport)
                 page = context.new_page()
-                logged_in, current_path = login(page, role, case)
+                logged_in, current_path = login(page, role, case, viewport_name)
                 if not logged_in:
                     results.append({"scope": role, "viewport": viewport_name, "route": "/login", "ok": False, "failures": [f"login redirected to {current_path}"]})
                     context.close()
