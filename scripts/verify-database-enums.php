@@ -12,11 +12,10 @@ $driver = DB::connection()->getDriverName();
 
 if ($driver === 'pgsql') {
     $expected = [
-        'facility_booking_status_enum' => 'confirmed,completed,cancelled',
-        'restaurant_order_status_enum' => 'ordered,preparing,paid,cancelled',
-        'room_status_enum' => 'available,occupied,maintenance,dirty',
-        'user_account_status_enum' => 'active,inactive',
-        'user_role_enum' => 'guest,receptionist,manager,admin',
+        'booking_status_enum' => 'pending,confirmed,checked_in,checked_out,canceled',
+        'payment_method_enum' => 'cash,transfer,credit_card,e_wallet',
+        'payment_status_enum' => 'pending,paid,failed',
+        'room_status_enum' => 'available,occupied,maintenance',
     ];
 
     $rows = DB::select(<<<'SQL'
@@ -24,13 +23,8 @@ if ($driver === 'pgsql') {
                string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder) AS enum_values
         FROM pg_type t
         JOIN pg_enum e ON t.oid = e.enumtypid
-        WHERE t.typname IN (
-            'user_role_enum',
-            'user_account_status_enum',
-            'room_status_enum',
-            'restaurant_order_status_enum',
-            'facility_booking_status_enum'
-        )
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = current_schema()
         GROUP BY t.typname
         ORDER BY t.typname
     SQL);
@@ -42,17 +36,16 @@ if ($driver === 'pgsql') {
         exit(1);
     }
 
-    echo "PostgreSQL native enums verified.\n";
+    echo "PostgreSQL required native enums verified.\n";
     exit(0);
 }
 
 if (in_array($driver, ['mysql', 'mariadb'], true)) {
     $expected = [
-        'facility_bookings.status' => "enum('confirmed','completed','cancelled')",
-        'restaurant_orders.status' => "enum('ordered','preparing','paid','cancelled')",
-        'rooms.status' => "enum('available','occupied','maintenance','dirty')",
-        'users.account_status' => "enum('active','inactive')",
-        'users.role' => "enum('guest','receptionist','manager','admin')",
+        'bookings.status' => "enum('pending','confirmed','checked_in','checked_out','canceled')",
+        'payments.payment_method' => "enum('cash','transfer','credit_card','e_wallet')",
+        'payments.payment_status' => "enum('pending','paid','failed')",
+        'rooms.status' => "enum('available','occupied','maintenance')",
     ];
     ksort($expected);
 
@@ -60,12 +53,7 @@ if (in_array($driver, ['mysql', 'mariadb'], true)) {
         SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE
         FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE()
-          AND (
-            (TABLE_NAME = 'users' AND COLUMN_NAME IN ('role', 'account_status'))
-            OR (TABLE_NAME = 'rooms' AND COLUMN_NAME = 'status')
-            OR (TABLE_NAME = 'restaurant_orders' AND COLUMN_NAME = 'status')
-            OR (TABLE_NAME = 'facility_bookings' AND COLUMN_NAME = 'status')
-          )
+          AND DATA_TYPE = 'enum'
     SQL);
 
     $actual = collect($rows)
@@ -80,7 +68,7 @@ if (in_array($driver, ['mysql', 'mariadb'], true)) {
         exit(1);
     }
 
-    echo "MariaDB/MySQL native ENUM columns verified.\n";
+    echo "MariaDB/MySQL required native ENUM columns verified.\n";
     exit(0);
 }
 
