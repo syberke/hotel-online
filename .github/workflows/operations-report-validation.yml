@@ -190,3 +190,57 @@ jobs:
       - name: Fail MariaDB validation when tests fail
         if: steps.mariadb_tests.outcome == 'failure'
         run: exit 1
+
+  ubuntu-docker-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Ubuntu deployment environment
+        run: |
+          cp .env.example .env.ci
+          sed -i 's#^APP_URL=.*#APP_URL=http://localhost:8080#' .env.ci
+          sed -i 's#^DOCKER_APP_URL=.*#DOCKER_APP_URL=http://localhost:8080#' .env.ci
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env.ci
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env.ci
+
+          sudo install -d -m 750 /etc/oasis-hotel
+          sudo tee /etc/oasis-hotel/database.env >/dev/null <<'EOF'
+          MARIADB_DATABASE=oasis_hotel
+          MARIADB_USER=oasis_hotel
+          MARIADB_PASSWORD=oasis_ci_password
+          MARIADB_ROOT_PASSWORD=oasis_ci_root_password
+          DB_DATABASE=oasis_hotel
+          DB_USERNAME=oasis_hotel
+          DB_PASSWORD=oasis_ci_password
+          EOF
+          sudo chmod 640 /etc/oasis-hotel/database.env
+          sudo chown root:$(id -gn) /etc/oasis-hotel/database.env
+
+      - name: Deploy full Ubuntu Docker Compose stack
+        run: OASIS_ENV_FILE="$PWD/.env.ci" ./deploy.sh
+
+      - name: Smoke test load balancer and web entrypoints
+        run: |
+          curl -fsS http://localhost:8080/lb-health
+          curl -fsS http://localhost:8080/ >/dev/null
+          curl -fsS http://localhost:8080/login >/dev/null
+
+          for i in 1 2 3 4 5 6; do
+            curl -fsSI http://localhost:8080/ | grep -i 'X-App-Node' || true
+          done
+
+          OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci exec -T web1 php scripts/verify-database-enums.php
+          OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci exec -T web1 php artisan route:list >/dev/null
+
+      - name: Capture Ubuntu stack logs
+        if: failure()
+        run: |
+          OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci ps || true
+          OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci logs --tail=200 web1 web2 web3 loadbalancer database || true
+
+      - name: Tear down Ubuntu Docker Compose stack
+        if: always()
+        run: OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci down -v --remove-orphans || true
