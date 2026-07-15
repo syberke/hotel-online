@@ -1,0 +1,44 @@
+{
+  "id": "/",
+  "name": "Oasis Hotel & Resort",
+  "short_name": "Oasis",
+  "description": "Oasis Hotel & Resort guest and hotel service portal.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f3",
+  "theme_color": "#0a0a0a",
+  "orientation": "any",
+  "categories": ["travel", "hospitality", "business"],
+  "icons": [
+    {
+      "src": "/icons/oasis-pwa.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/oasis-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Rooms",
+      "short_name": "Rooms",
+      "url": "/rooms"
+    },
+    {
+      "name": "Restaurant",
+      "short_name": "Dining",
+      "url": "/restaurant"
+    },
+    {
+      "name": "Facilities",
+      "short_name": "Facilities",
+      "url": "/facilities"
+    }
+  ]
+}
