@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use App\Observers\UserObserver;
 use App\Models\User;
+use App\Observers\UserObserver;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -21,15 +23,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-      User::observe(UserObserver::class);
-// 1. Registrasi Komponen Guest (Bawaan Kode Kamu)
-        Blade::component('layouts.guest-dashboard', 'guest-dashboard-layout');
+        User::observe(UserObserver::class);
 
-        // 2. REGISTRASI KOMPONEN ADMIN (Tambahkan Dua Baris Ini)
+        Blade::component('layouts.guest-dashboard', 'guest-dashboard-layout');
         Blade::component('layouts.admin', 'admin-layout');
         Blade::component('layouts.admin-dashboard', 'admin-dashboard-layout');
         Blade::component('layouts.manager-dashboard', 'manager-dashboard-layout');
-           Blade::component('layouts.receptionist-dashboard', 'receptionist-dashboard-layout');
-        
+        Blade::component('layouts.receptionist-dashboard', 'receptionist-dashboard-layout');
+
+        if (getenv('RENDER_EXTERNAL_HOSTNAME')) {
+            URL::forceScheme('https');
+        }
     }
 }
