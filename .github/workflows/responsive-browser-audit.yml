@@ -22,6 +22,24 @@ jobs:
           sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env.responsive
           sed -i 's/^APP_DEBUG=.*/APP_DEBUG=true/' .env.responsive
 
+          cat > docker-compose.responsive.yaml <<'EOF'
+          services:
+            web1:
+              environment:
+                APP_ENV: testing
+                APP_DEBUG: "true"
+            web2:
+              environment:
+                APP_ENV: testing
+                APP_DEBUG: "true"
+            web3:
+              environment:
+                APP_ENV: testing
+                APP_DEBUG: "true"
+          EOF
+
+          echo "COMPOSE_FILE=$PWD/docker-compose.yaml:$PWD/docker-compose.responsive.yaml" >> "$GITHUB_ENV"
+
           DB_PASSWORD="$(openssl rand -hex 24)"
           ROOT_PASSWORD="$(openssl rand -hex 24)"
           sudo install -d -m 750 /etc/oasis-hotel
