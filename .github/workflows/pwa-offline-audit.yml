@@ -1,0 +1,95 @@
+name: PWA Offline Audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/pwa-offline
+
+jobs:
+  pwa-offline-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, pdo_sqlite, zip
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install application dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Prepare local Laravel environment
+        run: |
+          cp .env.example .env
+          mkdir -p database storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
+          touch database/database.sqlite
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's#^APP_URL=.*#APP_URL=http://127.0.0.1:8000#' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i "s#^DB_DATABASE=.*#DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite#" .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          sed -i 's/^MAIL_MAILER=.*/MAIL_MAILER=array/' .env
+          php artisan key:generate --force
+          php artisan migrate:fresh --seed --force
+          php artisan view:cache
+
+      - name: Start local application server
+        run: |
+          setsid php artisan serve --host=127.0.0.1 --port=8000 > /tmp/oasis-pwa-server.log 2>&1 &
+          echo $! > /tmp/oasis-pwa-server.pid
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/oasis-pwa-server.log
+          exit 1
+
+      - name: Install Playwright Chromium
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
+
+      - name: Audit PWA installation and offline behavior
+        id: pwa_audit
+        continue-on-error: true
+        env:
+          BASE_URL: http://127.0.0.1:8000
+          APP_SERVER_PID_FILE: /tmp/oasis-pwa-server.pid
+        run: |
+          set -o pipefail
+          python3 scripts/pwa-audit.py 2>&1 | tee pwa-audit-output.txt
+
+      - name: Upload PWA audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-offline-audit
+          path: |
+            pwa-audit-output.txt
+            pwa-audit-artifacts/
+            /tmp/oasis-pwa-server.log
+          if-no-files-found: error
+          retention-days: 5
+
+      - name: Fail when PWA audit finds errors
+        if: steps.pwa_audit.outcome == 'failure'
+        run: exit 1
