@@ -1,3 +1,140 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media (max-width: 767px) {
+    .min-h-screen.flex:has(> aside.w-64),
+    .h-screen.flex:has(> aside.w-64),
+    body.flex:has(> aside.w-64) {
+        flex-direction: column !important;
+    }
+
+    .min-h-screen.flex > aside.w-64,
+    .h-screen.flex > aside.w-64,
+    body.flex > aside.w-64 {
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        position: sticky !important;
+        inset: auto !important;
+        top: 0 !important;
+        overflow: hidden !important;
+        border-right-width: 0 !important;
+        border-bottom: 1px solid rgb(38 38 38) !important;
+        z-index: 50 !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 > div:first-child:has(> nav) > div:first-child,
+    body.flex > aside.w-64 > div:first-child:has(> nav) > div:first-child,
+    .h-screen.flex > aside.w-64 > div:first-child:not(:has(nav)) {
+        display: none !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 > div:last-child,
+    .h-screen.flex > aside.w-64 > div:last-child,
+    body.flex > aside.w-64 > div:last-child {
+        display: none !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 > div:has(> nav),
+    .h-screen.flex > aside.w-64 > div:has(> nav),
+    body.flex > aside.w-64 > div:has(> nav) {
+        flex: none !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 nav,
+    .h-screen.flex > aside.w-64 nav,
+    body.flex > aside.w-64 nav {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        padding: 0.5rem !important;
+        margin: 0 !important;
+        scrollbar-width: thin;
+    }
+
+    .min-h-screen.flex > aside.w-64 nav > span,
+    .h-screen.flex > aside.w-64 nav > span,
+    body.flex > aside.w-64 nav > span {
+        display: none !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 nav > a,
+    .h-screen.flex > aside.w-64 nav > a,
+    body.flex > aside.w-64 nav > a {
+        flex: 0 0 auto !important;
+        min-width: max-content !important;
+        border-left-width: 0 !important;
+        border-bottom: 2px solid transparent !important;
+        padding: 0.65rem 0.8rem !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 nav > a.bg-neutral-900\/80,
+    .h-screen.flex > aside.w-64 nav > a.bg-neutral-900\/80,
+    body.flex > aside.w-64 nav > a.bg-neutral-900\/80 {
+        border-bottom-color: rgb(245 158 11) !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 + div,
+    .h-screen.flex > aside.w-64 + div,
+    body.flex > aside.w-64 + div {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        flex: 1 1 auto !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 + div > header,
+    .h-screen.flex > aside.w-64 + div > header,
+    body.flex > aside.w-64 + div > header {
+        min-height: 4rem !important;
+        height: 4rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        gap: 0.75rem !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 + div > header > div:last-child > span,
+    .min-h-screen.flex > aside.w-64 + div > header > div:last-child > div,
+    .h-screen.flex > aside.w-64 + div > header > div:last-child > span,
+    .h-screen.flex > aside.w-64 + div > header > div:last-child > div,
+    body.flex > aside.w-64 + div > header > div:last-child > span,
+    body.flex > aside.w-64 + div > header > div:last-child > div {
+        display: none !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 + div > main,
+    .min-h-screen.flex > aside.w-64 + div > div.p-10,
+    .h-screen.flex > aside.w-64 + div > main,
+    .h-screen.flex > aside.w-64 + div > div.p-10,
+    body.flex > aside.w-64 + div > main,
+    body.flex > aside.w-64 + div > div.p-10 {
+        padding: 1rem !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .min-h-screen.flex > aside.w-64 + div > header,
+    .h-screen.flex > aside.w-64 + div > header,
+    body.flex > aside.w-64 + div > header {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+
+    .min-h-screen.flex > aside.w-64 + div > main,
+    .min-h-screen.flex > aside.w-64 + div > div.p-10,
+    .h-screen.flex > aside.w-64 + div > main,
+    .h-screen.flex > aside.w-64 + div > div.p-10,
+    body.flex > aside.w-64 + div > main,
+    body.flex > aside.w-64 + div > div.p-10 {
+        padding: 1.5rem !important;
+    }
+}
