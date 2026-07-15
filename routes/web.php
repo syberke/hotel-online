@@ -15,6 +15,7 @@ use App\Http\Controllers\HousekeepingController;
 use App\Http\Controllers\AdminOperationController;
 use App\Http\Controllers\AdminControlController;
 use App\Http\Controllers\ExecutiveReportController;
+use App\Http\Controllers\HotelOperationalController;
 use App\Http\Controllers\OperationalViewController;
 use App\Http\Controllers\LiveReportViewController;
 use App\Http\Controllers\ManagerReportController;
@@ -93,7 +94,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('manager')->name('manager.')->group(function () {
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
-        Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
+        Route::get('/front-desk', [HotelOperationalController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
@@ -115,7 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [ExecutiveReportController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [ExecutiveReportController::class, 'adminReservationsView'])->name('reservation');
-        Route::get('/front-desk', [ExecutiveReportController::class, 'adminFrontDeskView'])->name('frontdesk');
+        Route::get('/front-desk', [HotelOperationalController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
