@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Observers\UserObserver;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
         Blade::component('layouts.admin-dashboard', 'admin-dashboard-layout');
         Blade::component('layouts.manager-dashboard', 'manager-dashboard-layout');
         Blade::component('layouts.receptionist-dashboard', 'receptionist-dashboard-layout');
+
+        // Compatibility alias for the legacy room-service Blade link.
+        Route::redirect('/restaurant-orders', '/guest/restaurant-orders')
+            ->name('restaurant.orders');
 
         if (getenv('RENDER_EXTERNAL_HOSTNAME')) {
             URL::forceScheme('https');
