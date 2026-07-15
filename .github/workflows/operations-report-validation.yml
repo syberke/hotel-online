@@ -220,9 +220,23 @@ jobs:
           sudo chown root:$(id -gn) /etc/oasis-hotel/database.env
 
       - name: Deploy full Ubuntu Docker Compose stack
-        run: OASIS_ENV_FILE="$PWD/.env.ci" ./deploy.sh
+        id: ubuntu_deploy
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          OASIS_ENV_FILE="$PWD/.env.ci" ./deploy.sh 2>&1 | tee ubuntu-deploy-output.txt
+
+      - name: Upload Ubuntu deploy output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-deploy-output
+          path: ubuntu-deploy-output.txt
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Smoke test load balancer and web entrypoints
+        if: steps.ubuntu_deploy.outcome == 'success'
         run: |
           curl -fsS http://localhost:8080/lb-health
           curl -fsS http://localhost:8080/ >/dev/null
@@ -236,7 +250,7 @@ jobs:
           OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci exec -T web1 php artisan route:list >/dev/null
 
       - name: Capture Ubuntu stack logs
-        if: failure()
+        if: steps.ubuntu_deploy.outcome == 'failure'
         run: |
           OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci ps || true
           OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci logs --tail=200 web1 web2 web3 loadbalancer database || true
@@ -244,3 +258,7 @@ jobs:
       - name: Tear down Ubuntu Docker Compose stack
         if: always()
         run: OASIS_ENV_FILE="$PWD/.env.ci" docker compose --env-file .env.ci down -v --remove-orphans || true
+
+      - name: Fail Ubuntu deployment validation when deploy fails
+        if: steps.ubuntu_deploy.outcome == 'failure'
+        run: exit 1
