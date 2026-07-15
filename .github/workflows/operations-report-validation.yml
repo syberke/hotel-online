@@ -224,7 +224,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          OASIS_ENV_FILE="$PWD/.env.ci" ./deploy.sh 2>&1 | tee ubuntu-deploy-output.txt
+          OASIS_ENV_FILE="$PWD/.env.ci" bash ./deploy.sh 2>&1 | tee ubuntu-deploy-output.txt
 
       - name: Upload Ubuntu deploy output
         if: always()
