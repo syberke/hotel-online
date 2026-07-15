@@ -10,6 +10,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use ReflectionMethod;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CoreManagerReportController extends ManagerReportController
@@ -18,11 +19,7 @@ class CoreManagerReportController extends ManagerReportController
 
     public function excel(Request $request, string $section): StreamedResponse
     {
-        if (!in_array($section, self::CUSTOM_SECTIONS, true)) {
-            return parent::excel($request, $section);
-        }
-
-        $report = $this->customReportData($section);
+        $report = $this->reportDataWithoutSubtitles($section);
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(substr($report['sheet'], 0, 31));
@@ -36,8 +33,7 @@ class CoreManagerReportController extends ManagerReportController
         $sheet->getRowDimension(1)->setRowHeight(28);
 
         $sheet->mergeCells("A2:{$lastColumn}2");
-        $generatedLabel = 'Generated ' . now()->format('d M Y H:i');
-        $sheet->setCellValue('A2', $report['subtitle'] !== '' ? $report['subtitle'] . ' | ' . $generatedLabel : $generatedLabel);
+        $sheet->setCellValue('A2', 'Generated ' . now()->format('d M Y H:i'));
         $sheet->getStyle("A2:{$lastColumn}2")->getFont()->setSize(9)->getColor()->setRGB('666666');
 
         $row = 4;
@@ -93,20 +89,30 @@ class CoreManagerReportController extends ManagerReportController
 
     public function pdf(Request $request, string $section, SimplePdfReportService $pdf)
     {
-        if (!in_array($section, self::CUSTOM_SECTIONS, true)) {
-            return parent::pdf($request, $section, $pdf);
-        }
-
-        $report = $this->customReportData($section);
+        $report = $this->reportDataWithoutSubtitles($section);
 
         return $pdf->download(
             $report['title'],
-            $report['subtitle'],
+            '',
             $report['summary'],
             $report['columns'],
             $report['rows'],
             'Oasis-' . $section . '-report-' . now()->format('Ymd-His') . '.pdf'
         );
+    }
+
+    private function reportDataWithoutSubtitles(string $section): array
+    {
+        if (in_array($section, self::CUSTOM_SECTIONS, true)) {
+            $report = $this->customReportData($section);
+        } else {
+            $reportMethod = new ReflectionMethod(ManagerReportController::class, 'reportData');
+            $report = $reportMethod->invoke($this, $section);
+        }
+
+        $report['subtitle'] = '';
+
+        return $report;
     }
 
     private function customReportData(string $section): array
@@ -146,7 +152,7 @@ class CoreManagerReportController extends ManagerReportController
 
         return [
             'title' => 'Reservations Ledger Report',
-            'subtitle' => 'Reservation status and payment status are reported as separate ledgers',
+            'subtitle' => '',
             'summary' => [
                 ['label' => 'Total Reservations', 'value' => (string) DB::table('bookings')->count()],
                 ['label' => 'Pending', 'value' => (string) DB::table('bookings')->where('status', 'pending')->count()],
