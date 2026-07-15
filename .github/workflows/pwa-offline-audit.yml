@@ -52,7 +52,7 @@ jobs:
 
       - name: Start local application server
         run: |
-          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/oasis-pwa-server.log 2>&1 &
+          setsid php artisan serve --host=127.0.0.1 --port=8000 > /tmp/oasis-pwa-server.log 2>&1 &
           echo $! > /tmp/oasis-pwa-server.pid
           for attempt in {1..30}; do
             if curl -fsS http://127.0.0.1:8000/ >/dev/null; then
