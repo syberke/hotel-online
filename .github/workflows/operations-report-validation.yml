@@ -6,6 +6,7 @@ on:
     branches:
       - fix/operations-reports-polish
       - fix/core-schema-enums
+      - fix/role-login-routing
       - main
 
 jobs:
@@ -83,6 +84,7 @@ jobs:
           php artisan test \
             tests/Feature/OperationsReportPolishTest.php \
             tests/Feature/CoreSchemaWorkflowTest.php \
+            tests/Feature/RoleLoginRoutingTest.php \
             --stop-on-failure > postgres-test-output.txt 2>&1
 
       - name: Upload PostgreSQL test output
@@ -173,6 +175,7 @@ jobs:
           php artisan test \
             tests/Feature/OperationsReportPolishTest.php \
             tests/Feature/CoreSchemaWorkflowTest.php \
+            tests/Feature/RoleLoginRoutingTest.php \
             --stop-on-failure > mariadb-test-output.txt 2>&1
 
       - name: Upload MariaDB test output
