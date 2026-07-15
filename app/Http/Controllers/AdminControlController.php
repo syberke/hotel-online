@@ -148,12 +148,13 @@ class AdminControlController extends AdminOperationController
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(['pending', 'confirmed', 'checked_in', 'checked_out', 'canceled'])],
+            'status' => ['required', Rule::in(['pending', 'confirmed', 'checked_in', 'checked_out', 'canceled', 'cancelled'])],
         ]);
 
+        $status = $validated['status'] === 'cancelled' ? 'canceled' : $validated['status'];
         $booking = Booking::findOrFail($id);
         $booking->update([
-            'status' => $validated['status'],
+            'status' => $status,
             'updated_at' => now(),
         ]);
 
