@@ -40,7 +40,7 @@ jobs:
       - name: Deploy full application stack
         run: OASIS_ENV_FILE="$PWD/.env.responsive" bash ./deploy.sh
 
-      - name: Create temporary browser audit accounts
+      - name: Create and verify temporary browser audit accounts
         run: |
           AUDIT_PASSWORD="$(openssl rand -hex 24)"
           echo "AUDIT_ADMIN_EMAIL=audit-admin@example.test" >> "$GITHUB_ENV"
@@ -60,7 +60,7 @@ jobs:
                 'receptionist' => 'audit-receptionist@example.test',
                 'guest' => 'audit-guest@example.test',
               ] as \$role => \$email) {
-                App\\Models\\User::updateOrCreate(
+                \$user = App\\Models\\User::updateOrCreate(
                   ['email' => \$email],
                   [
                     'name' => 'Responsive Audit ' . ucfirst(\$role),
@@ -69,6 +69,11 @@ jobs:
                     'role' => \$role,
                     'account_status' => 'active',
                   ]
+                );
+
+                throw_unless(
+                  Illuminate\\Support\\Facades\\Hash::check(getenv('AUDIT_PASSWORD'), \$user->fresh()->password),
+                  new RuntimeException('Audit account password verification failed for ' . \$role)
                 );
               }
             "
@@ -81,7 +86,9 @@ jobs:
       - name: Audit desktop tablet and mobile layouts
         id: browser_audit
         continue-on-error: true
-        run: python3 scripts/responsive-audit.py 2>&1 | tee responsive-audit-output.txt
+        run: |
+          set -o pipefail
+          python3 scripts/responsive-audit.py 2>&1 | tee responsive-audit-output.txt
 
       - name: Upload responsive audit artifacts
         if: always()
