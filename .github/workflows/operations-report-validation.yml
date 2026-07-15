@@ -65,20 +65,21 @@ jobs:
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
           php artisan key:generate --force
 
-      - name: Migrate and seed PostgreSQL
-        run: php artisan migrate:fresh --seed --force
+      - name: Migrate seed and verify PostgreSQL native enums
+        run: |
+          php artisan migrate:fresh --seed --force
+          php scripts/verify-database-enums.php
 
       - name: Validate routes and Blade
         run: |
           php artisan route:list >/dev/null
           php artisan view:cache
 
-      - name: Run PostgreSQL enum and feature validation
+      - name: Run PostgreSQL operational feature validation
         id: postgres_tests
         continue-on-error: true
         run: |
           php artisan test \
-            tests/Feature/EnumDatabaseCompatibilityTest.php \
             tests/Feature/OperationsReportPolishTest.php \
             --stop-on-failure > postgres-test-output.txt 2>&1
 
@@ -153,20 +154,21 @@ jobs:
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
           php artisan key:generate --force
 
-      - name: Migrate and seed MariaDB
-        run: php artisan migrate:fresh --seed --force
+      - name: Migrate seed and verify MariaDB native ENUM columns
+        run: |
+          php artisan migrate:fresh --seed --force
+          php scripts/verify-database-enums.php
 
       - name: Validate routes and Blade
         run: |
           php artisan route:list >/dev/null
           php artisan view:cache
 
-      - name: Run MariaDB enum and feature validation
+      - name: Run MariaDB operational feature validation
         id: mariadb_tests
         continue-on-error: true
         run: |
           php artisan test \
-            tests/Feature/EnumDatabaseCompatibilityTest.php \
             tests/Feature/OperationsReportPolishTest.php \
             --stop-on-failure > mariadb-test-output.txt 2>&1
 
