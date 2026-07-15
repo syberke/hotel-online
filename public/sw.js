@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'oasis-pwa-v1';
+const CACHE_VERSION = 'oasis-pwa-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-public-pages`;
 
@@ -6,6 +6,8 @@ const CORE_ASSETS = [
     '/',
     '/offline.html',
     '/manifest.json',
+    '/pwa.js',
+    '/logo.svg',
     '/icons/oasis-pwa.svg',
     '/icons/oasis-maskable.svg',
 ];
@@ -65,7 +67,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    if (isStaticAsset(request, url)) {
+    if (isPublicStaticAsset(url)) {
         event.respondWith(staleWhileRevalidate(request));
     }
 });
@@ -114,12 +116,13 @@ async function networkOnlyPrivatePage(request) {
     }
 }
 
-function isStaticAsset(request, url) {
+function isPublicStaticAsset(url) {
     return url.pathname.startsWith('/build/')
         || url.pathname.startsWith('/icons/')
         || url.pathname === '/manifest.json'
         || url.pathname === '/offline.html'
-        || ['style', 'script', 'font', 'image'].includes(request.destination);
+        || url.pathname === '/pwa.js'
+        || url.pathname === '/logo.svg';
 }
 
 async function staleWhileRevalidate(request) {
