@@ -73,6 +73,7 @@ jobs:
         continue-on-error: true
         env:
           BASE_URL: http://127.0.0.1:8000
+          APP_SERVER_PID_FILE: /tmp/oasis-pwa-server.pid
         run: |
           set -o pipefail
           python3 scripts/pwa-audit.py 2>&1 | tee pwa-audit-output.txt
