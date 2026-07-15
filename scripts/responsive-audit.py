@@ -110,6 +110,7 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
                 .map((aside) => {
                     const rect = aside.getBoundingClientRect();
                     const style = getComputedStyle(aside);
+                    const parentStyle = aside.parentElement ? getComputedStyle(aside.parentElement) : null;
                     const sibling = aside.nextElementSibling;
                     const siblingRect = sibling ? sibling.getBoundingClientRect() : null;
                     return {
@@ -117,10 +118,18 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
                         height: rect.height,
                         display: style.display,
                         visibility: style.visibility,
+                        parentDisplay: parentStyle ? parentStyle.display : '',
                         siblingWidth: siblingRect ? siblingRect.width : 0,
                     };
                 })
-                .filter((aside) => aside.width > 0 && aside.height > 0 && aside.display !== 'none' && aside.visibility !== 'hidden');
+                .filter((aside) => (
+                    aside.width > 0
+                    && aside.height > 0
+                    && aside.display !== 'none'
+                    && aside.visibility !== 'hidden'
+                    && (aside.parentDisplay === 'flex' || aside.parentDisplay === 'inline-flex')
+                    && aside.siblingWidth > 0
+                ));
 
             const widestAside = visibleAsides.sort((a, b) => b.width - a.width)[0] || null;
             return {
