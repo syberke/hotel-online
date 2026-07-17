@@ -122,8 +122,8 @@
         ></div>
 
         <aside
-            class="fixed inset-y-0 left-0 z-50 flex h-dvh w-[17rem] -translate-x-full flex-col overflow-hidden border-r border-slate-800 bg-slate-900 text-slate-300 shadow-2xl transition-transform duration-300 lg:static lg:z-30 lg:translate-x-0 lg:shadow-none"
-            :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+            class="fixed inset-y-0 left-0 z-50 flex h-dvh w-[17rem] flex-col overflow-hidden border-r border-slate-800 bg-slate-900 text-slate-300 shadow-2xl transition-transform duration-300 lg:static lg:z-30 lg:translate-x-0 lg:shadow-none"
+            :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             <div class="flex h-20 shrink-0 items-center justify-between border-b border-slate-800 px-6">
                 <a href="{{ route('guest.dashboard') }}" class="flex min-w-0 items-center gap-3">
@@ -153,7 +153,7 @@
                     <a href="{{ route('guest.dashboard') }}"
                        class="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition {{ Request::routeIs('guest.dashboard') ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/20' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.dashboard') ? 'bg-white/15' : 'bg-slate-800' }}">
-                            <i class="fa-solid fa-grid-2 text-xs"></i>
+                            <i class="fa-solid fa-table-columns text-xs"></i>
                         </span>
                         Dashboard
                     </a>
