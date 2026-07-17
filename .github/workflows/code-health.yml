@@ -43,3 +43,9 @@ jobs:
 
       - name: Run operational content regression test
         run: php artisan test --filter=OperationalContentRoutesTest
+
+      - name: Run staff operations route test
+        run: php artisan test --filter=StaffOperationsRoutesTest
+
+      - name: Run shared role detail test
+        run: php artisan test --filter=RolePathGuardTest
