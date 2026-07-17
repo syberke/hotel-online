@@ -1,7 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Oasis Hotel maskable icon">
-  <rect width="512" height="512" fill="#0a0a0a"/>
-  <circle cx="256" cy="256" r="176" fill="#171717" stroke="#d4a72c" stroke-width="12"/>
-  <circle cx="256" cy="256" r="126" fill="#0a0a0a" stroke="#8c6a18" stroke-width="3"/>
-  <text x="256" y="310" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="176" font-style="italic" fill="#f5f5f3">O</text>
-  <path d="M182 364h148" stroke="#d4a72c" stroke-width="6" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="48" y1="40" x2="470" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/>
+      <stop offset=".45" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1E40AF"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="186" fill="#FFFFFF" fill-opacity=".10"/>
+  <circle cx="256" cy="256" r="122" fill="none" stroke="#FFFFFF" stroke-width="40"/>
+  <path d="M174 316c25 27 52 40 82 40s57-13 82-40" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round"/>
+  <path d="M197 225l59-44 59 44" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="13" fill="#FFFFFF"/>
 </svg>
