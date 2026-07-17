@@ -69,6 +69,10 @@ verifikasi endpoint. Untuk menjalankan setiap tahap secara manual, termasuk
 pembuatan credential MariaDB, build, migrate, seed, dan troubleshooting, baca
 [Panduan Deployment Docker](docs/DEPLOYMENT.md).
 
+Untuk latihan UKK menggunakan dua VM, NAT dan bridge, konfigurasi manual Docker,
+load balancing, SSH password-less, FTP, serta checklist demonstrasi asesor, baca
+[Tutorial Manual UKK Instalasi Komputasi Awan](docs/UKK_MANUAL.md).
+
 Aplikasi tersedia di <http://localhost:8080>.
 
 ### Database MariaDB
