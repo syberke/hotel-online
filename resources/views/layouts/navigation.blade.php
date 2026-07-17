@@ -1,13 +1,11 @@
 <nav x-data="{ open: false }" class="public-navigation sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="flex h-18 items-center justify-between py-3">
-            <a href="{{ route('home') }}" class="flex items-center gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                <span class="grid h-11 w-11 place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200/60">
-                    <i class="fa-solid fa-hotel text-sm"></i>
-                </span>
-                <span>
-                    <span class="block text-base font-semibold tracking-tight text-slate-900">Oasis Hotel</span>
-                    <span class="block text-[11px] font-medium text-slate-500">Nusa Dua, Bali</span>
+        <div class="flex h-20 items-center justify-between py-3">
+            <a href="{{ route('home') }}" class="flex items-center gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Oasis Hotel home">
+                <x-brand-logo class="h-10 w-auto" />
+                <span class="hidden border-l border-slate-200 pl-3 sm:block">
+                    <span class="block text-xs font-semibold text-slate-700">Hotel & Resort</span>
+                    <span class="block text-[11px] text-slate-500">Nusa Dua, Bali</span>
                 </span>
             </a>
 
@@ -42,7 +40,7 @@
                         <x-slot name="trigger">
                             <button type="button" class="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
                                 <span class="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-600">
-                                    <i class="fa-solid fa-user text-xs"></i>
+                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                                 </span>
                                 <span class="max-w-32 truncate">{{ auth()->user()->name }}</span>
                                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
