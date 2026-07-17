@@ -20,8 +20,6 @@ class LiveReportViewController extends Controller
             ->where('payment_status', 'paid')
             ->sum('amount') ?: 0);
 
-        // Schema sederhana belum memiliki nominal billing fasilitas.
-        // Jangan membentuk revenue fasilitas dari multiplier/fallback palsu.
         $facRevenue = 0.0;
         $totalRevenue = $roomRevenue + $fbRevenue;
 
@@ -150,7 +148,7 @@ class LiveReportViewController extends Controller
             'revpar' => $revpar,
         ];
 
-        return view('admin.reports', compact(
+        return view('admin.reports-modern', compact(
             'roomRevenue',
             'fbRevenue',
             'facRevenue',
