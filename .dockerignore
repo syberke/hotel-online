@@ -1,5 +1,8 @@
 .git
 .env
+.env.*
+*.env
+database.ukk.env
 node_modules
 vendor
 public/build
