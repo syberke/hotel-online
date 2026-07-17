@@ -9,6 +9,7 @@ import '../css/responsive-fixes.css';
 import '../css/contrast-final.css';
 import '../css/interaction-fixes.css';
 import '../css/staff-overflow-fixes.css';
+import '../css/staff-detail-ui.css';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
@@ -76,8 +77,22 @@ function restorePreservedScrollPositions() {
     });
 }
 
+function normalizeSharedDetailPanels() {
+    document.querySelectorAll('#booking-receipt, #room-receipt').forEach((element) => {
+        element.classList.add('oasis-receipt');
+    });
+
+    const roomDetailPanel = document.querySelector('#managerRoomViewModal > div:not(.absolute)');
+    roomDetailPanel?.classList.add('staff-detail-panel');
+
+    document.querySelectorAll('[data-staff-detail-panel]').forEach((element) => {
+        element.classList.add('staff-detail-panel');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     restorePreservedScrollPositions();
+    normalizeSharedDetailPanels();
 
     document.querySelectorAll('[data-oasis-flash]').forEach((element) => {
         const type = element.dataset.type || 'info';
@@ -132,31 +147,48 @@ function renderRestaurantOrderItems(items) {
 
     if (!items.length) {
         const empty = document.createElement('p');
-        empty.className = 'p-4 text-center text-sm text-slate-500';
+        empty.className = 'p-5 text-center text-sm text-slate-500';
         empty.textContent = 'Tidak ada item menu pada pesanan ini.';
         container.appendChild(empty);
         return;
     }
 
     items.forEach((item) => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center justify-between gap-4 border-b border-slate-100 p-3 text-sm text-slate-700 last:border-0';
+        const quantityValue = Number(item.quantity || 0);
+        const priceValue = Number(item.price || 0);
+        const subtotalValue = Number(item.subtotal || (quantityValue * priceValue));
 
-        const name = document.createElement('span');
-        name.className = 'max-w-[180px] truncate font-semibold text-slate-900';
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 p-4 text-sm text-slate-700';
+
+        const description = document.createElement('div');
+        description.className = 'min-w-0';
+
+        const name = document.createElement('p');
+        name.className = 'break-words font-semibold text-slate-900';
         name.textContent = item.name ?? '-';
 
-        const quantity = document.createElement('span');
-        quantity.className = 'w-12 text-center font-mono text-slate-500';
-        quantity.textContent = item.quantity ?? 0;
+        const calculation = document.createElement('p');
+        calculation.className = 'mt-1 text-xs text-slate-500';
+        calculation.textContent = `${quantityValue} × Rp ${restaurantCurrency.format(priceValue)}`;
 
-        const price = document.createElement('span');
-        price.className = 'w-28 text-right font-mono font-semibold text-slate-900';
-        price.textContent = `Rp ${restaurantCurrency.format(Number(item.price || 0))}`;
+        const subtotal = document.createElement('p');
+        subtotal.className = 'shrink-0 text-right font-semibold text-slate-900';
+        subtotal.textContent = `Rp ${restaurantCurrency.format(subtotalValue)}`;
 
-        row.append(name, quantity, price);
+        description.append(name, calculation);
+        row.append(description, subtotal);
         container.appendChild(row);
     });
+}
+
+async function parseJsonResponse(response, fallbackMessage) {
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+        throw new Error(fallbackMessage);
+    }
+
+    return response.json();
 }
 
 async function openRestaurantOrderDetail(button) {
@@ -171,7 +203,7 @@ async function openRestaurantOrderDetail(button) {
                 'X-Requested-With': 'XMLHttpRequest',
             },
         });
-        const data = await response.json();
+        const data = await parseJsonResponse(response, 'Endpoint detail pesanan tidak mengembalikan data JSON. Muat ulang halaman dan coba lagi.');
 
         if (!response.ok || !data.success) {
             throw new Error(data.message || 'Detail pesanan tidak tersedia.');
@@ -183,9 +215,9 @@ async function openRestaurantOrderDetail(button) {
         document.getElementById('restaurant-detail-guest').textContent = order.guest_name || '-';
         document.getElementById('restaurant-detail-time').textContent = order.created_at || '-';
         document.getElementById('restaurant-detail-total').textContent = `Rp ${restaurantCurrency.format(Number(order.total_price || 0))}`;
-        document.getElementById('restaurant-detail-status').textContent = order.status || '-';
+        document.getElementById('restaurant-detail-status').textContent = String(order.status || '-').replaceAll('_', ' ');
         renderRestaurantOrderItems(Array.isArray(data.items) ? data.items : []);
-        document.getElementById('restaurant-order-detail-modal').classList.remove('hidden');
+        document.getElementById('restaurant-order-detail-modal')?.classList.remove('hidden');
     } catch (error) {
         window.OasisDialog.error(error.message || 'Gagal mengambil detail pesanan.');
     } finally {
