@@ -17,10 +17,21 @@ return [
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
-'recaptcha' => [
-    'site_key' => env('RECAPTCHA_SITE_KEY'),
-    'secret_key' => env('RECAPTCHA_SECRET_KEY'),
-],
+
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+        'snap_url' => env('MIDTRANS_IS_PRODUCTION', false)
+            ? 'https://app.midtrans.com/snap/snap.js'
+            : 'https://app.sandbox.midtrans.com/snap/snap.js',
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],
@@ -33,7 +44,7 @@ return [
 
     'slack' => [
         'notifications' => [
-            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
