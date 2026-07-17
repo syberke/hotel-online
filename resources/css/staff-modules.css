@@ -1,0 +1,287 @@
+/*
+ * Final compatibility layer for legacy operational Blade modules.
+ * This file intentionally loads last and only targets the staff portal scope.
+ */
+.staff-portal {
+    --staff-card-shadow: 0 18px 48px -34px rgba(15, 23, 42, 0.42);
+}
+
+.staff-portal .custom-scrollbar,
+.staff-portal .content-scrollbar {
+    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-width: thin;
+}
+
+.staff-portal .custom-scrollbar::-webkit-scrollbar,
+.staff-portal .content-scrollbar::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+.staff-portal .custom-scrollbar::-webkit-scrollbar-track,
+.staff-portal .content-scrollbar::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.staff-portal .custom-scrollbar::-webkit-scrollbar-thumb,
+.staff-portal .content-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: #cbd5e1 !important;
+}
+
+.staff-portal :where(.bg-white.border, .bg-white[class*="border-"], form.bg-white, section.bg-white, article.bg-white, aside.bg-white) {
+    border-color: #e2e8f0 !important;
+    border-radius: 1rem !important;
+    box-shadow: var(--staff-card-shadow) !important;
+}
+
+.staff-portal :where(.bg-neutral-50, .bg-neutral-50\/30, .bg-neutral-50\/40, .bg-neutral-50\/50, .bg-neutral-50\/60, .bg-neutral-100) {
+    background-color: #f8fafc !important;
+}
+
+.staff-portal :where(.border-neutral-100, .border-neutral-200, .border-neutral-200\/60, .border-neutral-300) {
+    border-color: #e2e8f0 !important;
+}
+
+.staff-portal :where(.text-neutral-900, .text-neutral-800) {
+    color: #0f172a !important;
+}
+
+.staff-portal :where(.text-neutral-400, .text-neutral-500, .text-neutral-600) {
+    color: #64748b !important;
+}
+
+.staff-portal :where(.w-9.h-9, .w-10.h-10, .w-12.h-12, .h-9.w-9, .h-10.w-10, .h-12.w-12)[class*="flex"][class*="items-center"] {
+    border-radius: 0.75rem !important;
+}
+
+.staff-portal :where(form.bg-white, form[class*="border"]) {
+    gap: 0.75rem !important;
+}
+
+.staff-portal :where(form.bg-white, form[class*="border"]) :where(input, select, textarea) {
+    min-height: 42px;
+    border-radius: 0.75rem !important;
+    border-color: #cbd5e1 !important;
+    background: #fff !important;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    font-size: 0.875rem !important;
+}
+
+.staff-portal :where(form.bg-white, form[class*="border"]) input[type="checkbox"],
+.staff-portal :where(form.bg-white, form[class*="border"]) input[type="radio"] {
+    min-height: auto;
+    border-radius: 0.25rem !important;
+    padding: 0;
+}
+
+.staff-portal :where(button, a)[class*="px-"][class*="py-"] {
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.staff-portal :where(button, a).bg-blue-600,
+.staff-portal :where(button, a).bg-blue-700,
+.staff-portal :where(button, a).bg-neutral-900,
+.staff-portal :where(button, a).bg-neutral-950,
+.staff-portal :where(button, a).bg-amber-600,
+.staff-portal :where(button, a).bg-amber-700,
+.staff-portal :where(button, a).bg-amber-800 {
+    border-radius: 0.75rem !important;
+    background-color: #2563eb !important;
+    color: #fff !important;
+    box-shadow: 0 12px 26px -19px rgba(37, 99, 235, .92) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.staff-portal :where(button, a).bg-blue-600:hover,
+.staff-portal :where(button, a).bg-blue-700:hover,
+.staff-portal :where(button, a).bg-neutral-900:hover,
+.staff-portal :where(button, a).bg-neutral-950:hover,
+.staff-portal :where(button, a).bg-amber-600:hover,
+.staff-portal :where(button, a).bg-amber-700:hover,
+.staff-portal :where(button, a).bg-amber-800:hover {
+    background-color: #1d4ed8 !important;
+}
+
+.staff-portal :where(button, a).bg-emerald-600,
+.staff-portal :where(button, a).bg-emerald-700 {
+    border-radius: 0.75rem !important;
+    box-shadow: 0 12px 26px -20px rgba(5, 150, 105, .9) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.staff-portal :where(button, a).bg-rose-600,
+.staff-portal :where(button, a).bg-red-600,
+.staff-portal :where(button, a).bg-red-700 {
+    border-radius: 0.75rem !important;
+    box-shadow: 0 12px 26px -20px rgba(225, 29, 72, .86) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.staff-portal :where(button, a)[class*="border-neutral-"][class*="bg-white"],
+.staff-portal :where(button, a)[class*="border-slate-"][class*="bg-white"] {
+    border-radius: 0.75rem !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.staff-portal :where(button, a)[class*="border-neutral-"][class*="bg-white"]:hover,
+.staff-portal :where(button, a)[class*="border-slate-"][class*="bg-white"]:hover {
+    border-color: #bfdbfe !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+}
+
+.staff-portal :where(.uppercase) {
+    letter-spacing: 0.055em !important;
+}
+
+.staff-portal :where(button.uppercase, a.uppercase, span.uppercase[class*="px-"]) {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.staff-portal :where(.text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+    line-height: 1.45 !important;
+}
+
+.staff-portal :where(span, div)[class*="text-[8px]"][class*="px-"],
+.staff-portal :where(span, div)[class*="text-[9px]"][class*="px-"],
+.staff-portal :where(span, div)[class*="text-[10px]"][class*="px-"] {
+    border-radius: 9999px !important;
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+}
+
+.staff-portal .selected-neon-row {
+    border-left: 3px solid #2563eb !important;
+    background: #eff6ff !important;
+}
+
+.staff-portal table {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff;
+}
+
+.staff-portal :where(.overflow-x-auto, .custom-scrollbar):has(> table) {
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.staff-portal thead,
+.staff-portal thead tr,
+.staff-portal thead[class*="sticky"] {
+    background: #f8fafc !important;
+}
+
+.staff-portal th {
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    font-size: 0.72rem !important;
+    font-weight: 650 !important;
+    letter-spacing: 0.025em !important;
+    text-transform: none !important;
+}
+
+.staff-portal td {
+    color: #475569;
+    font-size: 0.82rem;
+}
+
+.staff-portal tbody tr {
+    transition: background-color .15s ease;
+}
+
+.staff-portal tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+.staff-portal :where(.divide-neutral-100, .divide-slate-100) > :not([hidden]) ~ :not([hidden]) {
+    border-color: #f1f5f9 !important;
+}
+
+.staff-portal :where(.fixed.inset-0, [id*="modal"], [id*="Modal"]) :where(.relative.bg-white, .bg-white.max-w-sm, .bg-white.max-w-md, .bg-white.max-w-lg, .bg-white.max-w-xl, .bg-white.max-w-2xl, .aside-main-container) {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 1.25rem !important;
+    background: #fff !important;
+    box-shadow: 0 30px 80px -42px rgba(15, 23, 42, .72) !important;
+}
+
+.staff-portal :where(.fixed.inset-0, [id*="modal"], [id*="Modal"]) :where(h2, h3, h4) {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+    font-style: normal !important;
+    color: #0f172a !important;
+}
+
+.staff-portal :where(.aside-main-container, #print-aside-target .relative) {
+    border-radius: 1.25rem !important;
+}
+
+.staff-portal :where(.h-1, .h-1\.5, .h-2)[class*="bg-neutral-"] {
+    overflow: hidden;
+    border-radius: 9999px !important;
+    background: #e2e8f0 !important;
+}
+
+.staff-portal :where(.h-full.bg-amber-600, .h-full.bg-amber-700, .h-full.bg-neutral-900) {
+    border-radius: 9999px !important;
+    background: #2563eb !important;
+}
+
+.staff-portal :where(.border-l-2, .border-l-3) {
+    border-left-color: #bfdbfe !important;
+}
+
+.staff-portal :where(.italic) {
+    font-style: normal !important;
+}
+
+.staff-portal :where(.font-light) {
+    font-weight: 500 !important;
+}
+
+.staff-portal :where(.font-serif) {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.staff-portal :where(.rounded-sm) {
+    border-radius: 0.5rem !important;
+}
+
+.staff-portal :where(.p-3.bg-red-50, .p-3.bg-rose-50, .p-3.bg-amber-50, .p-3.bg-emerald-50, .p-4.bg-red-50, .p-4.bg-rose-50, .p-4.bg-amber-50, .p-4.bg-emerald-50) {
+    border-radius: 0.875rem !important;
+}
+
+.staff-portal :where(.grid.grid-cols-2, .grid.grid-cols-3, .grid.grid-cols-4, .grid.grid-cols-5) > .bg-white {
+    min-width: 0;
+}
+
+@media (max-width: 767px) {
+    .staff-portal :where(form.bg-white, form[class*="border"]):not(.inline-flex) {
+        align-items: stretch !important;
+    }
+
+    .staff-portal :where(form.bg-white, form[class*="border"]) :where(input, select, textarea, button, a) {
+        max-width: 100%;
+    }
+
+    .staff-portal :where(.overflow-x-auto, .custom-scrollbar):has(> table) {
+        border-radius: 0.875rem;
+    }
+}
+
+@media print {
+    .staff-portal :where(.aside-main-container, #print-aside-target .relative, [id*="invoice"] .relative) {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+}
