@@ -1,103 +1,78 @@
-<x-guest-layout>
-    <div class="min-h-screen relative font-sans antialiased bg-neutral-900">
+<x-auth-shell
+    eyebrow="Welcome back"
+    title="Sign in to your account"
+    subtitle="Use your registered email and password to access the Oasis guest portal."
+>
+    <x-auth-session-status class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" :status="session('status')" />
 
-        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop"
-             alt="Oasis Hotel Premium Suite"
-             class="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75">
+    <form method="POST" action="{{ route('login') }}" class="space-y-5">
+        @csrf
 
-        <div class="absolute inset-0 bg-neutral-950/30"></div>
-
-        <div class="relative min-h-screen flex items-center justify-center px-4 py-16">
-            <div class="w-full max-w-xl bg-white border border-neutral-200 p-8 md:p-12 rounded-none shadow-none relative">
-
-                <div class="absolute top-6 left-6 md:top-8 md:left-12">
-                    <a href="{{ route('home') }}" class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-2 group">
-                        <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i> Back to Home
-                    </a>
-                </div>
-
-                <div class="text-center mb-10 mt-6 md:mt-4">
-                    <h2 class="text-5xl font-serif tracking-wide text-neutral-900 mb-3 italic select-none">Oasis</h2>
-                    <h1 class="text-xs font-bold uppercase tracking-[0.25em] text-neutral-800">Welcome Back</h1>
-                    <p class="text-[11px] uppercase tracking-wider text-neutral-400 mt-2">Sign in to continue your journey</p>
-                </div>
-
-                <x-auth-session-status class="mb-6 text-xs text-emerald-600 font-bold uppercase tracking-wider bg-emerald-50 p-3 border border-emerald-200 text-center" :status="session('status')" />
-
-                <form method="POST" action="{{ route('login') }}" class="space-y-6">
-                    @csrf
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label for="email" class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Email Address</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400 text-xs">
-                                    <i class="fa-regular fa-envelope"></i>
-                                </span>
-                                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-                                       class="block w-full pl-9 pr-4 py-3 bg-white border border-neutral-300 rounded-none text-xs tracking-wide text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
-                                       placeholder="Enter your email">
-                            </div>
-                            <x-input-error :messages="$errors->get('email')" class="mt-1.5 text-xs text-red-600" />
-                        </div>
-
-                        <div>
-                            <label for="password" class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 mb-2">Password</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400 text-xs">
-                                    <i class="fa-solid fa-lock"></i>
-                                </span>
-                                <input id="password" type="password" name="password" required
-                                       class="block w-full pl-9 pr-4 py-3 bg-white border border-neutral-300 rounded-none text-xs tracking-wide text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
-                                       placeholder="Enter your password">
-                            </div>
-                            <x-input-error :messages="$errors->get('password')" class="mt-1.5 text-xs text-red-600" />
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-2 border-t border-neutral-100">
-                        <label for="remember_me" class="inline-flex items-center cursor-pointer">
-                            <input id="remember_me" type="checkbox" name="remember"
-                                   class="rounded-none border-neutral-300 text-neutral-900 focus:ring-neutral-950 focus:ring-offset-0 w-3.5 h-3.5">
-                            <span class="ms-2 text-[11px] font-bold uppercase tracking-wider text-neutral-500">Remember me</span>
-                        </label>
-
-                        @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}"
-                               class="text-[11px] font-bold text-neutral-400 hover:text-neutral-900 underline uppercase tracking-wider transition-colors">
-                                Forgot password?
-                            </a>
-                        @endif
-                    </div>
-
-                    @unless(app()->environment(['local', 'testing']))
-                        <div class="pt-4 border-t border-neutral-100 space-y-2 flex flex-col items-center justify-center">
-                            <div class="inline-block transform scale-95 origin-center select-none">
-                                <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
-                            </div>
-                            <x-input-error :messages="$errors->get('g-recaptcha-response')" class="text-xs text-red-600 font-medium text-center w-full mt-1" />
-                        </div>
-                    @endunless
-
-                    <div class="pt-2">
-                        <button type="submit"
-                                class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-3.5 px-4 rounded-none uppercase tracking-[0.2em] text-[10px] transition-all active:translate-y-[1px]">
-                            Sign In
-                        </button>
-                    </div>
-
-                    <div class="text-center pt-4 border-t border-neutral-100">
-                        <p class="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
-                            Don't have an account?
-                            <a href="{{ route('register') }}" class="font-bold text-neutral-900 underline ms-1 hover:text-neutral-700">Register</a>
-                        </p>
-                    </div>
-                </form>
+        <div>
+            <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    <i class="fa-regular fa-envelope text-sm"></i>
+                </span>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
+                       class="block w-full pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400"
+                       placeholder="name@example.com">
             </div>
+            <x-input-error :messages="$errors->get('email')" class="mt-2 text-sm text-rose-600" />
         </div>
-    </div>
 
-    @unless(app()->environment(['local', 'testing']))
+        <div>
+            <div class="mb-2 flex items-center justify-between gap-4">
+                <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="text-sm font-medium text-blue-600 transition hover:text-blue-700">Forgot password?</a>
+                @endif
+            </div>
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    <i class="fa-solid fa-lock text-sm"></i>
+                </span>
+                <input id="password" type="password" name="password" required autocomplete="current-password"
+                       class="block w-full pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400"
+                       placeholder="Enter your password">
+            </div>
+            <x-input-error :messages="$errors->get('password')" class="mt-2 text-sm text-rose-600" />
+        </div>
+
+        <label for="remember_me" class="flex cursor-pointer items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
+            <input id="remember_me" type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-slate-600">Keep me signed in on this device</span>
+        </label>
+
+        @if(config('services.recaptcha.site_key'))
+            <div class="recaptcha-shell">
+                <p class="mb-3 flex items-center gap-2 text-xs font-medium text-slate-500">
+                    <i class="fa-solid fa-shield-halved text-blue-500"></i>
+                    Security verification
+                </p>
+                <div class="flex justify-center sm:justify-start">
+                    <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                </div>
+                <x-input-error :messages="$errors->get('g-recaptcha-response')" class="mt-2 text-sm text-rose-600" />
+            </div>
+        @else
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                reCAPTCHA belum dikonfigurasi. Isi <code>RECAPTCHA_SITE_KEY</code> dan <code>RECAPTCHA_SECRET_KEY</code> di file <code>.env</code>.
+            </div>
+        @endif
+
+        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-200/70 transition hover:bg-blue-700">
+            Sign in
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+
+        <p class="text-center text-sm text-slate-500">
+            New to Oasis?
+            <a href="{{ route('register') }}" class="font-semibold text-blue-600 hover:text-blue-700">Create an account</a>
+        </p>
+    </form>
+
+    @if(config('services.recaptcha.site_key'))
         <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    @endunless
-</x-guest-layout>
+    @endif
+</x-auth-shell>
