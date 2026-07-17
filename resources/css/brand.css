@@ -1,20 +1,4 @@
-/* Reuse the canonical logo stored in public/logo.svg. */
-.guest-portal aside > div:first-child > a > span:first-child {
-    width: 124px !important;
-    height: 44px !important;
-    border-radius: 0.875rem !important;
-    background: #ffffff url('/logo.svg') center / 106px auto no-repeat !important;
-    box-shadow: 0 16px 30px -20px rgba(15, 23, 42, 0.85) !important;
-}
-
-.guest-portal aside > div:first-child > a > span:first-child i {
-    display: none !important;
-}
-
-.guest-portal aside > div:first-child > a > span:last-child {
-    display: none !important;
-}
-
+/* Canonical brand logo compatibility for legacy receipt templates. */
 #oasisInvoiceModal h3:first-child,
 #invoice-paper header h3:first-child {
     width: 120px;
