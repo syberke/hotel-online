@@ -2,61 +2,141 @@
 
 Panduan ini dibuat untuk latihan UKK klaster **Instalasi Komputasi Awan** menggunakan aplikasi **Oasis Hotel Online**.
 
-Seluruh langkah di dokumen ini dilakukan secara manual. Jangan menjalankan `deploy.sh` saat latihan utama. Tujuannya agar setiap konfigurasi dapat dipahami, diketik ulang, diuji, dan dijelaskan kepada asesor.
+Seluruh konfigurasi utama dilakukan secara manual. Saat latihan utama, jangan langsung menjalankan `deploy.sh`. Tujuannya agar setiap tahap dapat diketik ulang, diuji, dan dijelaskan kepada asesor.
+
+> Rekomendasi latihan: gunakan Ubuntu Server 24.04 LTS 64-bit pada kedua VM. Ubuntu 22.04 LTS juga dapat digunakan, tetapi nama interface dan beberapa tampilan installer dapat berbeda.
+
+---
 
 ## 1. Target akhir UKK
 
-Lingkungan yang akan dibangun terdiri dari dua mesin virtual Ubuntu Server.
+Lingkungan yang dibangun terdiri dari dua mesin virtual Ubuntu Server.
 
-### VM 1: deployment
+### VM1: deployment
 
-- hostname: `namasiswa_deployment`;
-- dua adapter jaringan, yaitu NAT dan Bridged Adapter;
+- hostname: `namasiswa-deployment`;
+- dua adapter jaringan, NAT dan Bridged Adapter;
 - aplikasi berada di `/home/ujikom/hotel-online`;
-- custom image dibangun dari `Dockerfile`;
-- tiga container web Laravel, yaitu `web1`, `web2`, dan `web3`;
+- custom image dibuat dari `Dockerfile`;
+- tiga container Laravel, yaitu `web1`, `web2`, dan `web3`;
 - satu container MariaDB;
 - satu container Nginx sebagai load balancer;
-- load balancer diakses melalui port `8080`;
+- load balancer diakses melalui port `8080:80`;
 - container web hanya memakai `expose`, bukan `ports`;
-- database membuka port `3306:3306` sesuai ketentuan UKK;
+- database memakai port `3306:3306` sesuai ketentuan UKK;
 - database memakai named volume `volume-ujikom`;
 - semua container memakai network `network-ujikom`;
 - semua service memakai restart policy;
 - setiap web node memiliki identitas berbeda untuk membuktikan load balancing.
 
-### VM 2: management
+### VM2: management
 
-- hostname: `namasiswa_management`;
-- dua adapter jaringan, yaitu NAT dan Bridged Adapter;
+- hostname: `namasiswa-management`;
+- dua adapter jaringan, NAT dan Bridged Adapter;
 - OpenSSH Server;
-- SSH dari VM1 menuju VM2 tanpa mengetik password;
+- SSH dari VM1 ke VM2 tanpa mengetik password;
 - FTP Server yang dapat diakses dari komputer host;
 - tiga container Nginx dengan tampilan berbeda;
 - satu container Nginx sebagai load balancer;
-- load balancer VM2 dapat membagi request ke tiga container web.
+- load balancer VM2 membagi request ke tiga container web.
+
+---
 
 ## 2. Pemetaan ketentuan UKK
 
-| Ketentuan | Implementasi dalam tutorial |
+| Ketentuan | Implementasi |
 |---|---|
 | Dua VM Ubuntu | VM1 deployment dan VM2 management |
-| NAT dan bridge | Adapter 1 NAT, Adapter 2 Bridged Adapter |
-| VM saling terhubung | Ping VM1 ke VM2 dan sebaliknya |
-| Custom image | Image Laravel dibangun dari `Dockerfile` |
+| Dua adapter | Adapter 1 NAT, Adapter 2 Bridged Adapter |
+| VM saling terhubung | Pengujian `ping` dua arah |
+| Custom image | Laravel dibangun dari `Dockerfile` |
 | Tiga web container | `web1`, `web2`, dan `web3` |
 | Database | MariaDB 11.4 |
+| Port database | `3306:3306` |
 | Volume | `volume-ujikom` |
 | Network | `network-ujikom` |
-| Load balancer | Nginx pada port 8080 |
-| Perbedaan setiap container | `APP_NODE_NAME` dan `APP_NODE_COLOR` |
+| Load balancer | Nginx pada port `8080:80` |
+| Perbedaan web node | `APP_NODE_NAME` dan `APP_NODE_COLOR` |
 | SSH tanpa password | SSH key ED25519 dari VM1 ke VM2 |
 | FTP | vsftpd pada VM2 |
-| Pengujian | `ping`, `curl`, browser, Docker CLI, dan FTP client |
+| Tiga web VM2 | `site1`, `site2`, dan `site3` |
+| Pengujian | `ping`, `curl`, browser, Docker CLI, SSH, dan FTP client |
 
-## 3. Lembar variabel sebelum mulai
+---
 
-Isi tabel berikut sebelum praktik. Gunakan IP sesuai nomor absen pada lembar UKK.
+## 3. Apa saja yang harus diinstal
+
+### 3.1 Pada komputer host Windows
+
+Siapkan:
+
+1. Oracle VirtualBox;
+2. ISO Ubuntu Server 24.04 LTS 64-bit;
+3. browser Chrome atau Edge;
+4. PowerShell;
+5. FileZilla Client atau WinSCP untuk pengujian FTP;
+6. Visual Studio Code bersifat opsional untuk membaca dokumentasi.
+
+Git, PHP, Composer, Node.js, MariaDB, Apache, dan Nginx **tidak wajib diinstal di Windows** untuk praktik deployment ini. Semua layanan aplikasi dijalankan di dalam VM dan container.
+
+### 3.2 Pada kedua VM
+
+Paket dasar:
+
+- `ca-certificates`, untuk validasi sertifikat HTTPS;
+- `curl`, untuk mengambil file dan menguji HTTP;
+- `git`, untuk mengambil source code;
+- `openssl`, untuk membuat `APP_KEY`;
+- `nano`, editor teks terminal;
+- `unzip` dan `zip`, utilitas arsip;
+- `jq`, membaca JSON dari terminal;
+- `tree`, melihat struktur folder;
+- `iputils-ping`, pengujian jaringan;
+- `dnsutils`, pengujian DNS;
+- `net-tools`, alat jaringan tambahan;
+- `ufw`, firewall Ubuntu;
+- `openssh-client`, perintah `ssh`, `scp`, dan `ssh-copy-id`.
+
+Paket Docker:
+
+- `docker-ce`, Docker Engine;
+- `docker-ce-cli`, command line Docker;
+- `containerd.io`, runtime container;
+- `docker-buildx-plugin`, builder image;
+- `docker-compose-plugin`, perintah `docker compose`.
+
+### 3.3 Tambahan pada VM2
+
+- `openssh-server`, server SSH;
+- `vsftpd`, server FTP.
+
+### 3.4 Yang tidak perlu diinstal langsung pada Ubuntu host
+
+Untuk tutorial ini, jangan menginstal paket berikut pada host kecuali asesor secara khusus meminta:
+
+- PHP;
+- Composer;
+- Node.js dan npm;
+- Apache host;
+- Nginx host;
+- MariaDB atau MySQL host.
+
+Alasannya:
+
+- Node.js tersedia pada tahap `frontend` Dockerfile;
+- Composer tersedia pada tahap `vendor` Dockerfile;
+- PHP dan Apache tersedia pada image runtime;
+- MariaDB dan Nginx dijalankan sebagai container.
+
+Cara menjelaskan kepada asesor:
+
+> Host hanya membutuhkan Docker dan alat administrasi. Dependency aplikasi dimasukkan ke custom image agar deployment konsisten dan tidak bergantung pada instalasi PHP, Composer, atau Node.js pada host.
+
+---
+
+## 4. Lembar variabel sebelum mulai
+
+Isi sesuai nomor absen pada tabel UKK.
 
 | Variabel | Isi |
 |---|---|
@@ -71,7 +151,7 @@ Isi tabel berikut sebelum praktik. Gunakan IP sesuai nomor absen pada lembar UKK
 | Interface NAT | `<INTERFACE_NAT>` |
 | Interface bridge | `<INTERFACE_BRIDGE>` |
 
-Contoh nomor absen 1 pada tabel UKK:
+Contoh nomor absen 1:
 
 ```text
 IP host : 172.20.3.2
@@ -79,75 +159,131 @@ IP VM1  : 172.20.3.3
 IP VM2  : 172.20.3.4
 ```
 
-Jangan memakai contoh tersebut apabila nomor absen berbeda.
+Jangan memakai contoh tersebut jika nomor absen berbeda.
 
-## 4. Topologi
+---
+
+## 5. Topologi
 
 ```text
 Komputer Host
      |
-     | jaringan bridge 172.20.3.0/24
+     | Bridged Network 172.20.3.0/24
      |
-     +-------------------------------+
-     |                               |
-     v                               v
-VM1 deployment                  VM2 management
-<IP_VM1>                        <IP_VM2>
-     |                               |
-     | :8080                         | :8080
-     v                               v
-Nginx Load Balancer             Nginx Load Balancer
-  |       |       |               |       |       |
- web1    web2    web3           site1   site2   site3
+     +--------------------------------+
+     |                                |
+     v                                v
+VM1 deployment                   VM2 management
+<IP_VM1>                         <IP_VM2>
+     |                                |
+     | :8080                          | :8080
+     v                                v
+Nginx Load Balancer              Nginx Load Balancer
+  |       |       |                |       |       |
+ web1    web2    web3            site1   site2   site3
   |       |       |
   +-------+-------+
           |
        MariaDB
 ```
 
-Fungsi setiap jaringan:
+Fungsi jaringan:
 
-- NAT dipakai agar VM dapat mengakses internet untuk instalasi package dan pull image;
-- Bridged Adapter dipakai agar host, VM1, dan VM2 berada pada jaringan yang sama;
-- Docker bridge network dipakai untuk komunikasi antar-container menggunakan nama service.
+- NAT menyediakan internet untuk `apt`, Git, dan pull image;
+- Bridged Adapter menghubungkan host, VM1, dan VM2 pada jaringan yang sama;
+- Docker bridge network menghubungkan container melalui nama service.
 
-## 5. Membuat dua VM di VirtualBox
+---
+
+# BAGIAN A: MEMBUAT VM DARI NOL
+
+## 6. Membuat dua VM di VirtualBox
 
 Lakukan untuk VM1 dan VM2.
 
-1. Buat VM Ubuntu Server 64-bit.
-2. Gunakan RAM minimal 2 GB. Untuk VM1 disarankan 4 GB jika komputer mencukupi.
-3. Gunakan disk minimal 25 GB.
-4. Buka **Settings > Network**.
-5. Adapter 1:
+1. Klik **New**.
+2. Pilih ISO Ubuntu Server.
+3. Type: `Linux`.
+4. Version: `Ubuntu (64-bit)`.
+5. RAM minimum 2 GB. Untuk VM1 disarankan 4 GB.
+6. CPU minimum 2 core untuk VM1 dan 1 sampai 2 core untuk VM2.
+7. Disk minimum 25 GB, dynamically allocated.
+8. Buka **Settings > Network**.
+9. Adapter 1:
    - Enable Network Adapter;
    - Attached to: `NAT`;
    - Cable Connected aktif.
-6. Adapter 2:
+10. Adapter 2:
    - Enable Network Adapter;
    - Attached to: `Bridged Adapter`;
-   - pilih kartu jaringan host yang digunakan;
+   - pilih kartu Wi-Fi atau Ethernet host yang aktif;
    - Cable Connected aktif.
-7. Instal Ubuntu Server.
-8. Buat user bernama `ujikom` agar perintah dalam tutorial konsisten.
 
-## 6. Mengatur hostname
+### 6.1 Instal Ubuntu Server
+
+Saat installer berjalan:
+
+1. pilih bahasa;
+2. pilih keyboard layout;
+3. pilih `Ubuntu Server`;
+4. biarkan interface NAT memperoleh DHCP;
+5. proxy dikosongkan jika tidak digunakan;
+6. gunakan mirror default;
+7. gunakan seluruh virtual disk;
+8. buat user:
+
+```text
+Your name   : Uji Kompetensi
+Server name : sementara, akan diganti
+Username    : ujikom
+Password    : password latihan
+```
+
+9. OpenSSH boleh tidak dipilih karena akan dipasang manual;
+10. jangan pilih snap tambahan;
+11. selesaikan instalasi dan reboot;
+12. keluarkan ISO jika installer terbuka kembali.
+
+Setelah login:
+
+```bash
+whoami
+hostnamectl
+lsb_release -a
+uname -m
+```
+
+Hasil yang diharapkan:
+
+- user adalah `ujikom`;
+- arsitektur umumnya `x86_64`;
+- Ubuntu 24.04 atau 22.04 LTS.
+
+---
+
+## 7. Mengatur hostname
+
+Linux hostname sebaiknya memakai tanda hubung, bukan underscore.
 
 ### VM1
 
 ```bash
-sudo hostnamectl set-hostname namasiswa_deployment
+sudo hostnamectl set-hostname namasiswa-deployment
 hostnamectl
 ```
 
 ### VM2
 
 ```bash
-sudo hostnamectl set-hostname namasiswa_management
+sudo hostnamectl set-hostname namasiswa-management
 hostnamectl
 ```
 
-Jika `hostnamectl` mengganti karakter underscore menjadi tanda hubung, gunakan nama yang diterima sistem dan jelaskan kepada asesor bahwa static hostname Linux mengikuti format hostname yang valid.
+Logout dan login kembali agar prompt menampilkan hostname baru:
+
+```bash
+exit
+```
 
 Tambahkan pemetaan kedua VM pada `/etc/hosts` di VM1 dan VM2:
 
@@ -158,46 +294,57 @@ sudo nano /etc/hosts
 Tambahkan:
 
 ```text
-<IP_VM1> namasiswa_deployment
-<IP_VM2> namasiswa_management
+<IP_VM1> namasiswa-deployment
+<IP_VM2> namasiswa-management
 ```
 
-## 7. Mengidentifikasi interface jaringan
+---
+
+## 8. Mengidentifikasi interface jaringan
 
 Jalankan pada masing-masing VM:
 
 ```bash
 ip -br link
 ip -br address
+ip route
 ```
 
-Umumnya:
+Umumnya pada VirtualBox:
 
 ```text
 enp0s3 = NAT
 enp0s8 = Bridged Adapter
 ```
 
-Nama interface dapat berbeda. Jangan menyalin nama interface tanpa mengeceknya.
+Nama interface dapat berbeda. Jangan menyalin nama interface tanpa memeriksa hasil perintah.
 
-## 8. Mengatur IP statis dengan Netplan
+---
 
-Cadangkan konfigurasi lama:
+## 9. Mengatur IP statis dengan Netplan
+
+Cadangkan konfigurasi:
 
 ```bash
 sudo cp -a /etc/netplan /etc/netplan.backup
 ls -la /etc/netplan
 ```
 
-Buat file konfigurasi:
+Lihat file bawaan:
+
+```bash
+sudo cat /etc/netplan/*.yaml
+```
+
+Buat file:
 
 ```bash
 sudo nano /etc/netplan/01-ukk.yaml
 ```
 
-### Konfigurasi VM1
+### 9.1 Konfigurasi VM1
 
-Ganti nama interface dan IP sesuai hasil pemeriksaan.
+Ganti interface dan IP.
 
 ```yaml
 network:
@@ -221,7 +368,7 @@ network:
           - 8.8.8.8
 ```
 
-### Konfigurasi VM2
+### 9.2 Konfigurasi VM2
 
 ```yaml
 network:
@@ -245,9 +392,10 @@ network:
           - 8.8.8.8
 ```
 
-Periksa indentasi YAML, lalu terapkan:
+Perbaiki permission dan terapkan:
 
 ```bash
+sudo chmod 600 /etc/netplan/01-ukk.yaml
 sudo netplan generate
 sudo netplan try
 sudo netplan apply
@@ -255,9 +403,15 @@ ip -br address
 ip route
 ```
 
-Metric 100 pada NAT membuat jalur internet NAT lebih diprioritaskan. Metric 200 pada bridge tetap mencatat gateway UKK tanpa mengalahkan jalur NAT.
+Metric 100 membuat internet NAT lebih diprioritaskan daripada gateway bridge bermetric 200.
 
-## 9. Menguji jaringan
+### 9.3 Jika bridge tidak memiliki gateway
+
+Pada beberapa laboratorium, bridge hanya dipakai untuk komunikasi lokal. Jika gateway `172.20.3.1` tidak tersedia, hapus bagian `routes` pada interface bridge. NAT tetap menjadi jalur internet.
+
+---
+
+## 10. Menguji jaringan sebelum instalasi
 
 ### Dari VM1
 
@@ -273,39 +427,97 @@ ping -c 4 <IP_VM2>
 ping -c 4 <IP_VM1>
 ```
 
-### Dari komputer host
-
-PowerShell:
+### Dari host Windows
 
 ```powershell
 ping <IP_VM1>
 ping <IP_VM2>
 ```
 
-Jika VM1 dan VM2 belum saling ping:
+Jangan lanjut ke Docker sebelum:
 
-- pastikan Adapter 2 aktif dan mode bridge;
-- pastikan memilih kartu jaringan host yang benar;
-- periksa IP dan prefix `/24`;
-- periksa apakah kedua VM berada pada network `172.20.3.0/24`;
-- periksa firewall Ubuntu;
-- periksa kabel virtual pada VirtualBox.
+- kedua VM bisa mengakses internet;
+- VM1 dan VM2 saling ping;
+- host bisa ping kedua VM.
 
-## 10. Memperbarui Ubuntu
+---
+
+# BAGIAN B: INSTALASI SOFTWARE DARI VM FRESH
+
+## 11. Update Ubuntu dan instal paket dasar
 
 Jalankan pada VM1 dan VM2:
 
 ```bash
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y ca-certificates curl git openssl nano
+sudo apt install -y \
+  ca-certificates \
+  curl \
+  git \
+  openssl \
+  nano \
+  unzip \
+  zip \
+  jq \
+  tree \
+  iputils-ping \
+  dnsutils \
+  net-tools \
+  ufw \
+  openssh-client
 ```
 
-## 11. Instalasi Docker Engine dan Compose secara manual
+Periksa:
+
+```bash
+git --version
+curl --version | head -n 1
+openssl version
+ssh -V
+```
+
+Penjelasan paket penting:
+
+| Paket | Fungsi |
+|---|---|
+| Git | mengambil source aplikasi |
+| curl | menguji HTTP dan mengambil key Docker |
+| OpenSSL | membuat application key |
+| OpenSSH client | SSH dari VM1 ke VM2 |
+| UFW | mengatur port firewall |
+| jq | membaca hasil JSON jika diperlukan |
+| ping dan dnsutils | menguji IP dan DNS |
+
+Jika kernel ikut diperbarui, reboot:
+
+```bash
+sudo reboot
+```
+
+Setelah VM hidup, login dan cek:
+
+```bash
+uname -r
+```
+
+---
+
+## 12. Instal Docker Engine dan Docker Compose secara manual
 
 Lakukan pada VM1 dan VM2.
 
-Tambahkan key resmi Docker:
+### 12.1 Hapus paket yang berpotensi konflik
+
+Pada VM baru biasanya tidak ada paket konflik. Perintah berikut tetap aman dijalankan:
+
+```bash
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+  sudo apt remove -y "$pkg" 2>/dev/null || true
+done
+```
+
+### 12.2 Tambahkan GPG key resmi Docker
 
 ```bash
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -314,66 +526,221 @@ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 ```
 
-Tambahkan repository Docker:
+Periksa:
 
 ```bash
-sudo nano /etc/apt/sources.list.d/docker.sources
+ls -l /etc/apt/keyrings/docker.asc
 ```
 
-Isi:
+### 12.3 Tambahkan repository Docker secara dinamis
 
-```text
-Types: deb
-URIs: https://download.docker.com/linux/ubuntu
-Suites: noble
-Components: stable
-Architectures: amd64
-Signed-By: /etc/apt/keyrings/docker.asc
-```
-
-Jika Ubuntu bukan 24.04 Noble atau arsitektur bukan amd64, sesuaikan nilai `Suites` dan `Architectures` berdasarkan:
+Perintah ini membaca codename Ubuntu dan arsitektur secara otomatis:
 
 ```bash
 . /etc/os-release
-echo "$VERSION_CODENAME"
-dpkg --print-architecture
+UBUNTU_SUITE="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
+ARCHITECTURE="$(dpkg --print-architecture)"
+
+echo "Suite: $UBUNTU_SUITE"
+echo "Architecture: $ARCHITECTURE"
 ```
 
-Instal Docker:
+Buat source:
+
+```bash
+sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${UBUNTU_SUITE}
+Components: stable
+Architectures: ${ARCHITECTURE}
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+```
+
+Periksa isi:
+
+```bash
+cat /etc/apt/sources.list.d/docker.sources
+```
+
+### 12.4 Instal paket Docker
 
 ```bash
 sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io \
-  docker-buildx-plugin docker-compose-plugin
+sudo apt install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
 ```
 
-Aktifkan service:
+### 12.5 Aktifkan Docker saat boot
 
 ```bash
 sudo systemctl enable --now docker
+sudo systemctl enable --now containerd
 sudo systemctl status docker --no-pager
 ```
 
-Tambahkan user ke grup Docker:
+Status harus `active (running)`.
+
+### 12.6 Beri akses Docker kepada user ujikom
 
 ```bash
 sudo usermod -aG docker "$USER"
+```
+
+Pilihan pertama, logout lalu login kembali:
+
+```bash
+exit
+```
+
+Pilihan kedua untuk terminal latihan:
+
+```bash
 newgrp docker
 ```
 
-Verifikasi:
+Periksa grup:
+
+```bash
+id
+```
+
+Harus terdapat grup `docker`.
+
+### 12.7 Verifikasi Docker
 
 ```bash
 docker --version
 docker compose version
+docker buildx version
+docker info
 docker run --rm hello-world
 ```
 
-Penjelasan untuk asesor:
+Perintah yang benar adalah:
 
-> Docker Engine menjalankan container. Docker Compose mendefinisikan beberapa service dalam satu file YAML. Buildx dipakai saat membangun custom image dari Dockerfile.
+```text
+docker compose
+```
 
-## 12. Menyiapkan aplikasi pada VM1
+Bukan perintah lama:
+
+```text
+docker-compose
+```
+
+Cara menjelaskan kepada asesor:
+
+> Docker Engine menjalankan container, containerd menangani runtime, Buildx membangun custom image, dan Docker Compose mendefinisikan banyak service dalam satu file YAML.
+
+### 12.8 Jika muncul permission denied
+
+```bash
+sudo usermod -aG docker "$USER"
+newgrp docker
+docker ps
+```
+
+Jika masih gagal, reboot VM:
+
+```bash
+sudo reboot
+```
+
+---
+
+## 13. Instal software khusus VM2
+
+Jalankan hanya pada VM2:
+
+```bash
+sudo apt update
+sudo apt install -y openssh-server vsftpd
+sudo systemctl enable --now ssh
+sudo systemctl enable --now vsftpd
+```
+
+Periksa:
+
+```bash
+systemctl is-active ssh
+systemctl is-enabled ssh
+systemctl is-active vsftpd
+systemctl is-enabled vsftpd
+sudo ss -ltnp | grep -E ':22|:21'
+```
+
+`openssh-server` akan dikonfigurasi pada bagian SSH. `vsftpd` akan dikonfigurasi pada bagian FTP.
+
+---
+
+## 14. Checklist instalasi software
+
+### VM1
+
+```bash
+command -v git
+command -v curl
+command -v openssl
+command -v ssh
+command -v docker
+docker compose version
+systemctl is-active docker
+```
+
+### VM2
+
+```bash
+command -v docker
+command -v sshd
+command -v vsftpd
+docker compose version
+systemctl is-active docker
+systemctl is-active ssh
+systemctl is-active vsftpd
+```
+
+Simpan bukti:
+
+```bash
+mkdir -p ~/bukti-ukk
+{
+  echo '=== HOSTNAME ==='
+  hostnamectl
+  echo '=== IP ==='
+  ip -br address
+  echo '=== DOCKER ==='
+  docker --version
+  docker compose version
+} | tee ~/bukti-ukk/instalasi-dasar.txt
+```
+
+### 14.1 Buat snapshot VirtualBox
+
+Setelah jaringan dan Docker berfungsi, matikan VM:
+
+```bash
+sudo poweroff
+```
+
+Buat snapshot bernama:
+
+```text
+BASE-UBUNTU-DOCKER-SIAP
+```
+
+Snapshot memudahkan mengulang latihan tanpa menginstal dari nol lagi.
+
+---
+
+# BAGIAN C: VM1 DEPLOYMENT APLIKASI
+
+## 15. Ambil source aplikasi
 
 Masuk ke VM1:
 
@@ -386,35 +753,44 @@ git pull origin main
 pwd
 ```
 
-Hasil `pwd` harus:
+Hasil `pwd`:
 
 ```text
 /home/ujikom/hotel-online
 ```
 
-Untuk latihan manual, jangan menjalankan:
+Periksa file utama:
+
+```bash
+ls -la
+ls Dockerfile docker-compose.yaml composer.json package.json
+```
+
+Saat latihan manual, jangan menjalankan:
 
 ```text
 ./deploy.sh
 ```
 
-## 13. Membuat environment aplikasi secara manual
+---
 
-Buat APP_KEY:
+## 16. Siapkan file rahasia latihan
+
+### 16.1 Buat APP_KEY
 
 ```bash
-openssl rand -base64 32
+printf 'base64:%s\n' "$(openssl rand -base64 32)"
 ```
 
-Salin hasilnya setelah awalan `base64:`.
+Salin seluruh hasil.
 
-Buat file:
+### 16.2 Buat `.env.ukk`
 
 ```bash
 nano .env.ukk
 ```
 
-Isi dan ganti `<IP_VM1>` serta `APP_KEY`:
+Isi dan sesuaikan `<IP_VM1>` serta `APP_KEY`:
 
 ```env
 APP_NAME="Oasis Hotel"
@@ -435,7 +811,7 @@ LOG_CHANNEL=stack
 LOG_STACK=single
 LOG_LEVEL=info
 
-SESSION_DRIVER=database
+SESSION_DRIVER=file
 SESSION_LIFETIME=120
 SESSION_ENCRYPT=true
 SESSION_PATH=/
@@ -445,7 +821,7 @@ SESSION_SECURE_COOKIE=false
 BROADCAST_CONNECTION=log
 FILESYSTEM_DISK=local
 QUEUE_CONNECTION=sync
-CACHE_STORE=database
+CACHE_STORE=file
 CACHE_PREFIX=oasis_ukk_
 
 MAIL_MAILER=log
@@ -459,7 +835,9 @@ RECAPTCHA_SITE_KEY=
 RECAPTCHA_SECRET_KEY=
 ```
 
-Buat credential database:
+Session dan cache memakai `file` agar aplikasi dapat start sebelum tabel tambahan tersedia. Database aplikasi tetap menggunakan MariaDB melalui konfigurasi Compose.
+
+### 16.3 Buat `database.ukk.env`
 
 ```bash
 nano database.ukk.env
@@ -478,24 +856,32 @@ DB_USERNAME=oasis_hotel
 DB_PASSWORD=UKK_Oasis_2026
 ```
 
-Amankan file:
+Amankan:
 
 ```bash
 chmod 600 .env.ukk database.ukk.env
 ls -l .env.ukk database.ukk.env
 ```
 
-Jangan commit kedua file tersebut.
+Pastikan tidak akan masuk Git:
 
 ```bash
-git status --short
+git check-ignore -v .env.ukk database.ukk.env
 ```
 
-Penjelasan untuk asesor:
+Pastikan tidak masuk build context image dengan pola `.dockerignore`:
 
-> Environment dipisahkan dari Dockerfile supaya password dan konfigurasi tidak tertanam di image. Compose akan memasukkan environment ketika container dijalankan.
+```bash
+grep -E '^\.env\.ukk$|^database\.ukk\.env$|^\.env\.\*$|^\*\.env$' .dockerignore
+```
 
-## 14. Memahami dan mengetik Dockerfile
+Cara menjelaskan kepada asesor:
+
+> Environment dipisahkan dari Dockerfile dan dikecualikan dari Git serta build context agar password tidak tertanam pada source code atau layer image.
+
+---
+
+## 17. Memahami Dockerfile
 
 Buka:
 
@@ -503,7 +889,7 @@ Buka:
 nano Dockerfile
 ```
 
-Untuk latihan, ketik ulang isi berikut:
+Isi yang digunakan:
 
 ```dockerfile
 FROM node:22-alpine AS frontend
@@ -523,7 +909,6 @@ RUN composer install --no-dev --no-interaction --prefer-dist \
     --ignore-platform-req=ext-gd
 
 FROM php:8.3-apache-bookworm
-
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -552,18 +937,20 @@ ENTRYPOINT ["hotel-entrypoint"]
 CMD ["apache2-foreground"]
 ```
 
-Fungsi tahap Dockerfile:
+Fungsi tahap:
 
 1. `frontend` membangun CSS dan JavaScript Vite;
-2. `vendor` menginstal dependency Composer untuk production;
-3. runtime menjalankan Laravel menggunakan PHP dan Apache;
-4. `pdo_mysql` membuat Laravel dapat terhubung ke MariaDB;
-5. `EXPOSE 80` mendokumentasikan port internal container;
-6. entrypoint menyiapkan permission dan cache Laravel saat container dimulai.
+2. `vendor` memasang dependency Composer production;
+3. runtime menyediakan PHP 8.3 dan Apache;
+4. `pdo_mysql` menghubungkan Laravel ke MariaDB;
+5. `EXPOSE 80` mendokumentasikan port internal;
+6. entrypoint menyiapkan permission dan cache Laravel.
 
-## 15. Konfigurasi Apache manual
+Ini alasan PHP, Composer, Node.js, npm, dan Apache tidak perlu dipasang pada host Ubuntu.
 
-Buka:
+---
+
+## 18. Konfigurasi Apache Laravel
 
 ```bash
 mkdir -p docker/apache
@@ -594,11 +981,11 @@ Isi:
 </VirtualHost>
 ```
 
-Header `X-App-Node` dipakai untuk melihat container mana yang menjawab request.
+`DocumentRoot` harus menunjuk ke folder `public` Laravel. Header `X-App-Node` dipakai untuk membuktikan container yang menjawab request.
 
-## 16. Membuat entrypoint manual
+---
 
-Buka:
+## 19. Membuat entrypoint
 
 ```bash
 nano docker/entrypoint.sh
@@ -628,15 +1015,17 @@ php artisan view:cache
 exec "$@"
 ```
 
-Beri izin eksekusi:
+Beri izin:
 
 ```bash
 chmod +x docker/entrypoint.sh
 ```
 
-## 17. Membuat konfigurasi load balancer VM1
+`exec "$@"` mengganti proses shell dengan Apache sehingga signal stop dan restart Docker diterima dengan benar.
 
-Buat file:
+---
+
+## 20. Konfigurasi load balancer VM1
 
 ```bash
 mkdir -p docker/nginx
@@ -678,14 +1067,14 @@ server {
 
 Penjelasan:
 
-- `upstream` berisi tujuan load balancing;
-- nama `web1`, `web2`, dan `web3` ditemukan melalui DNS internal Docker;
+- `upstream` adalah kumpulan backend;
+- Docker DNS menerjemahkan `web1`, `web2`, dan `web3`;
 - `least_conn` memilih node dengan koneksi aktif paling sedikit;
-- user hanya mengakses load balancer, bukan web node langsung.
+- user hanya mengakses load balancer.
 
-## 18. Membuat Docker Compose UKK secara manual
+---
 
-Buat file terpisah agar konfigurasi production repo tidak rusak:
+## 21. Membuat Docker Compose UKK
 
 ```bash
 nano docker-compose.ukk.yaml
@@ -706,6 +1095,7 @@ x-web: &web
   environment: &web-environment
     APP_ENV: production
     APP_DEBUG: "false"
+    APP_URL: http://<IP_VM1>:8080
     DB_CONNECTION: mysql
     DB_HOST: database
     DB_PORT: 3306
@@ -793,41 +1183,39 @@ volumes:
     name: public-storage-ujikom
 ```
 
-### Penjelasan penting Compose
+Ganti `<IP_VM1>`.
 
-- `build` membangun custom image dari Dockerfile;
-- tiga service web merupakan tiga replika horizontal dengan image yang sama;
-- `expose: 80` membuat web hanya tersedia di network Docker;
-- `ports: 8080:80` mempublikasikan load balancer ke host;
-- `ports: 3306:3306` memenuhi ketentuan UKK untuk database;
-- `volume-ujikom` menyimpan data MariaDB secara persisten;
-- `network-ujikom` memungkinkan komunikasi berdasarkan nama service;
-- `restart: unless-stopped` menyalakan kembali container setelah reboot;
-- healthcheck memastikan service benar-benar siap.
+Penjelasan penting:
 
-Catatan keamanan:
+- `build` membuat custom image;
+- `web1`, `web2`, dan `web3` adalah horizontal scaling tiga replika;
+- `expose: 80` tidak mempublikasikan web ke host;
+- `8080:80` mempublikasikan load balancer;
+- `3306:3306` memenuhi ketentuan UKK;
+- `volume-ujikom` menyimpan data MariaDB;
+- `network-ujikom` menyediakan komunikasi dan DNS antar-container;
+- `unless-stopped` menyalakan kembali container setelah reboot;
+- healthcheck menahan dependency sampai service siap.
 
-> Pada production umum, database sebaiknya tidak dipublikasikan ke host. Dalam tutorial ini port 3306 dibuka karena tercantum dalam ketentuan UKK.
+> Pada production umum, database sebaiknya tidak dipublikasikan. Port 3306 dibuka di sini karena tercantum pada ketentuan UKK.
 
-## 19. Validasi konfigurasi sebelum menjalankan
+---
+
+## 22. Validasi, build, dan jalankan VM1
+
+Validasi YAML:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml config
 ```
 
-Jika tidak ada error YAML, build image:
+Build custom image:
 
 ```bash
-docker compose -f docker-compose.ukk.yaml build
+docker compose -f docker-compose.ukk.yaml build --no-cache
 ```
 
-Periksa image:
-
-```bash
-docker image ls | grep oasis-hotel-ukk
-```
-
-## 20. Menjalankan stack VM1
+Jalankan:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml up -d
@@ -838,9 +1226,12 @@ Periksa:
 ```bash
 docker compose -f docker-compose.ukk.yaml ps
 docker ps
+docker image ls
+docker network ls
+docker volume ls
 ```
 
-Harus terdapat:
+Harus ada:
 
 ```text
 web1
@@ -850,57 +1241,68 @@ database
 loadbalancer
 ```
 
-Jalankan migration dari satu web node:
+Jika nama container memiliki prefix folder, itu normal. Contoh:
+
+```text
+hotel-online-web1-1
+```
+
+---
+
+## 23. Jalankan migrasi Laravel
 
 ```bash
 docker compose -f docker-compose.ukk.yaml exec web1 \
   php artisan migrate --force
 ```
 
-Jika proyek memerlukan data awal:
+Jika membutuhkan data awal:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml exec web1 \
   php artisan db:seed --force
 ```
 
-Bersihkan dan buat cache:
+Periksa:
+
+```bash
+docker compose -f docker-compose.ukk.yaml exec web1 \
+  php artisan migrate:status
+```
+
+Bersihkan cache jika environment berubah:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml exec web1 \
   php artisan optimize:clear
 
-docker compose -f docker-compose.ukk.yaml exec web1 \
-  php artisan optimize
+docker compose -f docker-compose.ukk.yaml restart web1 web2 web3
 ```
 
-## 21. Menguji aplikasi VM1
+---
 
-Dari VM1:
+## 24. Pengujian VM1
+
+### 24.1 Health check
 
 ```bash
-curl -I http://127.0.0.1:8080
 curl http://127.0.0.1:8080/lb-health
+curl -I http://127.0.0.1:8080
 ```
 
-Dari komputer host, buka:
+### 24.2 Browser host
 
 ```text
 http://<IP_VM1>:8080
 ```
 
-Jika tidak dapat diakses:
+### 24.3 Bukti tiga web container
 
 ```bash
-sudo ss -ltnp | grep ':8080'
-docker compose -f docker-compose.ukk.yaml logs loadbalancer
-docker compose -f docker-compose.ukk.yaml logs web1
-docker compose -f docker-compose.ukk.yaml logs database
+docker compose -f docker-compose.ukk.yaml ps
 ```
 
-## 22. Membuktikan load balancing VM1
-
-Jalankan beberapa request:
+### 24.4 Bukti load balancing
 
 ```bash
 for i in 1 2 3 4 5 6 7 8 9; do
@@ -908,7 +1310,7 @@ for i in 1 2 3 4 5 6 7 8 9; do
 done
 ```
 
-Hasil harus menunjukkan respons dari node yang berbeda:
+Hasil harus menampilkan node berbeda:
 
 ```text
 X-App-Node: Web 1
@@ -916,57 +1318,46 @@ X-App-Node: Web 2
 X-App-Node: Web 3
 ```
 
-Pada browser, badge node juga akan memiliki nama dan warna berbeda.
+Cara menjelaskan:
 
-Penjelasan untuk asesor:
+> Ketiga container memakai image yang sama. Perbedaannya diberikan melalui environment. Nginx membagi request dan header menunjukkan backend yang merespons.
 
-> Ketiga container dibangun dari image yang sama. Perbedaannya hanya environment `APP_NODE_NAME` dan `APP_NODE_COLOR`. Nginx membagi request ke tiga node. Perubahan header membuktikan bahwa request tidak selalu dijawab oleh container yang sama.
-
-## 23. Membuktikan network, volume, dan port
-
-### Network
+### 24.5 Bukti network
 
 ```bash
-docker network ls | grep network-ujikom
 docker network inspect network-ujikom
 ```
 
-### Volume
+### 24.6 Bukti volume
 
 ```bash
-docker volume ls | grep volume-ujikom
 docker volume inspect volume-ujikom
 ```
 
-### Port
+### 24.7 Bukti port
 
 ```bash
 sudo ss -ltnp | grep -E ':8080|:3306'
-```
-
-### Web node tidak dipublikasikan ke host
-
-```bash
 docker compose -f docker-compose.ukk.yaml ps
 ```
 
-Web node hanya menampilkan port internal `80/tcp`, sedangkan load balancer menampilkan `0.0.0.0:8080->80/tcp`.
+Web node hanya menunjukkan `80/tcp`. Load balancer menunjukkan `0.0.0.0:8080->80/tcp`.
 
-## 24. Membuktikan database terhubung
+### 24.8 Bukti aplikasi terhubung database
 
 ```bash
 docker compose -f docker-compose.ukk.yaml exec web1 \
   php artisan migrate:status
 ```
 
-Masuk ke MariaDB:
+Masuk MariaDB:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml exec database \
   mariadb -u oasis_hotel -p oasis_hotel
 ```
 
-Masukkan password dari `database.ukk.env`, lalu:
+Lalu:
 
 ```sql
 SHOW TABLES;
@@ -974,13 +1365,13 @@ SELECT DATABASE();
 EXIT;
 ```
 
-Penjelasan:
+Laravel memakai hostname `database`, bukan `localhost`, karena setiap container memiliki localhost sendiri.
 
-> Laravel memakai hostname `database`, bukan localhost. Di dalam container, localhost berarti container itu sendiri. Docker DNS menerjemahkan nama service `database` ke IP container MariaDB.
+---
 
 ## 25. Membuktikan persistensi volume
 
-Lihat daftar tabel terlebih dahulu:
+Lihat tabel:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml exec database \
@@ -988,20 +1379,22 @@ docker compose -f docker-compose.ukk.yaml exec database \
   -e "SHOW TABLES;"
 ```
 
-Hapus dan buat ulang container tanpa menghapus volume:
+Buat ulang container tanpa menghapus volume:
 
 ```bash
 docker compose -f docker-compose.ukk.yaml down
 docker compose -f docker-compose.ukk.yaml up -d
 ```
 
-Periksa tabel kembali. Data masih ada karena `docker compose down` tidak menghapus named volume.
+Periksa tabel lagi. Data tetap ada.
 
-Jangan memakai opsi berikut saat ingin mempertahankan data:
+Jangan gunakan ini jika ingin mempertahankan data:
 
 ```text
 docker compose down -v
 ```
+
+---
 
 ## 26. Membuktikan restart policy
 
@@ -1010,38 +1403,44 @@ docker compose -f docker-compose.ukk.yaml ps
 sudo reboot
 ```
 
-Setelah VM hidup kembali:
+Setelah login:
 
 ```bash
 docker ps
 curl -I http://127.0.0.1:8080
 ```
 
-Container harus kembali berjalan karena memakai `restart: unless-stopped`.
+Container kembali aktif karena `restart: unless-stopped` dan Docker aktif saat boot.
 
-# BAGIAN VM2: MANAGEMENT
+---
 
-## 27. Instalasi dan aktivasi OpenSSH Server di VM2
+# BAGIAN D: VM2 MANAGEMENT
+
+## 27. Konfigurasi OpenSSH Server
 
 Pada VM2:
 
 ```bash
-sudo apt update
-sudo apt install -y openssh-server
 sudo systemctl enable --now ssh
 sudo systemctl status ssh --no-pager
 sudo ss -ltnp | grep ':22'
 ```
 
-Uji dari VM1 menggunakan password terlebih dahulu:
+Uji dari VM1 menggunakan password:
 
 ```bash
 ssh ujikom@<IP_VM2>
 ```
 
-Ketik `exit` untuk kembali ke VM1.
+Ketik:
 
-## 28. Membuat SSH password-less dari VM1 ke VM2
+```bash
+exit
+```
+
+---
+
+## 28. SSH password-less dari VM1 ke VM2
 
 Pada VM1:
 
@@ -1049,15 +1448,15 @@ Pada VM1:
 ssh-keygen -t ed25519 -C "ukk-vm1-to-vm2"
 ```
 
-Tekan Enter untuk lokasi default. Untuk demonstrasi password-less penuh, kosongkan passphrase saat latihan UKK.
+Tekan Enter untuk lokasi default. Untuk demonstrasi password-less, passphrase boleh dikosongkan pada lingkungan laboratorium.
 
-Kirim public key ke VM2:
+Kirim public key:
 
 ```bash
 ssh-copy-id ujikom@<IP_VM2>
 ```
 
-Uji tanpa password:
+Uji:
 
 ```bash
 ssh -o PasswordAuthentication=no ujikom@<IP_VM2> hostname
@@ -1065,17 +1464,17 @@ ssh -o PasswordAuthentication=no ujikom@<IP_VM2> hostname
 
 Hasil harus menampilkan hostname VM2 tanpa meminta password.
 
-Penjelasan untuk asesor:
+Cara menjelaskan:
 
-> VM1 menyimpan private key. VM2 hanya menerima public key pada `~/.ssh/authorized_keys`. Server memverifikasi kepemilikan private key tanpa mengirim password melalui jaringan.
+> VM1 menyimpan private key. VM2 hanya menerima public key di `authorized_keys`. Server membuktikan kepemilikan private key tanpa mengirim password.
 
-## 29. Konfigurasi FTP Server pada VM2
+---
 
-Instal vsftpd:
+## 29. Konfigurasi FTP Server VM2
+
+Cadangkan konfigurasi:
 
 ```bash
-sudo apt update
-sudo apt install -y vsftpd
 sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.backup
 ```
 
@@ -1087,13 +1486,13 @@ sudo mkdir -p /home/ftpukk/upload
 sudo chown -R ftpukk:ftpukk /home/ftpukk/upload
 ```
 
-Buka konfigurasi:
+Edit:
 
 ```bash
 sudo nano /etc/vsftpd.conf
 ```
 
-Pastikan nilai berikut tersedia:
+Pastikan nilai berikut ada. Hapus atau komentari nilai duplikat yang bertentangan.
 
 ```ini
 listen=YES
@@ -1111,24 +1510,16 @@ use_localtime=YES
 xferlog_enable=YES
 ```
 
-Restart dan verifikasi:
+Restart:
 
 ```bash
-sudo systemctl enable --now vsftpd
 sudo systemctl restart vsftpd
+sudo systemctl enable vsftpd
 sudo systemctl status vsftpd --no-pager
 sudo ss -ltnp | grep ':21'
 ```
 
-Jika UFW aktif:
-
-```bash
-sudo ufw allow 21/tcp
-sudo ufw allow 30000:30010/tcp
-sudo ufw status
-```
-
-Uji dari komputer host menggunakan FileZilla atau WinSCP:
+Uji dari host menggunakan FileZilla atau WinSCP:
 
 ```text
 Protocol : FTP
@@ -1138,24 +1529,24 @@ Username : ftpukk
 Password : password yang dibuat
 ```
 
-Upload file ke folder `upload`, lalu verifikasi pada VM2:
+Upload file ke folder `upload`, lalu periksa:
 
 ```bash
 ls -lah /home/ftpukk/upload
 ```
 
-FTP biasa tidak terenkripsi. Gunakan hanya untuk kebutuhan laboratorium UKK.
+FTP biasa tidak terenkripsi. Gunakan hanya untuk demonstrasi laboratorium. Untuk penggunaan nyata, SFTP lebih aman.
 
-## 30. Membuat stack load balancing sederhana di VM2
+---
 
-Buat struktur folder:
+## 30. Buat tiga web container VM2
 
 ```bash
 mkdir -p /home/ujikom/management-stack/{site1,site2,site3,nginx}
 cd /home/ujikom/management-stack
 ```
 
-### Halaman site1
+### site1
 
 ```bash
 nano site1/index.html
@@ -1172,7 +1563,7 @@ nano site1/index.html
 </html>
 ```
 
-### Halaman site2
+### site2
 
 ```bash
 nano site2/index.html
@@ -1189,7 +1580,7 @@ nano site2/index.html
 </html>
 ```
 
-### Halaman site3
+### site3
 
 ```bash
 nano site3/index.html
@@ -1206,7 +1597,9 @@ nano site3/index.html
 </html>
 ```
 
-## 31. Konfigurasi load balancer VM2
+---
+
+## 31. Load balancer VM2
 
 ```bash
 nano nginx/default.conf
@@ -1216,7 +1609,6 @@ Isi:
 
 ```nginx
 upstream management_cluster {
-    round_robin;
     server site1:80;
     server site2:80;
     server site3:80;
@@ -1237,7 +1629,9 @@ server {
 }
 ```
 
-`round_robin` membagikan request secara bergiliran.
+Nginx menggunakan round-robin secara default jika tidak ada algoritma lain seperti `least_conn`.
+
+---
 
 ## 32. Docker Compose VM2
 
@@ -1306,7 +1700,9 @@ docker compose up -d
 docker compose ps
 ```
 
-## 33. Menguji load balancing VM2
+---
+
+## 33. Uji load balancing VM2
 
 Dari VM2:
 
@@ -1316,281 +1712,413 @@ for i in 1 2 3 4 5 6; do
 done
 ```
 
-Hasil harus bergantian:
+Hasil bergantian antara Node 1, Node 2, dan Node 3.
 
-```text
-Management Web Node 1
-Management Web Node 2
-Management Web Node 3
-```
-
-Dari host buka dan refresh beberapa kali:
+Dari host:
 
 ```text
 http://<IP_VM2>:8080
 ```
 
-## 34. Matriks pengujian akhir
+Refresh beberapa kali.
 
-| No | Pengujian | Perintah atau cara | Hasil yang diharapkan |
-|---:|---|---|---|
-| 1 | Host ke VM1 | `ping <IP_VM1>` | Reply |
-| 2 | Host ke VM2 | `ping <IP_VM2>` | Reply |
-| 3 | VM1 ke VM2 | `ping -c 4 <IP_VM2>` | 0% packet loss |
-| 4 | Internet VM | `ping -c 4 8.8.8.8` | Reply |
-| 5 | DNS VM | `ping -c 4 google.com` | Nama ter-resolve |
-| 6 | Docker | `docker run --rm hello-world` | Berhasil |
-| 7 | VM1 stack | `docker compose -f docker-compose.ukk.yaml ps` | 5 service running |
-| 8 | Aplikasi | Browser `http://<IP_VM1>:8080` | Oasis tampil |
-| 9 | Load balancing VM1 | Perulangan `curl -I` | Web 1, 2, 3 |
-| 10 | Database | `php artisan migrate:status` | Migration tampil |
-| 11 | Volume | `docker volume inspect volume-ujikom` | Volume ditemukan |
-| 12 | Network | `docker network inspect network-ujikom` | Container tergabung |
-| 13 | Restart | Reboot VM1 | Container hidup kembali |
-| 14 | SSH key | SSH VM1 ke VM2 | Tidak meminta password |
-| 15 | FTP | Upload dari host | File muncul di VM2 |
-| 16 | VM2 stack | Browser `http://<IP_VM2>:8080` | Tiga tampilan bergantian |
+Periksa header:
 
-## 35. Bukti screenshot yang disarankan
+```bash
+curl -sI http://127.0.0.1:8080 | grep -i X-Management-LB
+```
 
-Ambil screenshot berikut untuk dokumentasi:
+---
 
-1. konfigurasi Adapter 1 NAT dan Adapter 2 Bridge pada VM1;
-2. konfigurasi Adapter 1 NAT dan Adapter 2 Bridge pada VM2;
-3. output `hostnamectl` VM1;
-4. output `hostnamectl` VM2;
-5. output `ip -br address` kedua VM;
+# BAGIAN E: FIREWALL DAN PENGUJIAN
+
+## 34. Konfigurasi UFW
+
+Jangan aktifkan firewall sebelum mengizinkan port SSH jika VM dikelola melalui SSH.
+
+### VM1
+
+```bash
+sudo ufw allow 8080/tcp
+sudo ufw allow 3306/tcp
+sudo ufw enable
+sudo ufw status numbered
+```
+
+### VM2
+
+```bash
+sudo ufw allow 22/tcp
+sudo ufw allow 21/tcp
+sudo ufw allow 30000:30010/tcp
+sudo ufw allow 8080/tcp
+sudo ufw enable
+sudo ufw status numbered
+```
+
+Catatan:
+
+> Port yang dipublikasikan Docker dapat berinteraksi langsung dengan aturan iptables Docker. Untuk UKK, buktikan port dengan `docker compose ps`, `ss`, dan pengujian dari host, bukan hanya berdasarkan output UFW.
+
+---
+
+## 35. Matriks pengujian akhir
+
+| No | Pengujian | Perintah atau cara | Hasil |
+|---|---|---|---|
+| 1 | Internet VM1 | `ping -c 4 8.8.8.8` | berhasil |
+| 2 | Internet VM2 | `ping -c 4 8.8.8.8` | berhasil |
+| 3 | VM1 ke VM2 | `ping -c 4 <IP_VM2>` | berhasil |
+| 4 | Host ke VM1 | `ping <IP_VM1>` | berhasil |
+| 5 | Host ke VM2 | `ping <IP_VM2>` | berhasil |
+| 6 | Docker aktif | `systemctl is-active docker` | active |
+| 7 | Compose tersedia | `docker compose version` | tampil versi |
+| 8 | VM1 lima service | `docker compose -f docker-compose.ukk.yaml ps` | running/healthy |
+| 9 | Aplikasi VM1 | browser `<IP_VM1>:8080` | halaman tampil |
+| 10 | LB VM1 | loop `X-App-Node` | node berubah |
+| 11 | Database | `php artisan migrate:status` | terkoneksi |
+| 12 | Volume | recreate container | data tetap ada |
+| 13 | Restart policy | reboot VM1 | container hidup kembali |
+| 14 | SSH password-less | SSH dengan password auth disabled | hostname VM2 tampil |
+| 15 | FTP | upload dari host | file masuk VM2 |
+| 16 | VM2 empat service | `docker compose ps` | running |
+| 17 | LB VM2 | loop curl | Node 1, 2, dan 3 bergantian |
+
+---
+
+## 36. Bukti screenshot yang harus disiapkan
+
+1. Settings VirtualBox VM1 dengan NAT dan bridge;
+2. Settings VirtualBox VM2 dengan NAT dan bridge;
+3. `hostnamectl` VM1;
+4. `hostnamectl` VM2;
+5. `ip -br address` kedua VM;
 6. ping VM1 ke VM2;
-7. ping VM2 ke VM1;
+7. ping host ke kedua VM;
 8. versi Docker dan Compose;
-9. isi Dockerfile;
-10. isi Docker Compose VM1;
-11. output `docker compose ps` VM1;
-12. output `docker network ls`;
-13. output `docker volume ls`;
-14. browser aplikasi port 8080;
-15. hasil header Web 1, Web 2, dan Web 3;
-16. SSH VM1 ke VM2 tanpa password;
-17. status vsftpd;
-18. file hasil upload FTP;
-19. output container VM2;
-20. tiga tampilan load balancing VM2.
+9. `docker compose ps` VM1;
+10. `docker network inspect network-ujikom`;
+11. `docker volume inspect volume-ujikom`;
+12. browser aplikasi VM1;
+13. header `X-App-Node` yang berubah;
+14. tabel database atau `migrate:status`;
+15. SSH VM1 ke VM2 tanpa password;
+16. status vsftpd;
+17. upload FTP;
+18. `docker compose ps` VM2;
+19. tiga tampilan Node VM2;
+20. container aktif setelah reboot.
 
-## 36. Pertanyaan yang kemungkinan ditanyakan asesor
+Simpan dengan nama terurut:
 
-### Mengapa memakai dua adapter?
+```text
+01-virtualbox-vm1.png
+02-virtualbox-vm2.png
+03-hostname-vm1.png
+...
+20-restart-policy.png
+```
 
-NAT menyediakan internet untuk VM. Bridged Adapter membuat VM dapat berkomunikasi langsung dengan host dan VM lain pada jaringan yang sama.
+---
+
+## 37. Pertanyaan asesor dan jawaban singkat
 
 ### Apa perbedaan image dan container?
 
-Image adalah template read-only hasil build. Container adalah instance yang berjalan dari image.
+> Image adalah template read-only. Container adalah instance proses yang berjalan dari image.
 
-### Mengapa membuat custom image?
+### Mengapa memakai Dockerfile?
 
-Aplikasi Laravel memiliki dependency PHP, Apache, Composer, dan hasil build Vite yang perlu dikemas secara konsisten. Dockerfile mendefinisikan seluruh proses tersebut.
+> Dockerfile membuat custom image aplikasi secara konsisten dan dapat dibangun ulang.
 
-### Apa beda `expose` dan `ports`?
+### Mengapa host tidak diinstal PHP, Composer, dan Node.js?
 
-`expose` menyediakan port hanya untuk komunikasi antar-container. `ports` mempublikasikan port container ke host.
+> Dependency tersebut tersedia di tahap Dockerfile. Ini membuat host lebih sederhana dan deployment konsisten.
 
-### Mengapa web node tidak memakai `ports`?
+### Mengapa memakai dua adapter?
 
-Agar user tidak dapat melewati load balancer dan mengakses web node secara langsung.
+> NAT untuk internet. Bridge untuk komunikasi host, VM1, dan VM2 pada jaringan UKK.
 
-### Mengapa database memakai volume?
+### Mengapa web menggunakan expose?
 
-Filesystem container bersifat sementara. Named volume menjaga data tetap ada saat container dihapus dan dibuat ulang.
+> Web hanya boleh diakses load balancer melalui network internal, bukan langsung dari host.
 
-### Mengapa menggunakan network Docker?
+### Apa fungsi network-ujikom?
 
-Agar service dapat berkomunikasi secara terisolasi dan menemukan service lain berdasarkan nama, misalnya hostname `database`.
+> Network menghubungkan container dan menyediakan DNS berdasarkan nama service.
 
-### Apa fungsi load balancer?
+### Apa fungsi volume-ujikom?
 
-Load balancer menerima request dari user dan mendistribusikannya ke beberapa web node sehingga beban terbagi dan layanan tidak bergantung pada satu container.
-
-### Bagaimana membuktikan load balancing?
-
-Setiap container memiliki identitas berbeda. Request berulang menunjukkan header atau halaman yang berasal dari node berbeda.
+> Volume menyimpan data MariaDB di luar filesystem container agar tetap ada saat container dibuat ulang.
 
 ### Apa fungsi restart policy?
 
-Restart policy memastikan container kembali berjalan setelah crash, Docker daemon restart, atau VM reboot.
+> Docker menjalankan kembali container setelah daemon atau VM restart, kecuali container dihentikan secara manual.
 
-### Mengapa SSH dapat masuk tanpa password?
+### Bagaimana load balancing dibuktikan?
 
-VM1 memiliki private key, sedangkan public key disimpan pada VM2. VM2 memverifikasi bahwa VM1 memiliki private key yang sesuai.
+> Request berulang menghasilkan identitas backend yang berbeda melalui header atau tampilan node.
 
-### Apa fungsi FTP?
+### Mengapa DB_HOST menggunakan database?
 
-FTP digunakan untuk memindahkan file dari host menuju VM2 melalui jaringan. Dalam UKK ini FTP dipakai sebagai layanan manajemen file.
+> `database` adalah nama service yang diterjemahkan Docker DNS. `localhost` di web container menunjuk ke web container sendiri.
 
-### Mengapa database membuka port 3306 padahal dapat dibuat internal?
+### Apa arti 8080:80?
 
-Port 3306 dibuka karena menjadi ketentuan demonstrasi UKK. Pada deployment production, akses database sebaiknya dibatasi hanya pada network internal.
+> Port 8080 pada host diteruskan ke port 80 pada container.
 
-## 37. Troubleshooting cepat
+### Apa beda expose dan ports?
 
-### `docker: permission denied`
+> `expose` hanya mendokumentasikan dan menyediakan port pada jaringan container. `ports` mempublikasikan port ke host.
+
+### Mengapa FTP bukan pilihan aman?
+
+> FTP mengirim kredensial dan data tanpa enkripsi. FTP digunakan karena ketentuan laboratorium, sedangkan penggunaan nyata lebih baik memakai SFTP.
+
+### Bagaimana SSH tanpa password bekerja?
+
+> VM1 menandatangani proses autentikasi dengan private key. VM2 memverifikasi menggunakan public key pada `authorized_keys`.
+
+---
+
+## 38. Troubleshooting
+
+### Docker tidak aktif
+
+```bash
+sudo systemctl restart docker
+sudo systemctl status docker --no-pager
+sudo journalctl -u docker -n 100 --no-pager
+```
+
+### Permission denied Docker socket
 
 ```bash
 sudo usermod -aG docker "$USER"
 newgrp docker
 ```
 
-### Port 8080 sudah digunakan
+### Repository Docker tidak ditemukan
+
+```bash
+cat /etc/apt/sources.list.d/docker.sources
+cat /etc/os-release
+dpkg --print-architecture
+sudo apt update
+```
+
+### Compose YAML error
+
+```bash
+docker compose -f docker-compose.ukk.yaml config
+```
+
+Periksa indentasi spasi, bukan tab.
+
+### Build gagal
+
+```bash
+docker compose -f docker-compose.ukk.yaml build --no-cache --progress=plain
+```
+
+### Container restart terus
+
+```bash
+docker compose -f docker-compose.ukk.yaml ps
+docker compose -f docker-compose.ukk.yaml logs --tail=200 web1
+docker compose -f docker-compose.ukk.yaml logs --tail=200 database
+```
+
+### Port 8080 dipakai
 
 ```bash
 sudo ss -ltnp | grep ':8080'
 ```
 
-Hentikan service yang memakai port tersebut.
+Jika Apache atau Nginx host tidak sengaja terinstal:
 
-### Port 3306 sudah digunakan
+```bash
+sudo systemctl disable --now apache2 2>/dev/null || true
+sudo systemctl disable --now nginx 2>/dev/null || true
+```
+
+### Port 3306 dipakai
 
 ```bash
 sudo ss -ltnp | grep ':3306'
-sudo systemctl stop mysql mariadb 2>/dev/null || true
+sudo systemctl disable --now mariadb 2>/dev/null || true
+sudo systemctl disable --now mysql 2>/dev/null || true
 ```
 
-### `could not find driver`
-
-Pastikan custom image memiliki `pdo_mysql`:
+### Aplikasi 500
 
 ```bash
-docker compose -f docker-compose.ukk.yaml exec web1 php -m | grep pdo_mysql
-```
-
-### Laravel 500 setelah container hidup
-
-```bash
-docker compose -f docker-compose.ukk.yaml logs web1
-docker compose -f docker-compose.ukk.yaml exec web1 php artisan migrate --force
-```
-
-### `No application encryption key`
-
-Periksa `.env.ukk`:
-
-```bash
-grep '^APP_KEY=' .env.ukk
+docker compose -f docker-compose.ukk.yaml logs --tail=200 web1
+docker compose -f docker-compose.ukk.yaml exec web1 \
+  tail -n 100 storage/logs/laravel.log
 ```
 
 ### Database belum siap
 
 ```bash
-docker compose -f docker-compose.ukk.yaml logs database
 docker compose -f docker-compose.ukk.yaml ps
+docker compose -f docker-compose.ukk.yaml logs database
 ```
 
-### Nginx menampilkan 502
+### VM tidak saling ping
 
 ```bash
-docker compose -f docker-compose.ukk.yaml logs loadbalancer
-docker compose -f docker-compose.ukk.yaml ps web1 web2 web3
+ip -br address
+ip route
+sudo netplan generate
+sudo ufw status
+```
+
+Periksa Adapter 2, kartu jaringan bridge, IP `/24`, dan Cable Connected.
+
+### FTP gagal login
+
+```bash
+sudo systemctl status vsftpd --no-pager
+sudo journalctl -u vsftpd -n 100 --no-pager
+sudo grep -v '^#' /etc/vsftpd.conf | sed '/^$/d'
 ```
 
 ### SSH masih meminta password
 
-Pada VM1:
-
 ```bash
-ssh -v ujikom@<IP_VM2>
+ls -la ~/.ssh
+ssh -vvv ujikom@<IP_VM2>
 ```
 
 Pada VM2:
 
 ```bash
-ls -ld ~/.ssh
-ls -l ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-### FTP gagal login
+---
 
-```bash
-sudo systemctl status vsftpd
-sudo journalctl -u vsftpd -n 50 --no-pager
-sudo ss -ltnp | grep ':21'
-```
+## 39. Urutan demonstrasi kepada asesor
 
-## 38. Urutan demonstrasi yang aman
+1. Tunjukkan dua VM dan dua adapter;
+2. tunjukkan hostname dan IP;
+3. lakukan ping dua arah;
+4. jelaskan paket yang dipasang;
+5. tunjukkan versi Docker dan Compose;
+6. tunjukkan Dockerfile;
+7. jelaskan multi-stage build;
+8. tunjukkan Compose VM1;
+9. jelaskan web, database, load balancer, network, volume, dan restart policy;
+10. jalankan `docker compose ps`;
+11. buka aplikasi dari host;
+12. buktikan load balancing;
+13. buktikan database dan volume;
+14. reboot dan buktikan restart policy;
+15. SSH dari VM1 ke VM2 tanpa password;
+16. buktikan FTP;
+17. buktikan tiga web container VM2;
+18. buktikan load balancing VM2;
+19. tunjukkan screenshot dan dokumentasi.
 
-Gunakan urutan berikut saat praktik:
+---
 
-```text
-1. Tunjukkan dua VM dan dua adapter
-2. Tunjukkan hostname dan IP
-3. Tunjukkan ping VM1 dan VM2
-4. Tunjukkan Dockerfile
-5. Tunjukkan Compose VM1
-6. Jalankan docker compose config
-7. Jalankan build dan up
-8. Jalankan migration
-9. Tunjukkan aplikasi di port 8080
-10. Buktikan Web 1, Web 2, dan Web 3
-11. Tunjukkan network dan volume
-12. Buktikan restart policy
-13. SSH VM1 ke VM2 tanpa password
-14. Upload file melalui FTP
-15. Tunjukkan tiga container dan load balancer VM2
-16. Tunjukkan dokumentasi screenshot
-```
+## 40. Checklist akhir sebelum UKK
 
-## 39. Latihan sebelum UKK
+### Host
 
-Lakukan latihan minimal dua kali.
+- [ ] VirtualBox terinstal;
+- [ ] ISO Ubuntu Server tersedia;
+- [ ] FileZilla atau WinSCP tersedia;
+- [ ] IP nomor absen sudah dicatat.
+
+### VM1
+
+- [ ] NAT aktif;
+- [ ] bridge aktif;
+- [ ] hostname benar;
+- [ ] IP statis benar;
+- [ ] internet aktif;
+- [ ] ping VM2 berhasil;
+- [ ] paket dasar terinstal;
+- [ ] Docker aktif saat boot;
+- [ ] Compose tersedia;
+- [ ] source berada di `/home/ujikom/hotel-online`;
+- [ ] `.env.ukk` dibuat;
+- [ ] database env dibuat;
+- [ ] Dockerfile dipahami;
+- [ ] tiga web container berjalan;
+- [ ] MariaDB berjalan;
+- [ ] Nginx load balancer berjalan;
+- [ ] port 8080 dapat diakses;
+- [ ] port 3306 terbuka sesuai soal;
+- [ ] `network-ujikom` tersedia;
+- [ ] `volume-ujikom` tersedia;
+- [ ] load balancing terbukti;
+- [ ] restart policy terbukti.
+
+### VM2
+
+- [ ] NAT aktif;
+- [ ] bridge aktif;
+- [ ] hostname benar;
+- [ ] IP statis benar;
+- [ ] Docker aktif;
+- [ ] OpenSSH aktif;
+- [ ] SSH password-less berhasil;
+- [ ] vsftpd aktif;
+- [ ] FTP dari host berhasil;
+- [ ] tiga web container berjalan;
+- [ ] load balancer berjalan;
+- [ ] tampilan tiga node berbeda;
+- [ ] restart policy aktif.
+
+### Dokumentasi
+
+- [ ] screenshot lengkap;
+- [ ] urutan demonstrasi dilatih;
+- [ ] jawaban pertanyaan asesor dipahami;
+- [ ] secret tidak masuk Git;
+- [ ] secret tidak masuk Docker image;
+- [ ] snapshot VM tersedia.
+
+---
+
+## 41. Pola latihan sebelum hari UKK
 
 ### Latihan pertama
 
-Ikuti tutorial sambil membaca seluruh penjelasan.
+Ikuti tutorial sambil melihat dokumen.
 
 ### Latihan kedua
 
-Coba kerjakan hanya dengan melihat judul setiap bagian. Buka isi tutorial hanya ketika lupa.
+Ketik konfigurasi tanpa menyalin seluruh blok sekaligus. Setelah setiap tahap, jelaskan fungsi perintah dengan suara keras.
 
-### Target hafalan
+### Latihan ketiga
 
-Hafalkan fungsi, bukan seluruh karakter konfigurasi:
+Mulai dari snapshot Ubuntu dan Docker, kemudian selesaikan VM1 dan VM2 memakai timer.
 
-- NAT untuk internet;
-- bridge untuk komunikasi host dan VM;
-- Dockerfile untuk membuat image;
-- Compose untuk menjalankan banyak service;
-- expose untuk port internal;
-- ports untuk akses host;
-- volume untuk persistensi;
-- network untuk komunikasi service;
-- Nginx untuk load balancing;
-- restart policy untuk pemulihan otomatis;
-- SSH key untuk autentikasi tanpa password;
-- FTP untuk transfer file.
+### Latihan terakhir
 
-## 40. Checklist selesai
+Lakukan simulasi presentasi:
 
-- [ ] Dua VM Ubuntu tersedia
-- [ ] Masing-masing VM memiliki NAT dan bridge
-- [ ] Hostname VM1 benar
-- [ ] Hostname VM2 benar
-- [ ] IP statis sesuai nomor absen
-- [ ] Host dapat ping kedua VM
-- [ ] VM1 dan VM2 saling ping
-- [ ] Docker Engine dan Compose terpasang pada kedua VM
-- [ ] Aplikasi berada di `/home/ujikom/hotel-online`
-- [ ] Custom image berhasil dibangun
-- [ ] Web1, web2, dan web3 berjalan
-- [ ] Database MariaDB berjalan
-- [ ] Database memakai `volume-ujikom`
-- [ ] Semua service memakai `network-ujikom`
-- [ ] Load balancer VM1 memakai port 8080
-- [ ] Database memakai port 3306
-- [ ] Web node hanya memakai expose
-- [ ] Load balancing VM1 terbukti
-- [ ] SSH password-less VM1 ke VM2 berhasil
-- [ ] FTP VM2 dapat diakses dari host
-- [ ] Tiga web container VM2 berjalan
-- [ ] Load balancing VM2 terbukti
-- [ ] Restart policy terbukti
-- [ ] Screenshot dokumentasi lengkap
+1. sebutkan tujuan;
+2. tunjukkan topologi;
+3. jelaskan instalasi;
+4. jalankan pengujian;
+5. tunjukkan bukti;
+6. jawab pertanyaan tanpa membaca.
+
+Fokus utama bukan menghafal seluruh sintaks. Fokus pada hubungan berikut:
+
+```text
+Host -> port 8080 -> load balancer -> tiga web container -> database
+```
+
+serta:
+
+```text
+VM1 -> SSH key -> VM2
+Host -> FTP -> VM2
+```
