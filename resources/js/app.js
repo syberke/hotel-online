@@ -7,6 +7,7 @@ import '../css/design-system.css';
 import '../css/staff-modules.css';
 import '../css/responsive-fixes.css';
 import '../css/contrast-final.css';
+import '../css/interaction-fixes.css';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
@@ -50,7 +51,33 @@ window.OasisDialog = {
     },
 };
 
+function preservedScrollKey(element) {
+    return `oasis:scroll:${element.dataset.preserveScroll || 'sidebar'}`;
+}
+
+function savePreservedScrollPositions() {
+    document.querySelectorAll('[data-preserve-scroll]').forEach((element) => {
+        sessionStorage.setItem(preservedScrollKey(element), String(element.scrollTop));
+    });
+}
+
+function restorePreservedScrollPositions() {
+    document.querySelectorAll('[data-preserve-scroll]').forEach((element) => {
+        const savedPosition = Number.parseInt(sessionStorage.getItem(preservedScrollKey(element)) || '', 10);
+
+        if (Number.isFinite(savedPosition)) {
+            element.scrollTop = savedPosition;
+            requestAnimationFrame(() => { element.scrollTop = savedPosition; });
+            return;
+        }
+
+        element.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    restorePreservedScrollPositions();
+
     document.querySelectorAll('[data-oasis-flash]').forEach((element) => {
         const type = element.dataset.type || 'info';
         const message = element.dataset.message || '';
@@ -60,6 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-preserve-scroll] a[href]')) {
+        savePreservedScrollPositions();
+    }
+});
+
+window.addEventListener('pagehide', savePreservedScrollPositions);
+window.addEventListener('beforeunload', savePreservedScrollPositions);
 
 document.addEventListener('submit', async (event) => {
     const form = event.target.closest('form[data-confirm]');
