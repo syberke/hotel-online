@@ -2,14 +2,8 @@
     <div class="mx-auto max-w-7xl">
         <div class="mb-14 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
             <div class="space-y-5">
-                <a href="{{ route('home') }}" class="flex items-center gap-3">
-                    <span class="grid h-11 w-11 place-items-center rounded-xl bg-blue-600 text-white">
-                        <i class="fa-solid fa-hotel text-sm"></i>
-                    </span>
-                    <span>
-                        <span class="block text-lg font-semibold tracking-tight">Oasis Hotel</span>
-                        <span class="block text-xs text-slate-400">Comfort made simple</span>
-                    </span>
+                <a href="{{ route('home') }}" class="inline-flex rounded-2xl bg-white p-3 shadow-xl shadow-slate-950/20" aria-label="Oasis Hotel home">
+                    <x-brand-logo class="h-10 w-auto" />
                 </a>
                 <p class="max-w-sm text-sm leading-6 text-slate-400">
                     A comfortable place to stay in Nusa Dua with convenient rooms, dining, facilities, and guest services in one connected experience.
@@ -69,7 +63,7 @@
         </div>
 
         <div class="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-7 text-xs text-slate-500 md:flex-row">
-            <p>&copy; {{ date('Y') }} Oasis Hotel. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Oasis Hotel & Resort. All rights reserved.</p>
             <div class="flex gap-5">
                 <a href="#" class="transition hover:text-slate-300">Privacy</a>
                 <a href="#" class="transition hover:text-slate-300">Terms</a>
