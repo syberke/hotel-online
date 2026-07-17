@@ -21,6 +21,10 @@ class OperationalContentRoutesTest extends TestCase
             Route::getRoutes()->getByName('restaurant')?->getActionName(),
         );
         $this->assertSame(
+            RestaurantCatalogController::class . '@show',
+            Route::getRoutes()->getByName('restaurant.detail')?->getActionName(),
+        );
+        $this->assertSame(
             ContactMessageController::class . '@store',
             Route::getRoutes()->getByName('contact.store')?->getActionName(),
         );
@@ -86,6 +90,7 @@ class OperationalContentRoutesTest extends TestCase
         $this->assertStringNotContainsString("route('rooms.check')", $home);
         $this->assertStringContainsString("route('contact.store')", $contact);
         $this->assertStringContainsString('$venues', $restaurant);
+        $this->assertStringContainsString('$menuCategories', $restaurant);
         $this->assertStringContainsString("route('restaurant.reservations.store')", $restaurant);
         $this->assertStringContainsString("route('receptionist.walkin.store')", $walkIn);
         $this->assertStringNotContainsString('John Anderson', $walkIn);
