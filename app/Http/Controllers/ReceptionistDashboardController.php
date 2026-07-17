@@ -29,11 +29,11 @@ class ReceptionistDashboardController extends Controller
             ? round((($revenueToday - $revenueYesterday) / $revenueYesterday) * 100, 1)
             : 0;
 
-        $search = $request->input('search');
+        $search = trim((string) $request->input('search'));
         $arrivalsQuery = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
-            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
-            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->leftJoin('guests', function ($join) {
                 $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
             })
@@ -43,7 +43,7 @@ class ReceptionistDashboardController extends Controller
                 'bookings.check_in',
                 'bookings.check_out',
                 'bookings.status as booking_status',
-                'users.name as guest_name',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
                 'guests.id as guest_record_id',
                 'guests.identity_number',
                 'guests.phone as guest_phone',
@@ -53,12 +53,15 @@ class ReceptionistDashboardController extends Controller
                 'room_types.name as room_type'
             );
 
-        if ($search) {
-            $arrivalsQuery->where(function ($q) use ($search) {
-                $cleanSearch = ltrim($search, '#RES-OA-');
-                $q->where('bookings.id', 'like', "%{$cleanSearch}%")
-                    ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhere('rooms.room_number', 'like', "%{$search}%");
+        if ($search !== '') {
+            $cleanId = preg_replace('/\D+/', '', $search);
+            $needle = '%' . strtolower($search) . '%';
+            $arrivalsQuery->where(function ($query) use ($cleanId, $needle, $search) {
+                $query->whereRaw("LOWER(COALESCE(users.name, guests.name, '')) LIKE ?", [$needle])
+                    ->orWhere('rooms.room_number', 'like', '%' . $search . '%');
+                if ($cleanId !== '') {
+                    $query->orWhere('bookings.id', (int) $cleanId);
+                }
             });
         }
 
@@ -88,16 +91,102 @@ class ReceptionistDashboardController extends Controller
         }
         $svgPathD = 'M ' . implode(' L ', $svgPoints);
 
+        $dirtyRooms = DB::table('rooms')
+            ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->where('rooms.status', 'dirty')
+            ->select('rooms.room_number', 'room_types.name as room_type')
+            ->orderBy('rooms.room_number')
+            ->get();
+        $maintenanceRooms = DB::table('rooms')
+            ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->where('rooms.status', 'maintenance')
+            ->select('rooms.room_number', 'room_types.name as room_type')
+            ->orderBy('rooms.room_number')
+            ->get();
+
+        $pendingPayments = DB::table('bookings')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('payments', 'payments.booking_id', '=', 'bookings.id')
+            ->whereDate('bookings.check_in', '<=', $today)
+            ->whereIn('bookings.status', ['pending', 'confirmed'])
+            ->groupBy('bookings.id', 'users.name')
+            ->havingRaw("COALESCE(SUM(CASE WHEN payments.payment_status = 'paid' THEN payments.amount ELSE 0 END), 0) < MAX(bookings.total_price)")
+            ->select(
+                'bookings.id',
+                'users.name as guest_name',
+                DB::raw("COALESCE(SUM(CASE WHEN payments.payment_status = 'paid' THEN payments.amount ELSE 0 END), 0) as paid_amount"),
+                DB::raw('MAX(bookings.total_price) as total_price'),
+            )
+            ->orderBy('bookings.id')
+            ->get();
+
+        $assignmentBookings = DB::table('bookings')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->whereDate('bookings.check_in', '<=', now()->addDay()->toDateString())
+            ->whereDate('bookings.check_out', '>=', $today)
+            ->whereIn('bookings.status', ['pending', 'confirmed'])
+            ->select('bookings.id', 'users.name as guest_name', 'rooms.room_number')
+            ->orderBy('bookings.check_in')
+            ->take(8)
+            ->get();
+
         $vacantClean = DB::table('rooms')->where('status', 'available')->count();
-        $vacantDirty = 0;
-        $outOfOrder = DB::table('rooms')->where('status', 'maintenance')->count();
+        $vacantDirty = $dirtyRooms->count();
+        $outOfOrder = $maintenanceRooms->count();
+
+        $attentionAlerts = collect();
+        if ($maintenanceRooms->isNotEmpty()) {
+            $attentionAlerts->push([
+                'tone' => 'rose',
+                'icon' => 'fa-screwdriver-wrench',
+                'title' => $maintenanceRooms->count() . ' room(s) out of order',
+                'description' => 'These rooms cannot be assigned until maintenance changes their status.',
+                'items' => $maintenanceRooms->take(5)->map(fn ($room) => 'Room ' . $room->room_number . ' · ' . ($room->room_type ?: 'Unknown type'))->all(),
+                'url' => route('receptionist.roomavailability'),
+                'action' => 'Review room status',
+            ]);
+        }
+        if ($dirtyRooms->isNotEmpty()) {
+            $attentionAlerts->push([
+                'tone' => 'amber',
+                'icon' => 'fa-broom',
+                'title' => $dirtyRooms->count() . ' room(s) awaiting cleaning',
+                'description' => 'These rooms are visible but should not be allocated before housekeeping marks them available.',
+                'items' => $dirtyRooms->take(5)->map(fn ($room) => 'Room ' . $room->room_number . ' · ' . ($room->room_type ?: 'Unknown type'))->all(),
+                'url' => route('receptionist.housestatus'),
+                'action' => 'Open house status',
+            ]);
+        }
+        if ($pendingPayments->isNotEmpty()) {
+            $attentionAlerts->push([
+                'tone' => 'orange',
+                'icon' => 'fa-credit-card',
+                'title' => $pendingPayments->count() . ' arrival(s) still have a balance',
+                'description' => 'Open the payment desk before completing check-in.',
+                'items' => $pendingPayments->take(5)->map(fn ($booking) => '#OA-' . str_pad((string) $booking->id, 5, '0', STR_PAD_LEFT) . ' · ' . ($booking->guest_name ?: 'Guest') . ' · Rp ' . number_format(max(0, (float) $booking->total_price - (float) $booking->paid_amount), 0, ',', '.') . ' due')->all(),
+                'url' => route('receptionist.payments'),
+                'action' => 'Open payments',
+            ]);
+        }
+        if ($assignmentBookings->isNotEmpty()) {
+            $attentionAlerts->push([
+                'tone' => 'blue',
+                'icon' => 'fa-door-open',
+                'title' => $assignmentBookings->count() . ' reservation(s) need room confirmation',
+                'description' => 'Review the physical room before moving the reservation to check-in.',
+                'items' => $assignmentBookings->take(5)->map(fn ($booking) => '#OA-' . str_pad((string) $booking->id, 5, '0', STR_PAD_LEFT) . ' · ' . ($booking->guest_name ?: 'Guest') . ' · ' . ($booking->room_number ? 'Room ' . $booking->room_number : 'No room'))->all(),
+                'url' => route('receptionist.roomassignment'),
+                'action' => 'Open assignment queue',
+            ]);
+        }
 
         return view('receptionist.dashboard', compact(
             'totalRooms', 'occupiedRooms', 'occupancyRate', 'checkinsToday', 'expectedCheckins',
             'checkoutsToday', 'expectedCheckouts', 'inhouseGuests', 'inhouseReservations',
             'revenueToday', 'revenueDiffPct', 'arrivals', 'arrivalsCount', 'inHouseTabCount',
             'departuresTabCount', 'noShowTabCount', 'trendDates', 'svgPathD',
-            'vacantClean', 'vacantDirty', 'outOfOrder'
+            'vacantClean', 'vacantDirty', 'outOfOrder', 'attentionAlerts'
         ));
     }
 }
