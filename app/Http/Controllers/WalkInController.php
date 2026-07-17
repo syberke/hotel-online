@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -97,7 +97,7 @@ class WalkInController extends Controller
                     'name' => $validated['name'],
                     'email' => strtolower($validated['email']),
                     'email_verified_at' => now(),
-                    'password' => Hash::make($temporaryPassword),
+                    'password' => $user->getAuthPassword(),
                     'phone' => $validated['phone'],
                     'identity_number' => $validated['identity_number'],
                     'address' => $validated['address'] ?? null,
@@ -106,7 +106,7 @@ class WalkInController extends Controller
                 ]);
             }
 
-            $nights = max(1, now()->parse($validated['check_in'])->diffInDays(now()->parse($validated['check_out'])));
+            $nights = max(1, Carbon::parse($validated['check_in'])->diffInDays(Carbon::parse($validated['check_out'])));
             $total = (float) $room->price * $nights;
 
             $bookingId = DB::table('bookings')->insertGetId([
