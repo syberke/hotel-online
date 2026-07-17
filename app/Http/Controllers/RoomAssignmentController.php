@@ -21,7 +21,6 @@ class RoomAssignmentController extends Controller
                 'booking_id',
                 DB::raw("SUM(CASE WHEN payment_status = 'paid' THEN amount ELSE 0 END) as paid_amount"),
                 DB::raw("MAX(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) as has_paid_payment"),
-                DB::raw("MAX(payment_status) as latest_payment_status"),
             )
             ->groupBy('booking_id');
 
@@ -47,7 +46,6 @@ class RoomAssignmentController extends Controller
                 'room_types.name as room_type',
                 'payment_summary.paid_amount',
                 'payment_summary.has_paid_payment',
-                'payment_summary.latest_payment_status',
             );
 
         if ($search !== '') {
