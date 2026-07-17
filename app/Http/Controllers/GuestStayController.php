@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class GuestStayController extends Controller
@@ -29,13 +29,14 @@ class GuestStayController extends Controller
             $weatherResponse = Http::timeout(2)->get('https://api.open-meteo.com/v1/forecast', [
                 'latitude' => -8.4095,
                 'longitude' => 115.1889,
-                'current_weather' => true
+                'current_weather' => true,
             ]);
 
             $temperature = $weatherResponse->successful()
                 ? round($weatherResponse->json()['current_weather']['temperature']) . '°C'
                 : '29°C';
-        } catch (\Exception $e) {
+        } catch (\Throwable $exception) {
+            report($exception);
             $temperature = '29°C';
         }
 
@@ -58,6 +59,7 @@ class GuestStayController extends Controller
     public function myStay(Request $request)
     {
         $userId = auth()->id();
+        $guestRecord = DB::table('guests')->where('email', auth()->user()->email)->first();
 
         $allActiveBookings = DB::table('bookings')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
@@ -66,15 +68,17 @@ class GuestStayController extends Controller
                     ->where('payments.payment_status', 'paid');
             })
             ->where('bookings.user_id', $userId)
-            ->whereIn('bookings.status', ['confirmed', 'checked_in'])
+            ->whereIn('bookings.status', ['confirmed', 'checked_in', 'checked_out'])
             ->where(function ($query) {
                 $query->whereNotNull('payments.id')
-                    ->orWhere('bookings.status', 'checked_in');
+                    ->orWhereIn('bookings.status', ['checked_in', 'checked_out']);
             })
-            ->select('bookings.id', 'rooms.room_number')
+            ->select('bookings.id', 'bookings.status', 'bookings.check_in', 'rooms.room_number')
+            ->orderByRaw("CASE bookings.status WHEN 'checked_in' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'checked_out' THEN 3 ELSE 4 END")
+            ->orderByDesc('bookings.check_in')
             ->get();
 
-        $targetBookingId = $request->input('booking_id', optional($allActiveBookings->first())->id);
+        $targetBookingId = $request->integer('booking_id') ?: optional($allActiveBookings->first())->id;
 
         $currentBooking = DB::table('bookings')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
@@ -99,12 +103,16 @@ class GuestStayController extends Controller
             )
             ->first();
 
-        $hasPaidBooking = $currentBooking && $currentBooking->status === 'checked_in' && !empty($currentBooking->payment_id);
+        $hasPaidBooking = $currentBooking
+            && in_array($currentBooking->status, ['confirmed', 'checked_in', 'checked_out'], true)
+            && (! empty($currentBooking->payment_id) || in_array($currentBooking->status, ['checked_in', 'checked_out'], true));
 
-        $restaurantBill = DB::table('restaurant_orders')
-            ->where('guest_id', $userId)
-            ->where('status', 'ordered')
-            ->sum('total_price');
+        $restaurantBill = $guestRecord
+            ? DB::table('restaurant_orders')
+                ->where('guest_id', $guestRecord->id)
+                ->whereIn('status', ['ordered', 'paid', 'served', 'completed'])
+                ->sum('total_price')
+            : 0;
 
         $itineraries = DB::table('facility_bookings')
             ->where('user_id', $userId)
@@ -112,7 +120,13 @@ class GuestStayController extends Controller
             ->orderBy('booking_time', 'asc')
             ->get();
 
-        return view('guest.mystay', compact('currentBooking', 'restaurantBill', 'itineraries', 'allActiveBookings', 'hasPaidBooking'));
+        return view('guest.mystay', compact(
+            'currentBooking',
+            'restaurantBill',
+            'itineraries',
+            'allActiveBookings',
+            'hasPaidBooking'
+        ));
     }
 
     public function cancelBooking($id)
@@ -120,9 +134,10 @@ class GuestStayController extends Controller
         $userId = auth()->id();
         $booking = DB::table('bookings')->where('id', $id)->where('user_id', $userId)->first();
 
-        if (!$booking) {
+        if (! $booking) {
             return redirect()->back()->with('error', 'Data reservasi tidak valid.');
         }
+
         if ($booking->status !== 'pending') {
             return redirect()->back()->with('error', 'Hanya reservasi pending yang dapat dibatalkan.');
         }
