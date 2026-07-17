@@ -1,52 +1,46 @@
-<x-guest-layout>
-    <div class="min-h-screen relative font-sans antialiased bg-neutral-900">
-
-        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop"
-             alt="Oasis Hotel Security"
-             class="absolute inset-0 w-full h-full object-cover opacity-30 brightness-50">
-
-        <div class="absolute inset-0 bg-neutral-950/40"></div>
-
-        <div class="relative min-h-screen flex items-center justify-center px-4 py-16">
-            <div class="w-full max-w-md bg-white border border-neutral-200 p-8 md:p-12 rounded-none shadow-none relative">
-                
-                <div class="text-center mb-8">
-                    <h2 class="text-4xl font-serif tracking-wide text-neutral-900 mb-2 italic select-none">Oasis</h2>
-                    <h1 class="text-xs font-bold uppercase tracking-[0.25em] text-neutral-800">Two-Factor Email Verification</h1>
-                    <p class="text-[11px] uppercase tracking-wider text-neutral-400 mt-2 leading-relaxed">
-                        Buka kotak masuk <span class="text-neutral-800 font-bold">Email Gmail</span> kamu, kami telah mengirimkan 6 digit kode sandi keamanan OTP rahasia ke akun Anda.
-                    </p>
-                </div>
-
-                <form method="POST" action="{{ route('auth.otp.verify') }}" class="space-y-6">
-                    @csrf
-
-                    <div>
-                        <label for="otp_code" class="block text-[10px] font-bold uppercase tracking-widest text-neutral-700 text-center mb-3">Kode Verifikasi OTP</label>
-                        <div class="relative max-w-xs mx-auto">
-                            <input id="otp_code" type="text" name="otp_code" maxlength="6" required autofocus autocomplete="off"
-                                   class="block w-full text-center py-3 bg-neutral-50 border border-neutral-300 rounded-none text-base font-mono tracking-[0.5em] font-bold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 placeholder-neutral-300 transition-all" 
-                                   placeholder="000000">
-                        </div>
-                        <x-input-error :messages="$errors->get('otp_code')" class="mt-2 text-xs text-red-600 text-center font-medium" />
-                    </div>
-
-                    <div class="pt-2">
-                        <button type="submit" 
-                                class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-3.5 px-4 rounded-none uppercase tracking-[0.2em] text-[10px] transition-all active:translate-y-[1px]">
-                            Verifikasi Kode Keamanan
-                        </button>
-                    </div>
-
-                    <div class="text-center pt-4 border-t border-neutral-100">
-                        <p class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">
-                            Salah akun? 
-                            <a href="{{ route('login') }}" class="font-bold text-neutral-900 underline ms-1 hover:text-neutral-700">Kembali ke Login</a>
-                        </p>
-                    </div>
-                </form>
-
+<x-auth-shell
+    eyebrow="Account verification"
+    title="Verify your email address"
+    subtitle="Oasis now uses a secure email verification link instead of a manually entered OTP code."
+    maxWidth="max-w-lg"
+>
+    <div class="space-y-5">
+        <div class="flex items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-blue-600 shadow-sm">
+                <i class="fa-regular fa-envelope"></i>
+            </span>
+            <div>
+                <p class="text-sm font-semibold text-slate-900">Open the verification email</p>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                    Click the secure verification link sent to your registered email address. The old six-digit OTP form is no longer used.
+                </p>
             </div>
         </div>
+
+        @auth
+            @if (session('status') === 'verification-link-sent')
+                <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                    <i class="fa-solid fa-circle-check mt-0.5"></i>
+                    <span>A new verification link has been sent. Check your inbox and spam folder.</span>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('verification.send') }}">
+                @csrf
+                <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-200/70 transition hover:bg-blue-700">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                    Resend verification email
+                </button>
+            </form>
+
+            <a href="{{ route('verification.notice') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+                Open verification status
+            </a>
+        @else
+            <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-200/70 transition hover:bg-blue-700">
+                Return to sign in
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+        @endauth
     </div>
-</x-guest-layout>
+</x-auth-shell>
