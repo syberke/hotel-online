@@ -63,6 +63,6 @@ class StaffOperationsRoutesTest extends TestCase
 
         $this->assertStringNotContainsString("Today's Menu", $view);
         $this->assertStringContainsString('>Venues</a>', $view);
-        $this->assertStringContainsString("$mainTab === 'venues'", $view);
+        $this->assertStringContainsString('$mainTab === \'venues\'', $view);
     }
 }
