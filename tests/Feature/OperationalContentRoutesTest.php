@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\FolioController;
 use App\Http\Controllers\RestaurantCatalogController;
+use App\Http\Controllers\RestaurantMenuController;
 use App\Http\Controllers\RestaurantReservationController;
 use App\Http\Controllers\RestaurantVenueController;
 use App\Http\Controllers\WalkInController;
@@ -52,6 +53,7 @@ class OperationalContentRoutesTest extends TestCase
     public function test_restaurant_admin_routes_have_real_crud_methods(): void
     {
         foreach (['store', 'update', 'destroy'] as $method) {
+            $this->assertTrue(method_exists(RestaurantMenuController::class, $method));
             $this->assertTrue(method_exists(RestaurantVenueController::class, $method));
         }
 
@@ -59,6 +61,14 @@ class OperationalContentRoutesTest extends TestCase
             $this->assertTrue(method_exists(RestaurantReservationController::class, $method));
         }
 
+        $this->assertSame(
+            RestaurantMenuController::class . '@store',
+            Route::getRoutes()->getByName('admin.restaurant.menu.store')?->getActionName(),
+        );
+        $this->assertSame(
+            RestaurantMenuController::class . '@update',
+            Route::getRoutes()->getByName('admin.restaurant.menu.update')?->getActionName(),
+        );
         $this->assertNotNull(Route::getRoutes()->getByName('admin.restaurant.venues.store'));
         $this->assertNotNull(Route::getRoutes()->getByName('admin.restaurant.venues.update'));
         $this->assertNotNull(Route::getRoutes()->getByName('admin.restaurant.venues.destroy'));
