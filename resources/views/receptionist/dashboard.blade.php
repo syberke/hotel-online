@@ -95,7 +95,10 @@
                     <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-4"><div><p class="text-xs font-medium text-slate-500">Needs attention</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Tasks & alerts</h3></div><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $attentionAlerts->count() }}</span></div>
                     <div class="mt-4 space-y-3">
                         @forelse($attentionAlerts as $alert)
-                            @php([$box, $iconTone, $titleTone, $bodyTone, $chipTone] = $alertTones[$alert['tone']] ?? $alertTones['blue'])
+                            @php
+                                $toneValues = $alertTones[$alert['tone']] ?? $alertTones['blue'];
+                                [$box, $iconTone, $titleTone, $bodyTone, $chipTone] = $toneValues;
+                            @endphp
                             <article class="rounded-xl border p-4 {{ $box }}">
                                 <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/80 {{ $iconTone }}"><i class="fa-solid {{ $alert['icon'] }}"></i></span><div class="min-w-0"><p class="text-sm font-semibold {{ $titleTone }}">{{ $alert['title'] }}</p><p class="mt-1 text-xs leading-5 {{ $bodyTone }}">{{ $alert['description'] }}</p></div></div>
                                 <div class="mt-3 flex flex-wrap gap-1.5">@foreach($alert['items'] as $item)<span class="max-w-full break-words rounded-lg px-2 py-1 text-[11px] font-medium {{ $chipTone }}">{{ $item }}</span>@endforeach</div>
