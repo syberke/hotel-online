@@ -8,6 +8,7 @@ import '../css/staff-modules.css';
 import '../css/responsive-fixes.css';
 import '../css/contrast-final.css';
 import '../css/interaction-fixes.css';
+import '../css/staff-overflow-fixes.css';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
@@ -178,7 +179,7 @@ async function openRestaurantOrderDetail(button) {
 
         const order = data.order;
         document.getElementById('restaurant-detail-id').textContent = `#RS-${String(order.id).padStart(4, '0')}`;
-        document.getElementById('restaurant-detail-room').textContent = order.room_number || 'Table Walk-in';
+        document.getElementById('restaurant-detail-room').textContent = order.room_number || 'Dining table';
         document.getElementById('restaurant-detail-guest').textContent = order.guest_name || '-';
         document.getElementById('restaurant-detail-time').textContent = order.created_at || '-';
         document.getElementById('restaurant-detail-total').textContent = `Rp ${restaurantCurrency.format(Number(order.total_price || 0))}`;
