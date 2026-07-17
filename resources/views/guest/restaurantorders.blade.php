@@ -1,111 +1,25 @@
-<style>
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f3; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d4; }
-    [x-cloak] { display: none !important; }
-
-    /* ==========================================================================
-       PENGATURAN CETAK STRUK RESTORAN (HILANGKAN HEADER/FOOTER & CENTER CONTENT)
-       ========================================================================== */
-    @media print {
-        /* 1. Paksa browser membuang margin bawaan yang memicu teks otomatis */
-        @page {
-            size: auto;
-            margin: 0mm;
-        }
-
-        /* 2. Sembunyikan seluruh isi aplikasi dashboard & overlay */
-        body * {
-            visibility: hidden;
-        }
-
-        /* 3. Tampilkan hanya modal struk invoice dan paksa layout flexbox ke tengah */
-        #print-invoice-wrapper, #print-invoice-wrapper * {
-            visibility: visible;
-        }
-
-        #print-invoice-wrapper {
-            position: fixed;
-            inset: 0;
-            display: flex !important;
-            align-items: center;     /* Penataan Vertikal ke Tengah */
-            justify-content: center; /* Penataan Horizontal ke Tengah */
-            background: #ffffff !important;
-            width: 100vw;
-            height: 100vh;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-
-        /* Hilangkan backdrop gelap dan tombol aksi penutup/cetak agar tidak ikut ter-print */
-        #print-invoice-wrapper .absolute,
-        #print-invoice-wrapper .print-action-buttons,
-        #print-invoice-wrapper button {
-            display: none !important;
-        }
-
-        /* 4. Atur dimensi kertas nota di tengah agar proporsional */
-        #print-invoice-wrapper .relative {
-            box-shadow: none !important;
-            border: 1px solid #e5e5e5 !important; /* Batas box nota */
-            padding: 35px !important;
-            width: 90% !important;
-            max-width: 500px !important;
-            margin: 0 auto !important;
-            transform: none !important;
-            background-color: #ffffff !important;
-        }
-
-        /* 5. Jaga kecerahan warna badge/background sub-elemen */
-        .bg-emerald-50 { background-color: #ecfdf5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .bg-amber-50 { background-color: #fffbeb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-</style>
-
 <x-guest-dashboard-layout>
-    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+    @php
+        $midtransReady = filled(config('services.midtrans.client_key'))
+            && filled(config('services.midtrans.server_key'));
+    @endphp
 
-    @if(session('success'))
-        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 text-xs font-medium uppercase tracking-wide mb-4">
-            <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
-        </div>
-    @endif
-
-    <div class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex flex-col lg:flex-row w-full"
-         x-data="{
+    <div
+        x-data="{
             searchQuery: '',
-            menuFilter: 'all', 
+            menuFilter: 'all',
             serviceRate: 0.10,
             taxRate: 0.11,
             deliveryType: 'Dine-in at Venue',
             activeVenue: 'Oasis Fine Dining',
-
-            // STATE NAVIGASI TAB KANAN
             activeHistoryTab: 'cart',
-
-            // Pop-up Notifikasi & Invoice
-            modalTitle: '',
-            modalMessage: '',
-            modalSuccess: true,
-            showModal: false,
             invoiceData: { order_id: '', date: '', status: '', total: 0, items: [] },
             showInvoice: false,
-
-            // Konfirmasi Pembatalan
+            invoiceLoading: null,
+            paymentLoading: null,
             showCancelConfirmation: false,
             targetCancelFormId: null,
-
-            // Sinkronisasi Cart Persisten
             cart: JSON.parse(localStorage.getItem('oasis_restaurant_cart') || '[]'),
-
-            init() {
-                this.$watch('cart', value => {
-                    localStorage.setItem('oasis_restaurant_cart', JSON.stringify(value));
-                });
-            },
-
             allMenus: [
                 @foreach($restaurant_menus as $menu)
                 {
@@ -119,27 +33,14 @@
                 },
                 @endforeach
             ],
-
-            launchNotify(title, message, success = true) {
-                this.modalTitle = title;
-                this.modalMessage = message;
-                this.modalSuccess = success;
-                this.showModal = true;
-            },
-
-            triggerCancelModal(formId) {
-                this.targetCancelFormId = formId;
-                this.showCancelConfirmation = true;
-            },
-
-            executeFormCancellation() {
-                if (this.targetCancelFormId) {
-                    document.getElementById(this.targetCancelFormId).submit();
+            init() {
+                this.$watch('cart', value => localStorage.setItem('oasis_restaurant_cart', JSON.stringify(value)));
+                if (!this.allMenus.some(menu => menu.venue === this.activeVenue) && this.allMenus.length > 0) {
+                    this.activeVenue = this.allMenus[0].venue;
                 }
             },
-
             addToCart(item) {
-                let found = this.cart.find(i => i.id === item.id);
+                const found = this.cart.find(entry => entry.id === item.id);
                 if (found) {
                     found.quantity++;
                     this.cart = [...this.cart];
@@ -148,465 +49,444 @@
                 }
                 this.activeHistoryTab = 'cart';
             },
-
             updateQuantity(itemId, amount) {
-                let found = this.cart.find(i => i.id === itemId);
-                if (found) {
-                    found.quantity += amount;
-                    if (found.quantity <= 0) {
-                        this.cart = this.cart.filter(i => i.id !== itemId);
-                    } else {
-                        this.cart = [...this.cart];
-                    }
+                const found = this.cart.find(entry => entry.id === itemId);
+                if (!found) return;
+                found.quantity += amount;
+                if (found.quantity <= 0) {
+                    this.cart = this.cart.filter(entry => entry.id !== itemId);
+                    return;
                 }
+                this.cart = [...this.cart];
             },
-
             clearCart() {
                 this.cart = [];
                 localStorage.removeItem('oasis_restaurant_cart');
             },
-
             get subtotal() { return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); },
             get serviceCharge() { return Math.round(this.subtotal * this.serviceRate); },
             get tax() { return Math.round((this.subtotal + this.serviceCharge) * this.taxRate); },
             get grandTotal() { return this.subtotal + this.serviceCharge + this.tax; },
             get totalItems() { return this.cart.reduce((sum, item) => sum + item.quantity, 0); },
-
             get filteredMenus() {
-                return this.allMenus.filter(m => {
-                    const matchVenue = m.venue === this.activeVenue;
-                    const matchTab = this.menuFilter === 'all' || m.is_signature;
-                    const matchSearch = this.searchQuery.trim() === '' || 
-                                        m.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                                        m.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-                    return matchVenue && matchTab && matchSearch;
+                const query = this.searchQuery.trim().toLowerCase();
+                return this.allMenus.filter(menu => {
+                    const venueMatches = menu.venue === this.activeVenue;
+                    const filterMatches = this.menuFilter === 'all' || menu.is_signature;
+                    const searchMatches = query === '' || menu.title.toLowerCase().includes(query) || menu.description.toLowerCase().includes(query);
+                    return venueMatches && filterMatches && searchMatches;
                 });
             },
-
-            triggerRestaurantCheckout() {
+            confirmCancel(formId) {
+                this.targetCancelFormId = formId;
+                this.showCancelConfirmation = true;
+            },
+            executeCancellation() {
+                if (this.targetCancelFormId) document.getElementById(this.targetCancelFormId)?.submit();
+            },
+            async createPayment() {
                 if (this.cart.length === 0) return;
-                
-                const checkoutBtn = document.getElementById('btn-confirm-order');
-                checkoutBtn.disabled = true;
-                checkoutBtn.innerText = 'Processing Gateway...';
+                if (!window.snap || typeof window.snap.pay !== 'function') {
+                    window.OasisDialog?.error('Midtrans Snap belum tersedia. Muat ulang halaman lalu coba kembali.', 'Payment unavailable');
+                    return;
+                }
 
-                fetch('{{ route("restaurant.order.pay") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        cart_data: this.cart,
-                        booking_id: '{{ $booking_id ?? "" }}',
-                        delivery_note: this.deliveryType
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.token) {
-                        this.executeSnapPayment(data.token, data.order_id, checkoutBtn, true);
-                    } else {
-                        this.launchNotify('Error', data.message || 'Gagal membuat manifes order.', false);
-                        checkoutBtn.disabled = false;
-                        checkoutBtn.innerText = 'Confirm & Pay Now';
+                this.paymentLoading = 'cart';
+                try {
+                    const response = await fetch('{{ route('restaurant.order.pay') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            cart_data: this.cart,
+                            booking_id: '{{ $booking_id ?? '' }}',
+                            delivery_note: this.deliveryType
+                        })
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success || !payload.token) {
+                        throw new Error(payload.message || 'Token pembayaran tidak dapat dibuat.');
                     }
-                })
-                .catch(() => {
-                    this.launchNotify('Network Outage', 'Gagal memproses pengiriman data.', false);
-                    checkoutBtn.disabled = false;
-                    checkoutBtn.innerText = 'Confirm & Pay Now';
-                });
+                    this.openSnap(payload.token, payload.order_id, true);
+                } catch (error) {
+                    this.paymentLoading = null;
+                    window.OasisDialog?.error(error.message || 'Gateway pembayaran tidak dapat dihubungi.');
+                }
             },
+            async retryPayment(orderId) {
+                if (!window.snap || typeof window.snap.pay !== 'function') {
+                    window.OasisDialog?.error('Midtrans Snap belum tersedia. Muat ulang halaman lalu coba kembali.', 'Payment unavailable');
+                    return;
+                }
 
-            payPendingOrder(orderId, btnId) {
-                const payBtn = document.getElementById(btnId);
-                payBtn.disabled = true;
-                payBtn.innerText = 'Loading...';
-
-                fetch(`/restaurant-order/${orderId}/re-token`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                this.paymentLoading = orderId;
+                try {
+                    const response = await fetch(`{{ url('/restaurant-order') }}/${orderId}/re-token`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success || !payload.token) {
+                        throw new Error(payload.message || 'Token pembayaran tidak dapat dibuat.');
                     }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.token) {
-                        this.executeSnapPayment(data.token, orderId, payBtn, false);
-                    } else {
-                        this.launchNotify('Gateway Error', data.message || 'Gagal memuat token.', false);
-                        payBtn.disabled = false;
-                        payBtn.innerText = 'Pay Now';
-                    }
-                })
-                .catch(() => {
-                    payBtn.disabled = false;
-                    payBtn.innerText = 'Pay Now';
-                });
+                    this.openSnap(payload.token, orderId, false);
+                } catch (error) {
+                    this.paymentLoading = null;
+                    window.OasisDialog?.error(error.message || 'Pembayaran tidak dapat dilanjutkan.');
+                }
             },
-
-            executeSnapPayment(token, orderId, buttonEl, isFromCart = true) {
+            openSnap(token, orderId, fromCart) {
                 window.snap.pay(token, {
-                    onSuccess: (result) => {
-                        fetch('{{ route("restaurant.order.settle") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({ order_id: orderId })
-                        }).then(() => {
-                            if (isFromCart) this.clearCart();
-                            this.launchNotify('Success', 'Pembayaran sukses diverifikasi! Pesanan Anda dikirim ke dapur.', true);
-                            setTimeout(() => { window.location.href = '{{ route("guest.restaurant.orders") }}'; }, 2000);
-                        });
+                    onSuccess: async () => {
+                        try {
+                            const response = await fetch('{{ route('restaurant.order.settle') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({ order_id: orderId })
+                            });
+                            const payload = await response.json();
+                            if (!response.ok || !payload.success) {
+                                throw new Error(payload.message || 'Pembayaran berhasil tetapi sinkronisasi pesanan gagal.');
+                            }
+                            if (fromCart) this.clearCart();
+                            await window.OasisDialog?.success('Pembayaran berhasil. Pesanan sudah dikirim ke dapur.');
+                            window.location.reload();
+                        } catch (error) {
+                            this.paymentLoading = null;
+                            window.OasisDialog?.error(error.message || 'Sinkronisasi pembayaran gagal.');
+                        }
                     },
-                    onPending: () => { window.location.href = '{{ route("guest.restaurant.orders") }}'; },
-                    onError: () => { 
-                        this.launchNotify('Failed', 'Transaksi dibatalkan atau ditolak perbankan.', false);
-                        buttonEl.disabled = false;
-                        buttonEl.innerText = isFromCart ? 'Confirm & Pay Now' : 'Pay Now';
+                    onPending: () => {
+                        this.paymentLoading = null;
+                        window.OasisDialog?.info('Pembayaran masih menunggu penyelesaian.', 'Payment pending');
                     },
-                    onClose: () => {
-                        if (isFromCart) this.clearCart();
-                        window.location.href = '{{ route("guest.restaurant.orders") }}';
-                    }
+                    onError: () => {
+                        this.paymentLoading = null;
+                        window.OasisDialog?.error('Transaksi ditolak atau gagal diproses.');
+                    },
+                    onClose: () => { this.paymentLoading = null; }
                 });
             },
-
-            fetchInvoiceDetails(orderId) {
-                fetch(`/restaurant-order/${orderId}/details`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        this.invoiceData = data.details;
-                        this.showInvoice = true;
-                    } else {
-                        this.launchNotify('Error', 'Gagal memuat rincian invoice.', false);
+            async fetchInvoiceDetails(orderId) {
+                this.invoiceLoading = orderId;
+                try {
+                    const response = await fetch(`{{ url('/restaurant-order') }}/${orderId}/details`, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'Receipt tidak dapat dimuat.');
                     }
-                });
+                    this.invoiceData = payload.details;
+                    this.showInvoice = true;
+                } catch (error) {
+                    window.OasisDialog?.error(error.message || 'Receipt tidak dapat dimuat.');
+                } finally {
+                    this.invoiceLoading = null;
+                }
             }
-         }">
-        
-        <main class="flex-1 p-6 lg:p-8 overflow-y-auto custom-scrollbar space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-neutral-200">
+        }"
+        @keyup.escape.window="showInvoice = false; showCancelConfirmation = false"
+        class="space-y-6"
+    >
+        <style>
+            [x-cloak] { display: none !important; }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+            @media print {
+                @page { size: A4 portrait; margin: 16mm; }
+                body * { visibility: hidden; }
+                #restaurant-receipt, #restaurant-receipt * { visibility: visible; }
+                #restaurant-receipt {
+                    position: absolute !important;
+                    inset: 0 !important;
+                    width: 100% !important;
+                    max-width: none !important;
+                    border: 0 !important;
+                    box-shadow: none !important;
+                    padding: 0 !important;
+                }
+                #restaurant-receipt-actions, #restaurant-receipt-backdrop { display: none !important; }
+            }
+        </style>
+
+        @if(session('success'))
+            <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                <i class="fa-solid fa-circle-check mt-0.5"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        <section class="relative overflow-hidden rounded-2xl bg-slate-900 p-6 text-white shadow-sm md:p-8">
+            <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1600&auto=format&fit=crop" alt="Hotel restaurant" class="absolute inset-0 h-full w-full object-cover opacity-30">
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/88 to-blue-950/45"></div>
+            <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div class="max-w-2xl">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-blue-100 backdrop-blur">
+                        <i class="fa-solid fa-utensils"></i>
+                        Dining & in-room ordering
+                    </span>
+                    <h2 class="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">Restaurant Orders</h2>
+                    <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">Explore each venue, add dishes to your order, complete payment securely, and reopen receipts whenever needed.</p>
+                </div>
+                <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+                    <p class="text-xs text-slate-300">Ordering for</p>
+                    @if(isset($allActiveBookings) && $allActiveBookings->count() > 1)
+                        <form action="{{ route('guest.restaurant.orders') }}" method="GET" class="mt-2">
+                            <select name="booking_id" onchange="this.form.submit()" class="min-w-48 rounded-xl border-white/15 bg-white px-3 py-2 text-sm font-semibold text-slate-900">
+                                @foreach($allActiveBookings as $activeTab)
+                                    <option value="{{ $activeTab->id }}" {{ $activeTab->id == $booking_id ? 'selected' : '' }}>Room {{ $activeTab->room_number }}</option>
+                                @endforeach
+                            </select>
+                        </form>
+                    @else
+                        <p class="mt-1 text-lg font-semibold text-white">Room {{ $room_number ?? 'TBD' }}</p>
+                    @endif
+                </div>
+            </div>
+        </section>
+
+        @if(!$midtransReady)
+            <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                 <div>
-                    <h2 class="text-3xl font-serif text-neutral-900">Restaurant Orders</h2>
-                    <p class="text-xs text-neutral-400 mt-0.5">Book a table or order directly from our fine dining venues inside the resort.</p>
-                </div>
-
-                <div class="flex items-center gap-3 bg-white border border-neutral-200 p-3 shadow-sm h-14">
-                    <div class="text-neutral-400"><i class="fa-solid fa-hotel text-amber-700 text-xs"></i></div>
-                    <div class="text-xs">
-                        <p class="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Ordering From</p>
-                        @if(isset($allActiveBookings) && $allActiveBookings->count() > 1)
-                            <form action="{{ route('guest.restaurant.orders') }}" method="GET" id="roomSorterForm">
-                                <select name="booking_id" onchange="document.getElementById('roomSorterForm').submit()" class="appearance-none text-xs font-bold text-neutral-800 bg-transparent border-0 p-0 pr-6 focus:ring-0 cursor-pointer uppercase tracking-wider">
-                                    @foreach($allActiveBookings as $activeTab)
-                                        <option value="{{ $activeTab->id }}" {{ $activeTab->id == $booking_id ? 'selected' : '' }}>Room {{ $activeTab->room_number }}</option>
-                                    @endforeach
-                                </select>
-                            </form>
-                        @else
-                            <p class="font-bold text-neutral-800 mt-0.5">Room {{ $room_number ?? 'Assigning...' }}</p>
-                        @endif
-                    </div>
+                    <p class="font-semibold">Payment gateway is not configured</p>
+                    <p class="mt-1 text-amber-800">Add valid Midtrans keys in <code>.env</code> and clear the configuration cache before accepting online payments.</p>
                 </div>
             </div>
+        @endif
 
-            <div class="space-y-2">
-                <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Select Venue</h3>
-                <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                    <div @click="activeVenue = 'Oasis Fine Dining'" :class="activeVenue === 'Oasis Fine Dining' ? 'border-amber-600 ring-1 ring-amber-600' : 'border-neutral-200'" class="bg-white border p-4 min-w-[240px] shadow-sm relative cursor-pointer transition-all select-none">
-                        <span class="absolute top-3 right-3 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5">OPEN</span>
-                        <h4 class="text-xs font-bold uppercase text-neutral-900 tracking-wide">Oasis Fine Dining</h4>
-                        <p class="text-[10px] text-neutral-400 mt-0.5">Contemporary & French Fusion</p>
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+            <div class="min-w-0 space-y-5">
+                <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                    <div class="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+                        @foreach([
+                            ['Oasis Fine Dining', 'Contemporary dining', 'fa-utensils'],
+                            ['The Beach Club', 'Seafood and tropical drinks', 'fa-umbrella-beach'],
+                            ['The Garden Atrium', 'Breakfast and international menu', 'fa-seedling'],
+                        ] as [$venueName, $venueDescription, $venueIcon])
+                            <button
+                                type="button"
+                                @click="activeVenue = @js($venueName)"
+                                :class="activeVenue === @js($venueName) ? 'border-blue-200 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white hover:bg-slate-50'"
+                                class="min-w-64 rounded-xl border p-4 text-left transition"
+                            >
+                                <div class="flex items-start justify-between gap-4">
+                                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-white text-blue-600 shadow-sm"><i class="fa-solid {{ $venueIcon }}"></i></span>
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Open</span>
+                                </div>
+                                <h3 class="mt-4 text-sm font-semibold text-slate-900">{{ $venueName }}</h3>
+                                <p class="mt-1 text-xs text-slate-500">{{ $venueDescription }}</p>
+                            </button>
+                        @endforeach
                     </div>
-                    <div @click="activeVenue = 'The Beach Club'" :class="activeVenue === 'The Beach Club' ? 'border-amber-600 ring-1 ring-amber-600' : 'border-neutral-200'" class="bg-white border p-4 min-w-[240px] shadow-sm relative cursor-pointer transition-all select-none">
-                        <span class="absolute top-3 right-3 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5">OPEN</span>
-                        <h4 class="text-xs font-bold uppercase text-neutral-900 tracking-wide">The Beach Club</h4>
-                        <p class="text-[10px] text-neutral-400 mt-0.5">Seafood Grill & Tropical Bar</p>
-                    </div>
-                    <div @click="activeVenue = 'The Garden Atrium'" :class="activeVenue === 'The Garden Atrium' ? 'border-amber-600 ring-1 ring-amber-600' : 'border-neutral-200'" class="bg-white border p-4 min-w-[240px] shadow-sm relative cursor-pointer transition-all select-none">
-                        <span class="absolute top-3 right-3 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5">BREAKFAST ONLY</span>
-                        <h4 class="text-xs font-bold uppercase text-neutral-900 tracking-wide">The Garden Atrium</h4>
-                        <p class="text-[10px] text-neutral-400 mt-0.5">International Buffet</p>
-                    </div>
-                </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white p-3 border border-neutral-200">
-                <div class="relative md:col-span-2">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-neutral-400 text-xs"></i>
-                    <input type="text" x-model="searchQuery" :placeholder="'Search dishes in ' + activeVenue + '...'" class="w-full pl-9 pr-4 py-2 border border-neutral-200 bg-[#fafafa] text-xs font-medium text-neutral-800 focus:ring-0 focus:border-neutral-400">
-                </div>
-                <div class="flex gap-1.5">
-                    <button type="button" @click="menuFilter = 'signature'" :class="menuFilter === 'signature' ? 'bg-neutral-900 text-white' : 'bg-white border border-neutral-200 text-neutral-600'" class="flex-1 text-[10px] font-bold uppercase tracking-wider py-2 transition-all cursor-pointer">Signature</button>
-                    <button type="button" @click="menuFilter = 'all'" :class="menuFilter === 'all' ? 'bg-neutral-900 text-white' : 'bg-white border border-neutral-200 text-neutral-600'" class="flex-1 text-[10px] font-bold uppercase tracking-wider py-2 transition-all cursor-pointer">Full Menu</button>
-                </div>
-            </div>
+                    <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+                        <label class="relative block">
+                            <span class="sr-only">Search dishes</span>
+                            <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+                            <input type="search" x-model="searchQuery" :placeholder="'Search menu at ' + activeVenue" class="w-full rounded-xl border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm">
+                        </label>
+                        <div class="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-1.5">
+                            <button type="button" @click="menuFilter = 'all'" :class="menuFilter === 'all' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'" class="rounded-lg px-3 py-2 text-sm font-semibold">All menu</button>
+                            <button type="button" @click="menuFilter = 'signature'" :class="menuFilter === 'signature' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'" class="rounded-lg px-3 py-2 text-sm font-semibold">Signature</button>
+                        </div>
+                    </div>
+                </section>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <template x-for="menu in filteredMenus" :key="menu.id">
-                    <div class="bg-white border border-neutral-200 flex flex-col justify-between hover:border-neutral-400 transition-colors shadow-sm">
-                        <div>
-                            <div class="h-44 overflow-hidden bg-neutral-100 relative">
-                                <img :src="menu.image_url" class="w-full h-full object-cover" :alt="menu.title">
+                <section class="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+                    <template x-for="menu in filteredMenus" :key="menu.id">
+                        <article class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
+                            <div class="relative h-48 overflow-hidden bg-slate-100">
+                                <img :src="menu.image_url" :alt="menu.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
                                 <template x-if="menu.is_signature">
-                                    <span class="absolute bottom-3 left-3 bg-amber-800 text-white text-[8px] font-bold uppercase tracking-widest px-2 py-0.5">Chef's Signature</span>
+                                    <span class="absolute left-3 top-3 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">Chef signature</span>
                                 </template>
                             </div>
-                            <div class="p-4 space-y-1.5">
-                                <h4 class="text-xs font-bold uppercase tracking-wide text-neutral-900" x-text="menu.title"></h4>
-                                <p class="text-amber-800 font-mono font-bold text-xs" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(menu.price)"></p>
-                                <p class="text-neutral-400 text-[11px] leading-relaxed line-clamp-2" x-text="menu.description"></p>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <h3 class="truncate text-base font-semibold text-slate-900" x-text="menu.title"></h3>
+                                        <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-500" x-text="menu.description"></p>
+                                    </div>
+                                    <p class="shrink-0 text-sm font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(menu.price)"></p>
+                                </div>
+                                <button type="button" @click="addToCart(menu)" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                    Add to order
+                                </button>
                             </div>
-                        </div>
-                        <div class="p-4 pt-0">
-                            <button type="button" @click="addToCart(menu)" class="w-full border border-neutral-200 hover:border-neutral-900 text-neutral-800 text-[10px] font-bold uppercase tracking-widest py-2 transition-colors flex items-center justify-center gap-1 cursor-pointer">
-                                <i class="fa-solid fa-plus text-[8px]"></i> Add to Order
-                            </button>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </main>
+                        </article>
+                    </template>
 
-        <aside class="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-neutral-200 p-4 flex flex-col justify-between shrink-0 space-y-4 custom-scrollbar overflow-y-auto max-h-screen">
-            <div class="space-y-4 flex-1 flex flex-col">
-                <div class="grid grid-cols-4 gap-1 border-b border-neutral-200 pb-2 text-center text-[9px] font-bold uppercase tracking-wider">
-                    <button type="button" @click="activeHistoryTab = 'cart'" :class="activeHistoryTab === 'cart' ? 'text-amber-800 border-b-2 border-amber-800 pb-1' : 'text-neutral-400'" class="cursor-pointer">
-                        Cart (<span x-text="totalItems"></span>)
-                    </button>
-                    <button type="button" @click="activeHistoryTab = 'pending'" :class="activeHistoryTab === 'pending' ? 'text-amber-800 border-b-2 border-amber-800 pb-1' : 'text-neutral-400'" class="cursor-pointer">
-                        Unpaid
-                    </button>
-                    <button type="button" @click="activeHistoryTab = 'kitchen'" :class="activeHistoryTab === 'kitchen' ? 'text-amber-800 border-b-2 border-amber-800 pb-1' : 'text-neutral-400'" class="cursor-pointer">
-                        Kitchen
-                    </button>
-                    <button type="button" @click="activeHistoryTab = 'completed'" :class="activeHistoryTab === 'completed' ? 'text-amber-800 border-b-2 border-amber-800 pb-1' : 'text-neutral-400'" class="cursor-pointer">
-                        History
-                    </button>
+                    <div x-show="filteredMenus.length === 0" x-cloak class="sm:col-span-2 2xl:col-span-3 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                        <i class="fa-solid fa-magnifying-glass text-2xl text-slate-300"></i>
+                        <p class="mt-3 text-sm font-semibold text-slate-700">No dishes found</p>
+                        <p class="mt-1 text-sm text-slate-500">Try another venue or search term.</p>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-4 md:p-6">
+                <div class="grid grid-cols-4 gap-1 rounded-xl bg-slate-50 p-1.5">
+                    @foreach([
+                        ['cart', 'Cart'],
+                        ['pending', 'Unpaid'],
+                        ['kitchen', 'Kitchen'],
+                        ['completed', 'History'],
+                    ] as [$tabKey, $tabLabel])
+                        <button type="button" @click="activeHistoryTab = '{{ $tabKey }}'" :class="activeHistoryTab === '{{ $tabKey }}' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'" class="rounded-lg px-2 py-2.5 text-xs font-semibold transition">
+                            {{ $tabLabel }}<span x-show="'{{ $tabKey }}' === 'cart'" x-text="' (' + totalItems + ')'"> (0)</span>
+                        </button>
+                    @endforeach
                 </div>
 
-               <div class="flex-1 overflow-y-auto custom-scrollbar max-h-[70vh]">
-                    <div x-show="activeHistoryTab === 'cart'" class="space-y-4">
-                        <div class="space-y-2">
+                <div class="mt-5 max-h-[650px] overflow-y-auto pr-1">
+                    <section x-show="activeHistoryTab === 'cart'" class="space-y-4">
+                        <div class="space-y-3">
                             <template x-for="item in cart" :key="item.id">
-                                <div class="flex items-center gap-3 bg-[#fafafa] p-2 border border-neutral-100">
-                                    <img :src="item.image_url" class="w-10 h-10 object-cover" alt="Dish">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-[11px] font-bold text-neutral-800 truncate uppercase" x-text="item.title"></p>
-                                        <p class="text-[10px] font-mono text-amber-800 font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(item.price)"></p>
+                                <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+                                    <img :src="item.image_url" :alt="item.title" class="h-12 w-12 rounded-xl object-cover">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-semibold text-slate-900" x-text="item.title"></p>
+                                        <p class="mt-0.5 text-xs font-medium text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(item.price)"></p>
                                     </div>
-                                    <div class="flex items-center border border-neutral-300 bg-white text-[10px] font-bold">
-                                        <button type="button" @click="updateQuantity(item.id, -1)" class="px-2 py-0.5 hover:bg-neutral-100">-</button>
-                                        <span class="px-2" x-text="item.quantity"></span>
-                                        <button type="button" @click="updateQuantity(item.id, 1)" class="px-2 py-0.5 hover:bg-neutral-100">+</button>
+                                    <div class="flex items-center rounded-lg border border-slate-200 bg-white">
+                                        <button type="button" @click="updateQuantity(item.id, -1)" class="grid h-8 w-8 place-items-center text-slate-500 hover:bg-slate-50">−</button>
+                                        <span class="min-w-7 text-center text-xs font-semibold text-slate-800" x-text="item.quantity"></span>
+                                        <button type="button" @click="updateQuantity(item.id, 1)" class="grid h-8 w-8 place-items-center text-slate-500 hover:bg-slate-50">+</button>
                                     </div>
                                 </div>
                             </template>
-                            <div x-show="cart.length === 0" class="text-center py-12 text-neutral-400 text-xs italic">Keranjang belanja kosong. Silakan pilih menu di kiri.</div>
+
+                            <div x-show="cart.length === 0" class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                                <i class="fa-solid fa-basket-shopping text-2xl text-slate-300"></i>
+                                <p class="mt-3 text-sm font-semibold text-slate-700">Your cart is empty</p>
+                                <p class="mt-1 text-xs text-slate-500">Choose a dish from the menu.</p>
+                            </div>
                         </div>
 
-                        <div class="space-y-3 pt-4 border-t border-neutral-100" x-show="cart.length > 0" x-cloak>
-                            <div class="space-y-1.5 text-xs font-medium text-neutral-500">
-                                <div class="flex justify-between"><span>Subtotal</span><span class="font-mono text-neutral-800 font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(subtotal)"></span></div>
-                                <div class="flex justify-between"><span>Service & Tax (21%)</span><span class="font-mono text-neutral-800 font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(serviceCharge + tax)"></span></div>
-                                <div class="flex justify-between border-t border-neutral-100 pt-2 font-bold text-neutral-900 text-[11px] uppercase tracking-wide">
-                                    <span>Estimated Total</span>
-                                    <span class="font-mono text-amber-800 text-sm font-bold" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(grandTotal)"></span>
-                                </div>
-                            </div>
-                            <button type="button" @click="triggerRestaurantCheckout()" id="btn-confirm-order" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 shadow-md transition-colors cursor-pointer">
-                                Confirm & Pay Now
+                        <div x-show="cart.length > 0" x-cloak class="space-y-2 border-t border-slate-100 pt-4 text-sm">
+                            <div class="flex justify-between text-slate-500"><span>Subtotal</span><span class="font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(subtotal)"></span></div>
+                            <div class="flex justify-between text-slate-500"><span>Service charge</span><span class="font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(serviceCharge)"></span></div>
+                            <div class="flex justify-between text-slate-500"><span>Tax</span><span class="font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(tax)"></span></div>
+                            <div class="flex justify-between border-t border-slate-100 pt-3"><span class="font-semibold text-slate-900">Total</span><span class="text-lg font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(grandTotal)"></span></div>
+                            <button type="button" @click="createPayment()" :disabled="paymentLoading === 'cart' || {{ $midtransReady ? 'false' : 'true' }}" class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                <i class="fa-solid" :class="paymentLoading === 'cart' ? 'fa-circle-notch animate-spin' : 'fa-credit-card'"></i>
+                                <span x-text="paymentLoading === 'cart' ? 'Preparing payment...' : 'Confirm and pay'"></span>
                             </button>
                         </div>
-                    </div>
+                    </section>
 
-                   <div x-show="activeHistoryTab === 'pending'" class="space-y-2" x-cloak>
+                    <section x-show="activeHistoryTab === 'pending'" x-cloak class="space-y-3">
                         @php $hasPending = false; @endphp
-                        @foreach($orderHistory as $hist)
-                            @if($hist->payment_status === 'pending')
+                        @foreach($orderHistory as $history)
+                            @if($history->payment_status === 'pending')
                                 @php $hasPending = true; @endphp
-                                <div class="p-3 bg-amber-50/40 border border-amber-200 text-[11px] space-y-3 shadow-xs">
-                                    
-                                    <div class="flex justify-between items-center">
+                                <article class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                    <div class="flex items-start justify-between gap-4">
                                         <div>
-                                            <p class="font-mono font-bold text-neutral-800">#RS-{{ str_pad($hist->id, 4, '0', STR_PAD_LEFT) }}</p>
-                                            <span class="text-[9px] text-neutral-400 block mt-0.5">{{ date('d M Y, H:i', strtotime($hist->created_at)) }}</span>
+                                            <p class="font-mono text-xs font-semibold text-slate-900">#RS-{{ str_pad($history->id, 4, '0', STR_PAD_LEFT) }}</p>
+                                            <p class="mt-1 text-xs text-slate-500">{{ date('d M Y, H:i', strtotime($history->created_at)) }}</p>
                                         </div>
-                                        <span class="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">UNPAID / HOLD</span>
+                                        <span class="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-amber-700">Unpaid</span>
                                     </div>
-                                    
-                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-neutral-200/60">
-                                        <p class="font-mono font-bold text-neutral-900 text-xs shrink-0">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
-                                        
-                                        <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wide">
-                                            
-                                            <button type="button" @click="fetchInvoiceDetails({{ $hist->id }})" class="text-neutral-500 hover:text-neutral-900 underline cursor-pointer transition-colors shrink-0">
-                                                Details
-                                            </button>
-                                            
-                                            <form action="{{ route('restaurant.order.cancel', $hist->id) }}" method="POST" id="cancel-form-{{ $hist->id }}" class="inline-block m-0 p-0 shrink-0">
-                                                @csrf
-                                                <button type="button" @click="triggerCancelModal('cancel-form-{{ $hist->id }}')" class="text-red-600 hover:text-red-800 underline cursor-pointer transition-colors">
-                                                    Cancel
-                                                </button>
-                                            </form>
-
-                                            <button type="button" id="pay-btn-{{ $hist->id }}" @click="payPendingOrder({{ $hist->id }}, 'pay-btn-{{ $hist->id }}')" class="bg-amber-700 hover:bg-amber-800 text-white px-2.5 py-1 text-[9px] uppercase tracking-widest transition-colors shadow-xs cursor-pointer shrink-0">
-                                                Pay Now
-                                            </button>
-                                            
-                                        </div>
+                                    <p class="mt-4 text-lg font-semibold text-slate-900">Rp {{ number_format($history->total_price, 0, ',', '.') }}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <button type="button" @click="fetchInvoiceDetails({{ $history->id }})" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"><i class="fa-solid fa-receipt"></i>Details</button>
+                                        <form action="{{ route('restaurant.order.cancel', $history->id) }}" method="POST" id="cancel-form-{{ $history->id }}">
+                                            @csrf
+                                            <button type="button" @click="confirmCancel('cancel-form-{{ $history->id }}')" class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600">Cancel</button>
+                                        </form>
+                                        <button type="button" @click="retryPayment({{ $history->id }})" :disabled="paymentLoading === {{ $history->id }} || {{ $midtransReady ? 'false' : 'true' }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                                            <i class="fa-solid" :class="paymentLoading === {{ $history->id }} ? 'fa-circle-notch animate-spin' : 'fa-credit-card'"></i>Pay now
+                                        </button>
                                     </div>
-
-                                </div>
+                                </article>
                             @endif
                         @endforeach
                         @if(!$hasPending)
-                            <div class="text-center py-12 text-neutral-400 text-xs italic">Tidak ada tagihan tertunda. Semua pesanan Anda aman terlunasi.</div>
+                            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">No unpaid restaurant orders.</div>
                         @endif
-                    </div>
+                    </section>
 
-                    <div x-show="activeHistoryTab === 'kitchen'" class="space-y-2">
+                    <section x-show="activeHistoryTab === 'kitchen'" x-cloak class="space-y-3">
                         @php $hasKitchen = false; @endphp
-                        @foreach($orderHistory as $hist)
-                            @if($hist->payment_status === 'paid')
+                        @foreach($orderHistory as $history)
+                            @if($history->payment_status === 'paid')
                                 @php $hasKitchen = true; @endphp
-                                <div class="p-3 bg-emerald-50/30 border border-emerald-200 text-[11px] space-y-2">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="font-mono font-bold text-neutral-800">#RS-{{ str_pad($hist->id, 4, '0', STR_PAD_LEFT) }}</p>
-                                            <span class="text-[9px] text-neutral-400 block mt-0.5">{{ date('d M Y, H:i', strtotime($hist->created_at)) }}</span>
-                                        </div>
-                                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">PROCESSING IN KITCHEN</span>
+                                <article class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div><p class="font-mono text-xs font-semibold text-slate-900">#RS-{{ str_pad($history->id, 4, '0', STR_PAD_LEFT) }}</p><p class="mt-1 text-xs text-slate-500">{{ date('d M Y, H:i', strtotime($history->created_at)) }}</p></div>
+                                        <span class="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-emerald-700">Paid</span>
                                     </div>
-                                    <div class="flex justify-between items-center pt-1 border-t border-neutral-100">
-                                        <p class="font-mono font-bold text-neutral-800">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
-                                        <button type="button" @click="fetchInvoiceDetails({{ $hist->id }})" class="text-[9px] text-amber-800 font-bold underline cursor-pointer">View Receipts</button>
-                                    </div>
-                                </div>
+                                    <div class="mt-4 flex items-center justify-between"><p class="text-sm font-semibold text-slate-900">Rp {{ number_format($history->total_price, 0, ',', '.') }}</p><button type="button" @click="fetchInvoiceDetails({{ $history->id }})" class="text-xs font-semibold text-blue-600 hover:text-blue-700">View receipt</button></div>
+                                </article>
                             @endif
                         @endforeach
                         @if(!$hasKitchen)
-                            <div class="text-center py-12 text-neutral-400 text-xs italic">Belum ada pesanan yang dikirim ke dapur. Selesaikan pembayaran terlebih dahulu.</div>
+                            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">No paid orders are being processed.</div>
                         @endif
-                    </div>
+                    </section>
 
-                    <div x-show="activeHistoryTab === 'completed'" class="space-y-2">
-                        @php $hasHistoryAll = false; @endphp
-                        @foreach($orderHistory as $hist)
-                            @php $hasHistoryAll = true; @endphp
-                            <div class="p-3 bg-white border border-neutral-200 text-[11px] space-y-2">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <p class="font-mono font-bold text-neutral-800">#RS-{{ str_pad($hist->id, 4, '0', STR_PAD_LEFT) }}</p>
-                                        <span class="text-[9px] text-neutral-400 block mt-0.5">{{ date('d M Y, H:i', strtotime($hist->created_at)) }}</span>
-                                    </div>
-                                    @if($hist->payment_status === 'paid')
-                                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">PAID</span>
-                                    @elseif($hist->payment_status === 'pending')
-                                        <span class="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">UNPAID</span>
-                                    @else
-                                        <span class="text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-wider uppercase">FAILED</span>
-                                    @endif
+                    <section x-show="activeHistoryTab === 'completed'" x-cloak class="space-y-3">
+                        @forelse($orderHistory as $history)
+                            <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div><p class="font-mono text-xs font-semibold text-slate-900">#RS-{{ str_pad($history->id, 4, '0', STR_PAD_LEFT) }}</p><p class="mt-1 text-xs text-slate-500">{{ date('d M Y, H:i', strtotime($history->created_at)) }}</p></div>
+                                    <span class="rounded-full px-2 py-1 text-[10px] font-semibold {{ $history->payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($history->payment_status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700') }}">{{ ucwords($history->payment_status) }}</span>
                                 </div>
-                                <div class="flex justify-between items-center pt-1 border-t border-neutral-100">
-                                    <p class="font-mono font-bold text-neutral-800">Rp {{ number_format($hist->total_price, 0, ',', '.') }}</p>
-                                    <button type="button" @click="fetchInvoiceDetails({{ $hist->id }})" class="text-[9px] text-neutral-600 font-bold underline cursor-pointer">View Manifest</button>
-                                </div>
-                            </div>
-                        @endforeach
-                        @if(!$hasHistoryAll)
-                            <div class="text-center py-12 text-neutral-400 text-xs italic">Tidak ada rekam jejak riwayat pesanan kuliner.</div>
-                        @endif
-                    </div>
+                                <div class="mt-4 flex items-center justify-between"><p class="text-sm font-semibold text-slate-900">Rp {{ number_format($history->total_price, 0, ',', '.') }}</p><button type="button" @click="fetchInvoiceDetails({{ $history->id }})" class="text-xs font-semibold text-blue-600 hover:text-blue-700">Receipt</button></div>
+                            </article>
+                        @empty
+                            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">No restaurant order history.</div>
+                        @endforelse
+                    </section>
                 </div>
-            </div>
-        </aside>
-
-        <div x-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
-            <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showModal = false"></div>
-            <div class="relative bg-white max-w-xs w-full border border-neutral-200 p-6 shadow-2xl text-center transform transition-all">
-                <div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-3 border text-sm" :class="modalSuccess ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'">
-                    <i class="fa-solid" :class="modalSuccess ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
-                </div>
-                <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-900 mb-1" x-text="modalTitle"></h4>
-                <p class="text-neutral-500 text-[11px] leading-relaxed mb-4" x-text="modalMessage"></p>
-                <button @click="showModal = false" class="w-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer">Acknowledge</button>
-            </div>
+            </aside>
         </div>
 
-        <div id="print-invoice-wrapper" x-show="showInvoice" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
-            <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showInvoice = false"></div>
-            <div class="relative bg-white max-w-sm w-full border border-neutral-200 p-6 shadow-2xl transform transition-all text-left">
-                <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900">Receipt Manifest</h3>
-                    <button @click="showInvoice = false" class="text-neutral-400 hover:text-neutral-900 text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                
-                <div class="mt-4 space-y-3">
-                    <div class="text-[11px] font-medium text-neutral-500 space-y-2">
-                        <p>Order Reference ID: <span class="font-mono font-bold text-neutral-800" x-text="'#RS-' + String(invoiceData.order_id).padStart(4, '0')"></span></p>
-                        <p>Timestamp Settlement: <span class="text-neutral-800" x-text="invoiceData.date"></span></p>
-                        <p class="flex items-center gap-2">Billing Matrix: 
-                            <span class="font-bold uppercase text-[9px] px-2 py-0.5 border" 
-                                  :class="invoiceData.status === 'paid' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'" 
-                                  x-text="invoiceData.status === 'paid' ? 'Paid / Sent to Kitchen' : 'Awaiting Payment'">
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="border-t border-neutral-100 pt-3">
-                        <p class="text-[9px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Breakdown Ledger</p>
-                        <div class="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
-                            <template x-for="line in invoiceData.items">
-                                <div class="flex justify-between items-center text-[11px]">
-                                    <div class="min-w-0 flex-1">
-                                        <p class="font-bold text-neutral-800 uppercase truncate" x-text="line.name"></p>
-                                        <p class="text-[10px] text-neutral-400 font-mono" x-text="line.qty + ' x Rp ' + new Intl.NumberFormat('id-ID').format(line.price)"></p>
-                                    </div>
-                                    <span class="font-mono text-neutral-800 font-bold pl-4" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(line.qty * line.price)"></span>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-neutral-100 pt-3 flex justify-between items-baseline pb-4">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-900">Grand Total Invoiced</span>
-                        <span class="font-mono text-amber-800 font-bold text-sm" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(invoiceData.total)"></span>
-                    </div>
-
-                    <div class="print-action-buttons grid grid-cols-2 gap-2 pt-2 border-t border-neutral-100">
-                        <button type="button" @click="window.print()" class="w-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs">
-                            <i class="fa-solid fa-print"></i> Print Receipt
-                        </button>
-                        <button type="button" @click="showInvoice = false" class="w-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer">
-                            Dismiss
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div x-show="showInvoice" x-transition.opacity x-cloak class="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto p-4 sm:p-6">
+            <div id="restaurant-receipt-backdrop" class="fixed inset-0 bg-slate-950/65 backdrop-blur-sm" @click="showInvoice = false"></div>
+            <article id="restaurant-receipt" class="relative my-auto w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+                <header class="flex items-start justify-between gap-5 border-b border-slate-200 pb-5">
+                    <div><x-brand-logo class="h-9 w-auto" /><p class="mt-3 text-sm font-semibold text-slate-900">Restaurant order receipt</p><p class="mt-1 text-xs text-slate-500">Oasis Hotel & Resort · Nusa Dua, Bali</p></div>
+                    <div class="text-right"><p class="text-xs font-medium text-slate-500">Receipt number</p><p class="mt-1 font-mono text-sm font-semibold text-slate-900" x-text="'#RS-' + String(invoiceData.order_id).padStart(4, '0')"></p><span class="mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="invoiceData.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="invoiceData.status"></span></div>
+                </header>
+                <div class="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4 text-sm"><div><p class="text-xs text-slate-500">Guest</p><p class="mt-1 font-semibold text-slate-900">{{ auth()->user()->name }}</p></div><div><p class="text-xs text-slate-500">Date</p><p class="mt-1 font-semibold text-slate-900" x-text="invoiceData.date"></p></div></div>
+                <div class="mt-5 overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500"><span>Description</span><span>Amount</span></div><template x-for="item in invoiceData.items" :key="item.name"><div class="flex items-start justify-between gap-4 border-t border-slate-100 px-4 py-4 text-sm"><div><p class="font-semibold text-slate-900" x-text="item.name"></p><p class="mt-1 text-xs text-slate-500" x-text="item.qty + ' × Rp ' + new Intl.NumberFormat('id-ID').format(item.price)"></p></div><p class="shrink-0 font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(item.qty * item.price)"></p></div></template></div>
+                <div class="mt-5 flex items-center justify-between border-t border-slate-200 pt-5"><span class="text-sm font-semibold text-slate-700">Total</span><span class="text-xl font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(invoiceData.total)"></span></div>
+                <div id="restaurant-receipt-actions" class="mt-6 flex flex-col gap-3 sm:flex-row"><button type="button" onclick="window.print()" class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-print"></i>Print receipt</button><button type="button" @click="showInvoice = false" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">Close</button></div>
+            </article>
         </div>
 
-        <div x-show="showCancelConfirmation" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
-            <div class="absolute inset-0 bg-neutral-950/40 backdrop-blur-xs" @click="showCancelConfirmation = false"></div>
-            <div class="relative bg-white max-w-xs w-full border border-neutral-200 p-6 shadow-2xl text-center transform transition-all">
-                <div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-3 border border-red-200 bg-red-50 text-red-800 text-sm">
-                    <i class="fa-solid fa-trash-can"></i>
-                </div>
-                <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-900 mb-1">Cancel Order?</h4>
-                <p class="text-neutral-500 text-[11px] leading-relaxed mb-4">Apakah Anda yakin ingin membatalkan pesanan kuliner ini? Tindakan ini akan menghapus manifest dari antrean.</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button @click="showCancelConfirmation = false" class="w-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer">Kembali</button>
-                    <button @click="executeFormCancellation()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-[9px] uppercase tracking-widest py-2.5 transition-colors cursor-pointer">Ya, Batalkan</button>
-                </div>
-            </div>
+        <div x-show="showCancelConfirmation" x-transition.opacity x-cloak class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" @click="showCancelConfirmation = false"></div>
+            <section class="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xl">
+                <span class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600"><i class="fa-solid fa-trash-can"></i></span>
+                <h3 class="mt-5 text-xl font-semibold text-slate-900">Cancel this order?</h3>
+                <p class="mt-2 text-sm leading-6 text-slate-500">The pending restaurant order will be removed and cannot be restored.</p>
+                <div class="mt-6 grid grid-cols-2 gap-3"><button type="button" @click="showCancelConfirmation = false" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">Keep order</button><button type="button" @click="executeCancellation()" class="rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-700">Cancel order</button></div>
+            </section>
         </div>
-
     </div>
+
+    @if($midtransReady)
+        <script src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+    @endif
 </x-guest-dashboard-layout>
