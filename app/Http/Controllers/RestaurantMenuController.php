@@ -18,10 +18,12 @@ class RestaurantMenuController extends Controller
         'Beverages',
     ];
 
+    private const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=900';
+
     public function store(Request $request): RedirectResponse
     {
         $this->authorizeAdmin($request);
-        $validated = $this->validatedPayload($request);
+        $validated = $this->validatedPayload($request, self::DEFAULT_IMAGE);
 
         DB::table('restaurant_menus')->insert($validated + [
             'created_at' => now(),
@@ -37,10 +39,7 @@ class RestaurantMenuController extends Controller
         $menu = DB::table('restaurant_menus')->where('id', $id)->first();
         abort_unless($menu, 404);
 
-        $validated = $this->validatedPayload($request);
-        if (blank($validated['foto_url'])) {
-            $validated['foto_url'] = $menu->foto_url;
-        }
+        $validated = $this->validatedPayload($request, $menu->foto_url ?: self::DEFAULT_IMAGE);
 
         DB::table('restaurant_menus')->where('id', $id)->update($validated + [
             'updated_at' => now(),
@@ -62,7 +61,7 @@ class RestaurantMenuController extends Controller
         return back()->with('success', 'Menu restoran berhasil dihapus.');
     }
 
-    private function validatedPayload(Request $request): array
+    private function validatedPayload(Request $request, string $fallbackImage): array
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -72,7 +71,7 @@ class RestaurantMenuController extends Controller
             'foto_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
-        $validated['foto_url'] = $validated['foto_url'] ?? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=900';
+        $validated['foto_url'] = $validated['foto_url'] ?: $fallbackImage;
         $validated['is_available'] = $request->boolean('is_available');
 
         return $validated;
