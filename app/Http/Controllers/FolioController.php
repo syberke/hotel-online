@@ -11,6 +11,8 @@ class FolioController extends Controller
 {
     public function show(Request $request): View
     {
+        abort_unless(in_array($request->user()?->role, ['admin', 'manager', 'receptionist'], true), 403);
+
         $bookingId = $request->integer('booking_id');
         if (! $bookingId) {
             $bookingId = (int) (DB::table('bookings')
