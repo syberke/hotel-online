@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\RestaurantCatalogController;
+use App\Http\Controllers\RestaurantMenuController;
 use App\Http\Controllers\RestaurantVenueController;
 use App\Http\Controllers\RestaurantReservationController;
 use App\Http\Controllers\ContactMessageController;
@@ -183,9 +184,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/restaurant-order/{id}/update-status', [ExecutiveReportController::class, 'adminUpdateOrderStatus'])->name('admin.restaurant.update-status');
         Route::delete('/admin/restaurant-order/{id}/delete', [AdminOperationController::class, 'adminDeleteRestaurantOrder'])->name('admin.restaurant.order.delete');
         Route::delete('/admin/facilities/booking/{id}/delete', [AdminOperationController::class, 'adminDeleteFacilityBooking'])->name('admin.facilities.booking.delete');
-        Route::post('/admin/restaurant/menu/store', [AdminOperationController::class, 'adminStoreMenu'])->name('admin.restaurant.menu.store');
-        Route::post('/admin/restaurant/menu/{id}/update', [AdminOperationController::class, 'adminUpdateMenu'])->name('admin.restaurant.menu.update');
-        Route::delete('/admin/restaurant/menu/{id}/delete', [AdminOperationController::class, 'adminDeleteMenu'])->name('admin.restaurant.menu.delete');
+        Route::post('/admin/restaurant/menu/store', [RestaurantMenuController::class, 'store'])->name('admin.restaurant.menu.store');
+        Route::post('/admin/restaurant/menu/{id}/update', [RestaurantMenuController::class, 'update'])->name('admin.restaurant.menu.update');
+        Route::delete('/admin/restaurant/menu/{id}/delete', [RestaurantMenuController::class, 'destroy'])->name('admin.restaurant.menu.delete');
     });
 
     Route::get('/admin/facilities/booking/{id}/detail', [CoreFacilityViewController::class, 'adminFacilityBookingDetail']);
