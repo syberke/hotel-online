@@ -17,6 +17,7 @@ use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\ReceptionistReservationController;
 use App\Http\Controllers\ReceptionistDashboardController;
 use App\Http\Controllers\ReceptionistGuestHistoryController;
+use App\Http\Controllers\RoomAssignmentController;
 use App\Http\Controllers\FolioController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\FrontOfficeFlowController;
@@ -91,8 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
-        Route::match(['get', 'post'], '/room-assignment', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment');
-        Route::post('/room-assignment/assign', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment.assign');
+        Route::get('/room-assignment', [RoomAssignmentController::class, 'index'])->name('roomassignment');
+        Route::post('/room-assignment/assign', [RoomAssignmentController::class, 'store'])->name('roomassignment.assign');
         Route::match(['get', 'post'], '/check-out', [RoomLifecycleController::class, 'processCheckOut'])->name('checkout');
         Route::post('/check-out/process', [RoomLifecycleController::class, 'processCheckOut'])->name('checkout.process');
         Route::get('/folio', [FolioController::class, 'show'])->name('folio');
@@ -101,6 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reservations', [ReceptionistReservationController::class, 'receptionistReservationsView'])->name('reservations');
         Route::get('/guests', [FrontOfficeCheckController::class, 'receptionistGuestsView'])->name('guests');
         Route::get('/guest-history', [ReceptionistGuestHistoryController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
+        Route::patch('/guest-history/{userId}/identity', [ReceptionistGuestHistoryController::class, 'updateIdentity'])->name('guesthistory.identity.update');
         Route::get('/room-availability', [CoreHousekeepingController::class, 'roomAvailabilityView'])->name('roomavailability');
         Route::get('/house-status', [CoreHousekeepingController::class, 'houseStatusView'])->name('housestatus');
         Route::post('/house-status/update', [CoreHousekeepingController::class, 'updateHouseStatus'])->name('housestatus.update');
@@ -114,6 +116,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
+        Route::redirect('/restaurant/venues', '/manager/restaurant-gastronomy?view=venues')->name('restaurant.venues');
+        Route::post('/restaurant/venues', [RestaurantVenueController::class, 'store'])->name('restaurant.venues.store');
+        Route::patch('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'update'])->name('restaurant.venues.update');
+        Route::delete('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'destroy'])->name('restaurant.venues.destroy');
         Route::get('/facilities-wellness', [CoreFacilityViewController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
@@ -138,7 +144,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
-        Route::redirect('/restaurant/menu', '/admin/restaurant-gastronomy?view=menu')->name('restaurant.menu');
+        Route::redirect('/restaurant/menu', '/admin/restaurant-gastronomy?view=venues')->name('restaurant.menu');
+        Route::redirect('/restaurant/venues', '/admin/restaurant-gastronomy?view=venues')->name('restaurant.venues');
         Route::post('/restaurant/venues', [RestaurantVenueController::class, 'store'])->name('restaurant.venues.store');
         Route::patch('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'update'])->name('restaurant.venues.update');
         Route::delete('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'destroy'])->name('restaurant.venues.destroy');
@@ -189,7 +196,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/admin/restaurant/menu/{id}/delete', [RestaurantMenuController::class, 'destroy'])->name('admin.restaurant.menu.delete');
     });
 
-    Route::get('/admin/facilities/booking/{id}/detail', [CoreFacilityViewController::class, 'adminFacilityBookingDetail']);
+    Route::get('/admin/facilities/booking/{id}/detail', [CoreFacilityViewController::class, 'adminFacilityBookingDetail'])->name('admin.facilities.booking.detail');
     Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
     Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
     Route::get('/admin/rooms/{id}/json-detail', [StaffRoomDetailController::class, 'show'])->name('admin.room.json');
