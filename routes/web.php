@@ -16,6 +16,7 @@ use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\ReceptionistReservationController;
 use App\Http\Controllers\ReceptionistDashboardController;
 use App\Http\Controllers\ReceptionistGuestHistoryController;
+use App\Http\Controllers\WalkInController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\FrontOfficeFlowController;
 use App\Http\Controllers\RoomLifecycleController;
@@ -41,6 +42,8 @@ Route::get('/restaurant/menu/{id}', [PublicPortalController::class, 'menuShow'])
 Route::get('/facilities', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities');
 Route::get('/contact', fn () => view('page.contact'))->name('contact');
 Route::post('/contact', [ContactMessageController::class, 'store'])->middleware('throttle:10,1')->name('contact.store');
+Route::view('/privacy', 'page.privacy')->name('privacy');
+Route::view('/terms', 'page.terms')->name('terms');
 
 Route::get('/dashboard', function () {
     $role = auth()->user()->role ?: 'guest';
@@ -84,8 +87,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDashboardController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
-        Route::get('/walk-in', fn () => view('receptionist.walkin'))->name('walkin');
-        Route::post('/walk-in/store', [FrontOfficeCheckController::class, 'storeWalkIn'])->name('walkin.store');
+        Route::get('/walk-in', [WalkInController::class, 'create'])->name('walkin');
+        Route::post('/walk-in/store', [WalkInController::class, 'store'])->name('walkin.store');
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
         Route::match(['get', 'post'], '/room-assignment', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment');
