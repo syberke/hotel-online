@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\ContactMessageController;
+use App\Http\Controllers\FolioController;
 use App\Http\Controllers\RestaurantCatalogController;
 use App\Http\Controllers\RestaurantReservationController;
 use App\Http\Controllers\RestaurantVenueController;
@@ -28,7 +29,7 @@ class OperationalContentRoutesTest extends TestCase
         );
     }
 
-    public function test_walk_in_routes_do_not_reference_missing_controller_methods(): void
+    public function test_front_office_routes_do_not_reference_missing_or_dummy_controller_methods(): void
     {
         $this->assertSame(
             WalkInController::class . '@create',
@@ -38,8 +39,14 @@ class OperationalContentRoutesTest extends TestCase
             WalkInController::class . '@store',
             Route::getRoutes()->getByName('receptionist.walkin.store')?->getActionName(),
         );
+        $this->assertSame(
+            FolioController::class . '@show',
+            Route::getRoutes()->getByName('receptionist.folio')?->getActionName(),
+        );
+
         $this->assertTrue(method_exists(WalkInController::class, 'create'));
         $this->assertTrue(method_exists(WalkInController::class, 'store'));
+        $this->assertTrue(method_exists(FolioController::class, 'show'));
     }
 
     public function test_restaurant_admin_routes_have_real_crud_methods(): void
@@ -64,6 +71,7 @@ class OperationalContentRoutesTest extends TestCase
         $contact = file_get_contents(resource_path('views/page/contact.blade.php'));
         $restaurant = file_get_contents(resource_path('views/page/restaurant.blade.php'));
         $walkIn = file_get_contents(resource_path('views/receptionist/walkin.blade.php'));
+        $folio = file_get_contents(resource_path('views/receptionist/folio.blade.php'));
 
         $this->assertStringNotContainsString("route('rooms.check')", $home);
         $this->assertStringContainsString("route('contact.store')", $contact);
@@ -71,5 +79,7 @@ class OperationalContentRoutesTest extends TestCase
         $this->assertStringContainsString("route('restaurant.reservations.store')", $restaurant);
         $this->assertStringContainsString("route('receptionist.walkin.store')", $walkIn);
         $this->assertStringNotContainsString('John Anderson', $walkIn);
+        $this->assertStringNotContainsString('Breakfast & Laundry Pack', $folio);
+        $this->assertStringContainsString('$charges as $charge', $folio);
     }
 }
