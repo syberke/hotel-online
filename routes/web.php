@@ -28,6 +28,7 @@ use App\Http\Controllers\AdminControlController;
 use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\ExecutiveReportController;
 use App\Http\Controllers\OperationalViewController;
+use App\Http\Controllers\StaffRestaurantController;
 use App\Http\Controllers\CoreDashboardController;
 use App\Http\Controllers\CoreFacilityViewController;
 use App\Http\Controllers\LiveReportViewController;
@@ -115,7 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
-        Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
+        Route::get('/restaurant-gastronomy', [StaffRestaurantController::class, 'index'])->name('restaurant');
         Route::redirect('/restaurant/venues', '/manager/restaurant-gastronomy?view=venues')->name('restaurant.venues');
         Route::post('/restaurant/venues', [RestaurantVenueController::class, 'store'])->name('restaurant.venues.store');
         Route::patch('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'update'])->name('restaurant.venues.update');
@@ -143,7 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
-        Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
+        Route::get('/restaurant-gastronomy', [StaffRestaurantController::class, 'index'])->name('restaurant');
         Route::redirect('/restaurant/menu', '/admin/restaurant-gastronomy?view=venues')->name('restaurant.menu');
         Route::redirect('/restaurant/venues', '/admin/restaurant-gastronomy?view=venues')->name('restaurant.venues');
         Route::post('/restaurant/venues', [RestaurantVenueController::class, 'store'])->name('restaurant.venues.store');
