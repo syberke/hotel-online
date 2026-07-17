@@ -16,144 +16,98 @@
             'manager.userandrole' => 'users',
         ];
         $managerReportSection = $managerReportSections[$currentRouteName] ?? null;
+        $navGroups = [
+            'Overview' => [
+                [$portalPrefix . '.dashboard', 'fa-table-columns', 'Dashboard'],
+            ],
+            'Operations' => array_values(array_filter([
+                [Route::has($portalPrefix . '.reservation') ? $portalPrefix . '.reservation' : null, 'fa-calendar-check', 'Reservations'],
+                [Route::has($portalPrefix . '.frontdesk') ? $portalPrefix . '.frontdesk' : null, 'fa-bell-concierge', 'Front Desk'],
+                [Route::has($portalPrefix . '.rooms') ? $portalPrefix . '.rooms' : null, 'fa-bed', 'Rooms & Inventory'],
+                [Route::has($portalPrefix . '.roomservice') ? $portalPrefix . '.roomservice' : null, 'fa-bowl-food', 'Room Service'],
+                [Route::has($portalPrefix . '.restaurant') ? $portalPrefix . '.restaurant' : null, 'fa-utensils', 'Restaurant'],
+                [Route::has($portalPrefix . '.facilities') ? $portalPrefix . '.facilities' : null, 'fa-spa', 'Facilities'],
+            ], fn ($item) => filled($item[0]))),
+            'Reports & access' => array_values(array_filter([
+                [Route::has($portalPrefix . '.finance') ? $portalPrefix . '.finance' : null, 'fa-file-invoice-dollar', 'Finance'],
+                [Route::has($portalPrefix . '.reports') ? $portalPrefix . '.reports' : null, 'fa-chart-column', 'Reports'],
+                [Route::has($portalPrefix . '.userandrole') ? $portalPrefix . '.userandrole' : null, 'fa-users-gear', 'Users & Roles'],
+                [Route::has('profile.edit') ? 'profile.edit' : null, 'fa-user-gear', 'Profile Settings'],
+            ], fn ($item) => filled($item[0]))),
+        ];
     @endphp
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <div x-data="{ mobileNavOpen: false }" class="staff-portal-shell fixed inset-0 z-10 flex overflow-hidden bg-slate-100 text-slate-900">
+        <div x-show="mobileNavOpen" x-transition.opacity x-cloak class="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm lg:hidden" @click="mobileNavOpen = false"></div>
 
-    <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #faf9f6; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
-    </style>
+        <aside class="fixed inset-y-0 left-0 z-50 flex h-dvh w-[16rem] flex-col overflow-hidden border-r border-slate-800 bg-slate-950 text-slate-300 shadow-2xl transition-transform duration-300 lg:static lg:z-30 lg:translate-x-0 lg:shadow-none" :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full'">
+            <div class="flex h-[4.5rem] shrink-0 items-center justify-between border-b border-slate-800 px-5">
+                <a href="{{ route($portalPrefix . '.dashboard') }}" class="inline-flex rounded-xl bg-white px-3 py-2 shadow-sm">
+                    <x-brand-logo class="h-8 w-auto" />
+                </a>
+                <button type="button" class="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden" @click="mobileNavOpen = false" aria-label="Close navigation"><i class="fa-solid fa-xmark"></i></button>
+            </div>
 
-    <div class="min-h-screen bg-[#f5f5f3] text-neutral-900 font-sans antialiased flex selection:bg-amber-100 selection:text-amber-900 w-full relative">
-        <aside class="w-64 bg-neutral-950 text-neutral-400 flex flex-col justify-between shrink-0 border-r border-neutral-900 z-30 relative h-screen sticky top-0 overflow-y-auto custom-scrollbar">
-            <div>
-                <div class="p-8 border-b border-neutral-900 text-center relative group">
-                    <h2 class="text-3xl font-serif tracking-[0.2em] text-white uppercase select-none transition-colors group-hover:text-amber-400">Oasis</h2>
-                    <p class="text-[9px] uppercase tracking-[0.4em] text-amber-500 font-bold mt-1">
-                        {{ $isManager ? 'Manager Portal' : 'Admin Portal' }}
-                    </p>
-                    <div class="w-6 h-px bg-amber-500/30 mx-auto mt-4 transition-all group-hover:w-16"></div>
+            <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4">
+                <div class="mb-4 rounded-xl border border-slate-800 bg-slate-900/70 p-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">{{ $isManager ? 'Manager workspace' : 'Admin workspace' }}</p>
+                    <p class="mt-1 text-sm font-semibold text-white">{{ auth()->user()->name }}</p>
+                    <p class="mt-1 text-xs text-slate-400">Live hotel operations</p>
                 </div>
 
-                <nav class="p-4 pt-6 space-y-1">
-                    <span class="px-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Main Ledger</span>
-                    <a href="{{ route($portalPrefix . '.dashboard') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.dashboard') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-square-poll-horizontal text-sm w-5"></i> Dashboard
-                    </a>
-
-                    <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Management & Front Desk</span>
-                    <a href="{{ route($portalPrefix . '.reservation') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.reservation') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-calendar-check text-sm w-5"></i> Reservations
-                    </a>
-                    <a href="{{ route($portalPrefix . '.rooms') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.rooms') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-bed text-sm w-5"></i> Rooms & Inventory
-                    </a>
-
-                    <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">In-House Services</span>
-                    <a href="{{ route($portalPrefix . '.roomservice') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.roomservice') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-bowl-food text-sm w-5"></i> Room Service Orders
-                    </a>
-                    <a href="{{ route($portalPrefix . '.restaurant') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.restaurant') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-utensils text-sm w-5"></i> Restaurant Gastronomy
-                    </a>
-                    <a href="{{ route($portalPrefix . '.facilities') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.facilities') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-spa text-sm w-5"></i> Facilities & Wellness
-                    </a>
-
-                    <span class="px-4 pt-4 text-[9px] uppercase tracking-[0.2em] font-bold text-neutral-600 block mb-2">Reports & Controls</span>
-                    <a href="{{ route($portalPrefix . '.finance') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.finance') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-file-invoice-dollar text-sm w-5"></i> Finance & Billing Matrix
-                    </a>
-                    <a href="{{ route($portalPrefix . '.reports') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.reports') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-chart-line text-sm w-5"></i> Operational Reports
-                    </a>
-                    <a href="{{ route($portalPrefix . '.userandrole') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs($portalPrefix . '.userandrole') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-users-gear text-sm w-5"></i> User & Role Control
-                    </a>
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3.5 px-4 py-3 text-xs {{ request()->routeIs('profile.edit') ? 'font-bold bg-neutral-900/80 text-amber-400 border-l-2 border-amber-500' : 'font-medium hover:bg-neutral-900/40 hover:text-white border-l-2 border-transparent hover:border-neutral-700' }} transition-all">
-                        <i class="fa-solid fa-sliders text-sm w-5"></i> Account Settings
-                    </a>
+                <nav class="space-y-5">
+                    @foreach($navGroups as $groupLabel => $items)
+                        <div>
+                            <p class="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">{{ $groupLabel }}</p>
+                            <div class="space-y-1">
+                                @foreach($items as [$routeName, $icon, $label])
+                                    <a href="{{ route($routeName) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ request()->routeIs($routeName) ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg {{ request()->routeIs($routeName) ? 'bg-white/15' : 'bg-slate-900 text-slate-400' }}"><i class="fa-solid {{ $icon }} text-xs"></i></span>
+                                        <span class="truncate">{{ $label }}</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
                 </nav>
             </div>
 
-            <div class="p-4 border-t border-neutral-900 space-y-4">
-                <div class="p-4 bg-neutral-900/40 border border-neutral-900/60 flex items-center justify-between select-none">
-                    <div>
-                        <span class="text-[9px] uppercase tracking-widest font-bold text-neutral-500 block">Property Node</span>
-                        <span class="text-xs text-neutral-400 font-medium mt-0.5 inline-block">Nusa Dua, Bali</span>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xl font-light font-serif text-white tracking-wide">Live</div>
-                        <span class="text-amber-500 text-[10px]"><i class="fa-solid fa-circle-check mr-0.5"></i> Secure</span>
-                    </div>
-                </div>
-
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3.5 px-4 py-3 text-xs uppercase tracking-widest font-bold text-red-400/80 hover:text-red-400 hover:bg-red-950/20 transition-all text-left cursor-pointer border-none bg-transparent">
-                        <i class="fa-solid fa-arrow-right-from-bracket text-sm w-5"></i> Logout Portal
-                    </button>
-                </form>
+            <div class="shrink-0 border-t border-slate-800 p-4">
+                <div class="mb-3 flex items-center justify-between rounded-xl bg-slate-900 p-3 text-xs"><div><p class="font-semibold text-slate-200">Nusa Dua, Bali</p><p class="mt-1 text-slate-500">Property node</p></div><span class="inline-flex items-center gap-1.5 font-semibold text-emerald-400"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Live</span></div>
+                <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10 hover:text-rose-200"><span class="grid h-8 w-8 place-items-center rounded-lg bg-rose-500/10"><i class="fa-solid fa-arrow-right-from-bracket text-xs"></i></span>Sign out</button></form>
             </div>
         </aside>
 
-        <div class="flex-1 flex flex-col h-screen overflow-y-auto custom-scrollbar relative bg-[#f5f5f3]">
-            <header class="bg-white border-b border-neutral-200/70 px-10 py-4 sticky top-0 z-20 flex justify-between items-center h-20 shrink-0">
-                <div>
-                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">System Staff Management</span>
-                    <h1 class="text-xl font-serif text-neutral-900 font-normal tracking-wide mt-0.5">Control Center</h1>
+        <section class="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
+            <header class="staff-topbar flex h-[4.5rem] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6">
+                <div class="flex min-w-0 items-center gap-3">
+                    <button type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm lg:hidden" @click="mobileNavOpen = true" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+                    <div class="min-w-0"><p class="text-xs font-medium text-slate-500">{{ $isManager ? 'Business management' : 'Hotel administration' }}</p><h1 class="truncate text-lg font-semibold tracking-tight text-slate-900">{{ $isManager ? 'Manager Portal' : 'Admin Portal' }}</h1></div>
                 </div>
-                <div class="flex items-center space-x-6">
-                    <span class="border border-amber-700/20 bg-amber-50/60 text-amber-900 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 flex items-center gap-1.5 select-none">
-                        <i class="fa-solid fa-shield-halved text-amber-700 text-xs"></i> Security Cleared: {{ strtoupper(auth()->user()->role ?? 'Admin') }}
-                    </span>
-                    <div class="h-6 w-px bg-neutral-200"></div>
-                    <a href="{{ route('home') }}" class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1.5 group">
-                        Exit Portal <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-neutral-400 group-hover:text-neutral-900 transition-colors"></i>
-                    </a>
-                </div>
+                <div class="flex items-center gap-2 sm:gap-3"><span class="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:inline-flex"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Online</span><a href="{{ route('home') }}" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50"><span class="hidden sm:inline">Hotel website</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a></div>
             </header>
 
-            <div class="p-10 space-y-8 flex-1 bg-[#f5f5f3]">
-                @if($isManager && $managerReportSection)
-                    <div class="bg-white border border-neutral-200 shadow-sm px-5 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700">Manager Report Export</span>
-                            <p class="text-xs text-neutral-500 mt-1">Export laporan modul <strong class="text-neutral-900">{{ ucwords(str_replace(['_', '-'], ' ', $managerReportSection)) }}</strong> dari data database saat ini.</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('manager.section-report.excel', ['section' => $managerReportSection]) }}" class="bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-800 px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-file-excel text-emerald-600"></i> Excel Report
-                            </a>
-                            <a href="{{ route('manager.section-report.pdf', ['section' => $managerReportSection]) }}" class="bg-neutral-950 hover:bg-neutral-800 text-white px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-file-pdf text-rose-400"></i> PDF Report
-                            </a>
-                        </div>
-                    </div>
-                @endif
+            <main class="staff-main-content custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 md:p-5 xl:p-6">
+                <div class="mx-auto w-full max-w-[1600px] space-y-5">
+                    @if($isManager && $managerReportSection)
+                        <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                            <div><p class="text-sm font-semibold text-blue-600">Manager report export</p><p class="mt-1 text-sm text-slate-500">Export {{ ucwords(str_replace(['_', '-'], ' ', $managerReportSection)) }} using current database records.</p></div>
+                            <div class="flex flex-wrap gap-2"><a href="{{ route('manager.section-report.excel', ['section' => $managerReportSection]) }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-file-excel text-emerald-600"></i>Excel</a><a href="{{ route('manager.section-report.pdf', ['section' => $managerReportSection]) }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-file-pdf"></i>PDF</a></div>
+                        </section>
+                    @endif
 
-                @if(request()->routeIs('admin.facilities') && !$isManager)
-                    <div class="bg-white border border-neutral-200 shadow-sm px-5 py-4 flex items-center justify-between gap-4">
-                        <div>
-                            <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400">Facility Master Data</span>
-                            <p class="text-xs text-neutral-600 mt-1">Tambahkan area fasilitas baru ke inventory hotel.</p>
-                        </div>
-                        <button type="button" onclick="openCreateFacilityModal()" class="bg-amber-800 hover:bg-amber-900 text-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider cursor-pointer">
-                            <i class="fa-solid fa-plus mr-1.5"></i> Add Facility
-                        </button>
-                    </div>
-                @endif
+                    @if(request()->routeIs('admin.facilities') && !$isManager)
+                        <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-semibold text-blue-600">Facility master data</p><p class="mt-1 text-sm text-slate-500">Add a new facility area to the hotel inventory.</p></div><button type="button" onclick="openCreateFacilityModal()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add facility</button></section>
+                    @endif
 
-                {{ $slot }}
+                    {{ $slot }}
 
-                @if(request()->routeIs('admin.restaurant') && isset($menus))
-                    @include('admin.partials.restaurant-menu-inline')
-                @endif
-            </div>
-        </div>
+                    @if(request()->routeIs('admin.restaurant') && isset($menus))
+                        @include('admin.partials.restaurant-menu-inline')
+                    @endif
+                </div>
+            </main>
+        </section>
     </div>
 
     @if(request()->routeIs('admin.restaurant') && isset($menus))
@@ -163,71 +117,33 @@
                 const orderTab = links.find((link) => link.textContent.trim() === 'Order Management');
                 const menuTab = links.find((link) => link.textContent.trim() === "Today's Menu");
                 const menuPanel = document.getElementById('restaurant-menu-inline-panel');
-
                 if (!orderTab || !menuTab || !menuPanel) return;
-
                 const tabHeader = orderTab.parentElement;
                 const card = tabHeader.parentElement;
                 card.appendChild(menuPanel);
                 const orderNodes = [...card.children].filter((node) => node !== tabHeader && node !== menuPanel);
-
                 const setActiveTab = (view) => {
                     const showMenu = view === 'menu';
                     orderNodes.forEach((node) => node.classList.toggle('hidden', showMenu));
                     menuPanel.classList.toggle('hidden', !showMenu);
-
-                    orderTab.className = showMenu
-                        ? 'hover:text-neutral-900 transition-colors pb-1.5 px-0.5'
-                        : 'text-neutral-900 border-b-2 border-neutral-900 pb-1.5 px-0.5 font-bold';
-                    menuTab.className = showMenu
-                        ? 'text-neutral-900 border-b-2 border-neutral-900 pb-1.5 px-0.5 font-bold cursor-pointer'
-                        : 'hover:text-neutral-900 transition-colors pb-1.5 px-0.5 cursor-pointer';
-
+                    orderTab.className = showMenu ? 'rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50' : 'rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700';
+                    menuTab.className = showMenu ? 'rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 cursor-pointer' : 'rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 cursor-pointer';
                     const url = new URL(window.location.href);
                     url.searchParams.set('view', showMenu ? 'menu' : 'orders');
                     window.history.replaceState({}, '', url);
                 };
-
-                orderTab.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    setActiveTab('orders');
-                });
-
-                menuTab.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    setActiveTab('menu');
-                });
-
+                orderTab.addEventListener('click', (event) => { event.preventDefault(); setActiveTab('orders'); });
+                menuTab.addEventListener('click', (event) => { event.preventDefault(); setActiveTab('menu'); });
                 setActiveTab(@json(request('view', 'orders')));
             });
         </script>
     @endif
 
     @if($isManager && request()->routeIs('manager.reports'))
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                document.querySelectorAll('a').forEach((link) => {
-                    if (link.textContent.includes('Export Spreadsheet')) {
-                        link.href = @json(route('manager.reports.export.excel'));
-                    }
-                    if (link.textContent.includes('Executive Print / PDF')) {
-                        link.href = @json(route('manager.reports.export.pdf'));
-                        link.removeAttribute('target');
-                    }
-                });
-            });
-        </script>
+        <script>document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('a').forEach((link) => { if (link.textContent.includes('Export Spreadsheet')) link.href = @json(route('manager.reports.export.excel')); if (link.textContent.includes('Executive Print / PDF')) { link.href = @json(route('manager.reports.export.pdf')); link.removeAttribute('target'); } }); });</script>
     @endif
 
     @if(request()->routeIs('admin.userandrole', 'manager.userandrole'))
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                document.querySelectorAll('span').forEach((node) => {
-                    if (node.textContent.trim() === 'Inactive Roles') {
-                        node.textContent = 'Inactive Accounts';
-                    }
-                });
-            });
-        </script>
+        <script>document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('span').forEach((node) => { if (node.textContent.trim() === 'Inactive Roles') node.textContent = 'Inactive Accounts'; }); });</script>
     @endif
 </x-admin-layout>
