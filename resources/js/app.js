@@ -4,6 +4,7 @@ import Alpine from 'alpinejs';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import '../css/design-system.css';
+import '../css/staff-modules.css';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
