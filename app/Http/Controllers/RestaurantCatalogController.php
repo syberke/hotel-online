@@ -11,14 +11,10 @@ class RestaurantCatalogController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = DB::table('restaurant_menus');
+        $query = DB::table('restaurant_menus')->where('is_available', true);
 
         if ($request->filled('category') && $request->string('category')->value() !== 'All Menu') {
-            $category = strtolower($request->string('category')->value());
-            $query->where(function ($builder) use ($category) {
-                $builder->whereRaw('LOWER(description) LIKE ?', ['%' . $category . '%'])
-                    ->orWhereRaw('LOWER(name) LIKE ?', ['%' . $category . '%']);
-            });
+            $query->where('category', $request->string('category')->value());
         }
 
         if ($request->filled('search')) {
@@ -38,6 +34,7 @@ class RestaurantCatalogController extends Controller
         }
 
         $culinaryMenus = $query
+            ->orderBy('category')
             ->orderBy('name')
             ->paginate(8)
             ->withQueryString()
@@ -49,8 +46,15 @@ class RestaurantCatalogController extends Controller
             ->orderBy('name')
             ->get();
 
-        $totalMenuItems = DB::table('restaurant_menus')->count();
+        $menuCategories = DB::table('restaurant_menus')
+            ->where('is_available', true)
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
 
-        return view('page.restaurant', compact('culinaryMenus', 'venues', 'totalMenuItems'));
+        $totalMenuItems = DB::table('restaurant_menus')->where('is_available', true)->count();
+
+        return view('page.restaurant', compact('culinaryMenus', 'venues', 'menuCategories', 'totalMenuItems'));
     }
 }
