@@ -27,7 +27,7 @@
                     <nav class="flex items-center gap-2 text-xs font-medium text-slate-300"><a href="{{ route('home') }}" class="hover:text-white">Home</a><i class="fa-solid fa-chevron-right text-[9px]"></i><span class="text-blue-200">Restaurant</span></nav>
                     <p class="mt-6 text-sm font-medium text-blue-300">Hotel dining</p>
                     <h1 class="mt-2 text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">Dining venues and menus managed from one system</h1>
-                    <p class="mt-5 max-w-2xl text-base leading-7 text-slate-200">Venue information, operating hours, table capacity, menu items, and reservations are loaded from the hotel database.</p>
+                    <p class="mt-5 max-w-2xl text-base leading-7 text-slate-200">Venue information, operating hours, table capacity, menu categories, availability, and reservations are loaded from the hotel database.</p>
                     <div class="mt-8 flex flex-col gap-3 sm:flex-row"><a href="#menu-browsing-anchor" class="rounded-xl bg-blue-600 px-5 py-3.5 text-center text-sm font-semibold text-white hover:bg-blue-500">Browse menu</a><a href="#reservation-block" class="rounded-xl border border-white/15 bg-white/10 px-5 py-3.5 text-center text-sm font-semibold text-white backdrop-blur hover:bg-white/20">Reserve a table</a></div>
                 </div>
             </div>
@@ -62,7 +62,14 @@
 
         <section id="menu-browsing-anchor" class="border-y border-slate-200 bg-white py-20 scroll-mt-20">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p class="text-sm font-medium text-blue-600">Menu</p><h2 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Browse {{ $totalMenuItems }} dishes and drinks</h2></div><div class="flex max-w-full gap-2 overflow-x-auto rounded-xl bg-slate-50 p-1.5">@foreach(['All Menu', 'Appetizers', 'Main Courses', 'Seafood', 'Steak Selection', 'Desserts'] as $category)<a href="{{ route('restaurant', ['category' => $category, 'search' => request('search'), 'min_price' => request('min_price'), 'max_price' => request('max_price')]) }}#menu-browsing-anchor" class="min-w-max rounded-lg px-3.5 py-2 text-sm font-semibold transition {{ request('category', 'All Menu') === $category ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">{{ $category === 'All Menu' ? 'All' : $category }}</a>@endforeach</div></div>
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div><p class="text-sm font-medium text-blue-600">Menu</p><h2 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Browse {{ $totalMenuItems }} available dishes and drinks</h2></div>
+                    <div class="flex max-w-full gap-2 overflow-x-auto rounded-xl bg-slate-50 p-1.5">
+                        @foreach(collect(['All Menu'])->concat($menuCategories) as $category)
+                            <a href="{{ route('restaurant', ['category' => $category, 'search' => request('search'), 'min_price' => request('min_price'), 'max_price' => request('max_price')]) }}#menu-browsing-anchor" class="min-w-max rounded-lg px-3.5 py-2 text-sm font-semibold transition {{ request('category', 'All Menu') === $category ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">{{ $category === 'All Menu' ? 'All' : $category }}</a>
+                        @endforeach
+                    </div>
+                </div>
 
                 <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
                     <form action="{{ route('restaurant') }}" method="GET" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24">
@@ -76,9 +83,15 @@
                     <section class="min-w-0">
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             @forelse($culinaryMenus as $menu)
-                                <article class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"><a href="{{ route('restaurant.detail', $menu->id) }}" class="block h-52 overflow-hidden bg-slate-100"><img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"></a><div class="p-5"><div class="flex items-start justify-between gap-4"><div class="min-w-0"><a href="{{ route('restaurant.detail', $menu->id) }}" class="text-lg font-semibold text-slate-900 hover:text-blue-700">{{ $menu->name }}</a><p class="mt-2 line-clamp-3 text-sm leading-6 text-slate-500">{{ $menu->description }}</p></div><p class="shrink-0 text-sm font-semibold text-blue-700">Rp {{ number_format($menu->price, 0, ',', '.') }}</p></div><div class="mt-5 grid grid-cols-2 gap-3"><a href="{{ route('restaurant.detail', $menu->id) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Details</a><button type="button" @click="addItem({{ $menu->id }}, @js($menu->name), {{ $menu->price }}, @js($menu->foto_url))" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add</button></div></div></article>
+                                <article class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
+                                    <a href="{{ route('restaurant.detail', $menu->id) }}" class="block h-52 overflow-hidden bg-slate-100"><img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"></a>
+                                    <div class="p-5">
+                                        <div class="flex items-start justify-between gap-4"><div class="min-w-0"><span class="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-700">{{ $menu->category }}</span><a href="{{ route('restaurant.detail', $menu->id) }}" class="mt-3 block text-lg font-semibold text-slate-900 hover:text-blue-700">{{ $menu->name }}</a><p class="mt-2 line-clamp-3 text-sm leading-6 text-slate-500">{{ $menu->description }}</p></div><p class="shrink-0 text-sm font-semibold text-blue-700">Rp {{ number_format($menu->price, 0, ',', '.') }}</p></div>
+                                        <div class="mt-5 grid grid-cols-2 gap-3"><a href="{{ route('restaurant.detail', $menu->id) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Details</a><button type="button" @click="addItem({{ $menu->id }}, @js($menu->name), {{ $menu->price }}, @js($menu->foto_url))" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add</button></div>
+                                    </div>
+                                </article>
                             @empty
-                                <div class="md:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-sm text-slate-500">No menu items match these filters.</div>
+                                <div class="md:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-sm text-slate-500">No available menu items match these filters.</div>
                             @endforelse
                         </div>
                         <x-catalog-pagination :paginator="$culinaryMenus" label="menu items" />
