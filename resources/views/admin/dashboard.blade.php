@@ -7,17 +7,17 @@
 
         @php
             $metrics = [
-                ['Total reservations', number_format($totalReservations), $reservationDiff, 'fa-calendar-check', 'blue'],
-                ['Total guests', number_format($totalGuests), $guestDiff, 'fa-users', 'violet'],
-                ['Occupancy rate', number_format($occupancyRate, 1) . '%', $occupancyDiff, 'fa-bed', 'emerald'],
-                ['Average daily rate', 'Rp ' . number_format($adr), $adrDiff, 'fa-calculator', 'amber'],
-                ['Total revenue', 'Rp ' . number_format($totalRevenue), $revenueDiff, 'fa-chart-line', 'rose'],
+                ['Total reservations', number_format($totalReservations), $reservationDiff, 'fa-calendar-check', 'bg-blue-50 text-blue-600'],
+                ['Total guests', number_format($totalGuests), $guestDiff, 'fa-users', 'bg-violet-50 text-violet-600'],
+                ['Occupancy rate', number_format($occupancyRate, 1) . '%', $occupancyDiff, 'fa-bed', 'bg-emerald-50 text-emerald-600'],
+                ['Average daily rate', 'Rp ' . number_format($adr), $adrDiff, 'fa-calculator', 'bg-amber-50 text-amber-600'],
+                ['Total revenue', 'Rp ' . number_format($totalRevenue), $revenueDiff, 'fa-chart-line', 'bg-rose-50 text-rose-600'],
             ];
         @endphp
         <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            @foreach($metrics as [$label, $value, $diff, $icon, $tone])
+            @foreach($metrics as [$label, $value, $diff, $icon, $iconClasses])
                 <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-medium text-slate-500">{{ $label }}</p><p class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{{ $value }}</p></div><span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-{{ $tone }}-50 text-{{ $tone }}-600"><i class="fa-solid {{ $icon }}"></i></span></div>
+                    <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-medium text-slate-500">{{ $label }}</p><p class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{{ $value }}</p></div><span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl {{ $iconClasses }}"><i class="fa-solid {{ $icon }}"></i></span></div>
                     <p class="mt-4 flex items-center gap-2 text-xs"><span class="inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold {{ $diff >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}"><i class="fa-solid {{ $diff >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[9px]"></i>{{ abs($diff) }}%</span><span class="text-slate-400">vs last week</span></p>
                 </article>
             @endforeach
