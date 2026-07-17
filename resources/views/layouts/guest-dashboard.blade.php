@@ -26,10 +26,8 @@
             :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             <div class="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-5">
-                <a href="{{ route('guest.dashboard') }}" class="flex min-w-0 items-center gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    <span class="flex h-11 min-w-32 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 shadow-sm">
-                        <x-brand-logo class="h-8 w-auto" />
-                    </span>
+                <a href="{{ route('guest.dashboard') }}" class="oasis-logo-transparent flex min-w-0 items-center rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <x-brand-logo class="h-10 w-auto" />
                     <span class="sr-only">Oasis Hotel guest portal</span>
                 </a>
 
@@ -43,7 +41,7 @@
                 </button>
             </div>
 
-            <div class="guest-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-5">
+            <div class="guest-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-5" data-preserve-scroll="guest-sidebar">
                 <nav class="space-y-1">
                     <p class="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Overview</p>
 
@@ -57,6 +55,7 @@
 
                     @foreach($guestNav as $item)
                         <a href="{{ route($item['route']) }}"
+                           @if(Request::routeIs($item['route'])) aria-current="page" @endif
                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs($item['route']) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                             <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs($item['route']) ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                                 <i class="fa-solid {{ $item['icon'] }} text-xs"></i>
@@ -68,6 +67,7 @@
                     <p class="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Hotel services</p>
 
                     <a href="{{ route('guest.restaurant.orders') }}"
+                       @if(Request::routeIs('guest.restaurant.orders')) aria-current="page" @endif
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('guest.restaurant.orders') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                         <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.restaurant.orders') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                             <i class="fa-solid fa-utensils text-xs"></i>
@@ -76,6 +76,7 @@
                     </a>
 
                     <a href="{{ route('guest.facilities.booking') }}"
+                       @if(Request::routeIs('guest.facilities.booking')) aria-current="page" @endif
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('guest.facilities.booking') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                         <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.facilities.booking') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                             <i class="fa-solid fa-spa text-xs"></i>
@@ -85,6 +86,7 @@
 
                     @if(Route::has('guest.room.service'))
                         <a href="{{ route('guest.room.service') }}"
+                           @if(Request::routeIs('guest.room.service')) aria-current="page" @endif
                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('guest.room.service') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                             <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.room.service') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                                 <i class="fa-solid fa-bell-concierge text-xs"></i>
@@ -96,6 +98,7 @@
                     <p class="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Account</p>
 
                     <a href="{{ route('profile.edit') }}"
+                       @if(Request::routeIs('profile.edit')) aria-current="page" @endif
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('profile.edit') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                         <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('profile.edit') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                             <i class="fa-solid fa-user-gear text-xs"></i>
