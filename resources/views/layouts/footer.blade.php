@@ -2,19 +2,12 @@
     <div class="mx-auto max-w-7xl">
         <div class="mb-14 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
             <div class="space-y-5">
-                <a href="{{ route('home') }}" class="inline-flex rounded-2xl bg-white p-3 shadow-xl shadow-slate-950/20" aria-label="Oasis Hotel home">
-                    <x-brand-logo class="h-10 w-auto" />
+                <a href="{{ route('home') }}" class="oasis-logo-transparent inline-flex" aria-label="Oasis Hotel home">
+                    <x-brand-logo class="h-12 w-auto brightness-0 invert" />
                 </a>
                 <p class="max-w-sm text-sm leading-6 text-slate-400">
-                    A comfortable place to stay in Nusa Dua with convenient rooms, dining, facilities, and guest services in one connected experience.
+                    A comfortable place to stay in Nusa Dua with rooms, dining venues, facilities, contact support, and guest services connected to the same hotel system.
                 </p>
-                <div class="flex gap-3">
-                    @foreach(['instagram', 'facebook-f', 'x-twitter'] as $icon)
-                        <a href="#" class="grid h-10 w-10 place-items-center rounded-xl border border-slate-800 text-slate-400 transition hover:border-blue-500 hover:bg-blue-500/10 hover:text-blue-300" aria-label="Social media">
-                            <i class="fa-brands fa-{{ $icon }} text-sm"></i>
-                        </a>
-                    @endforeach
-                </div>
             </div>
 
             <div>
@@ -33,41 +26,38 @@
                 <ul class="space-y-4 text-sm text-slate-400">
                     <li class="flex items-start gap-3 leading-6">
                         <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-900 text-blue-400"><i class="fa-solid fa-location-dot text-xs"></i></span>
-                        <span>Jl. Pantai Indah No. 88, Nusa Dua, Bali 80363</span>
+                        <span>{{ config('hotel.address') }}</span>
                     </li>
-                    <li class="flex items-center gap-3">
-                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-900 text-blue-400"><i class="fa-solid fa-phone text-xs"></i></span>
-                        <span>+62 361 770 888</span>
-                    </li>
-                    <li class="flex items-center gap-3">
-                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-900 text-blue-400"><i class="fa-solid fa-envelope text-xs"></i></span>
-                        <a href="mailto:stay@oasishotel.com" class="transition hover:text-white">stay@oasishotel.com</a>
-                    </li>
+                    @if(config('hotel.phone'))
+                        <li class="flex items-center gap-3">
+                            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-900 text-blue-400"><i class="fa-solid fa-phone text-xs"></i></span>
+                            <a href="tel:{{ preg_replace('/\s+/', '', config('hotel.phone')) }}" class="transition hover:text-white">{{ config('hotel.phone') }}</a>
+                        </li>
+                    @endif
+                    @if(config('hotel.email'))
+                        <li class="flex items-center gap-3">
+                            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-900 text-blue-400"><i class="fa-solid fa-envelope text-xs"></i></span>
+                            <a href="mailto:{{ config('hotel.email') }}" class="break-all transition hover:text-white">{{ config('hotel.email') }}</a>
+                        </li>
+                    @endif
                 </ul>
             </div>
 
             <div>
-                <h4 class="mb-3 text-sm font-semibold text-white">Stay updated</h4>
+                <h4 class="mb-3 text-sm font-semibold text-white">Need help?</h4>
                 <p class="mb-5 text-sm leading-6 text-slate-400">
-                    Receive room availability, dining updates, and seasonal hotel information.
+                    Use the real Contact form to create a message in the hotel inbox. Admin can process it and Manager can review it.
                 </p>
-                <form action="#" method="POST" class="space-y-3">
-                    @csrf
-                    <input type="email" required placeholder="Email address" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500/20">
-                    <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-                        Subscribe
-                        <i class="fa-solid fa-arrow-right text-xs"></i>
-                    </button>
-                </form>
+                <a href="{{ route('contact') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                    Contact hotel team
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
             </div>
         </div>
 
         <div class="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-7 text-xs text-slate-500 md:flex-row">
             <p>&copy; {{ date('Y') }} Oasis Hotel & Resort. All rights reserved.</p>
-            <div class="flex gap-5">
-                <a href="#" class="transition hover:text-slate-300">Privacy</a>
-                <a href="#" class="transition hover:text-slate-300">Terms</a>
-            </div>
+            <p>Hotel information and operational data are managed from the Oasis system.</p>
         </div>
     </div>
 </footer>
