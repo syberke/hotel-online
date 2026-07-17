@@ -226,6 +226,108 @@ async function openRestaurantOrderDetail(button) {
     }
 }
 
+function assignRoomDetailText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value ?? '-';
+}
+
+function roomStatusClasses(status) {
+    const tones = {
+        available: 'bg-emerald-50 text-emerald-800 border border-emerald-100',
+        reserved: 'bg-amber-50 text-amber-800 border border-amber-100',
+        occupied: 'bg-blue-50 text-blue-800 border border-blue-100',
+        dirty: 'bg-violet-50 text-violet-800 border border-violet-100',
+        maintenance: 'bg-rose-50 text-rose-800 border border-rose-100',
+    };
+
+    return `inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tones[status] || 'bg-slate-100 text-slate-700 border border-slate-200'}`;
+}
+
+async function openStaffRoomDetail(roomId) {
+    const modal = document.getElementById('managerRoomViewModal');
+    if (!modal) return;
+
+    try {
+        const response = await fetch(`/admin/rooms/${roomId}/json-detail`, {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        const payload = await parseJsonResponse(response, 'Detail kamar tidak mengembalikan data JSON. Pastikan akun memiliki akses lalu muat ulang halaman.');
+
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.message || 'Detail kamar tidak tersedia.');
+        }
+
+        const room = payload.room;
+        const booking = payload.booking;
+        const panel = modal.querySelector(':scope > div:not(.absolute)');
+        panel?.classList.add('staff-detail-panel');
+
+        const heading = modal.querySelector('h4');
+        if (heading) {
+            heading.textContent = 'Room details';
+            heading.className = 'text-sm font-semibold text-blue-600';
+        }
+
+        assignRoomDetailText('mv_title_room', `Room ${room.room_number}`);
+        assignRoomDetailText('mv_room_type', room.type_name || 'Unassigned type');
+        assignRoomDetailText('mv_room_price', `Rp ${restaurantCurrency.format(Number(room.price || 0))}`);
+        assignRoomDetailText('mv_room_cap', `Maximum ${Number(room.max_capacity || 0)} guest(s)`);
+
+        const statusBadge = document.getElementById('mv_room_status');
+        if (statusBadge) {
+            statusBadge.textContent = String(room.status || 'unknown').replaceAll('_', ' ');
+            statusBadge.className = roomStatusClasses(room.status);
+        }
+
+        const bookingSection = document.getElementById('mv_booking_section');
+        const emptySection = document.getElementById('mv_empty_section');
+        const bookingHeading = document.getElementById('mv_booking_heading');
+
+        if (booking) {
+            if (bookingHeading) {
+                bookingHeading.innerHTML = room.status === 'occupied'
+                    ? '<i class="fa-solid fa-user-check mr-1"></i> Current guest stay'
+                    : '<i class="fa-solid fa-calendar-check mr-1"></i> Upcoming reservation';
+            }
+            assignRoomDetailText('mv_guest_name', booking.guest_name || 'Registered guest');
+            assignRoomDetailText('mv_guest_email', booking.guest_email || '-');
+            assignRoomDetailText('mv_guest_count', `${Number(booking.guests_count || 0)} guest(s)`);
+
+            const checkIn = booking.check_in
+                ? new Date(`${booking.check_in}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '-';
+            const checkOut = booking.check_out
+                ? new Date(`${booking.check_out}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '-';
+            assignRoomDetailText('mv_stay_dates', `${checkIn} – ${checkOut}`);
+
+            bookingSection?.classList.remove('hidden');
+            emptySection?.classList.add('hidden');
+        } else {
+            bookingSection?.classList.add('hidden');
+            emptySection?.classList.remove('hidden');
+            if (emptySection) {
+                emptySection.innerHTML = '<i class="fa-solid fa-bed mb-2 block text-xl text-slate-300"></i>No active or upcoming reservation is attached to this room.';
+            }
+        }
+
+        const closeButton = panel?.querySelector('button[type="button"]:last-child');
+        if (closeButton && closeButton.textContent.trim()) {
+            closeButton.textContent = 'Close details';
+        }
+
+        modal.classList.remove('hidden');
+    } catch (error) {
+        window.OasisDialog.error(error.message || 'Detail kamar gagal dimuat.', 'Room details unavailable');
+    }
+}
+
+window.openManagerViewModal = openStaffRoomDetail;
+window.closeManagerViewModal = () => document.getElementById('managerRoomViewModal')?.classList.add('hidden');
+
 document.addEventListener('click', (event) => {
     const detailButton = event.target.closest('[data-restaurant-order-detail]');
     if (detailButton) {
