@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('restaurant_menus', function (Blueprint $table) {
-            $table->string('category')->default('Main Courses')->after('description');
-            $table->boolean('is_available')->default(true)->after('category');
+            $table->string('category')->default('Main Courses');
+            $table->boolean('is_available')->default(true);
             $table->index(['category', 'is_available']);
         });
     }
