@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'oasis-pwa-v2';
+const CACHE_VERSION = 'oasis-pwa-v4';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-public-pages`;
 
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
     '/offline.html',
     '/manifest.json',
     '/pwa.js',
+    '/pwa-ui.css',
     '/logo.svg',
     '/icons/oasis-pwa.svg',
     '/icons/oasis-maskable.svg',
@@ -122,6 +123,7 @@ function isPublicStaticAsset(url) {
         || url.pathname === '/manifest.json'
         || url.pathname === '/offline.html'
         || url.pathname === '/pwa.js'
+        || url.pathname === '/pwa-ui.css'
         || url.pathname === '/logo.svg';
 }
 
