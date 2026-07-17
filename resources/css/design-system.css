@@ -1,0 +1,372 @@
+/*
+ * Oasis unified visual system
+ * Loaded last so legacy Blade utility classes render with the current design.
+ */
+:root {
+    --oasis-primary: #2563eb;
+    --oasis-primary-dark: #1d4ed8;
+    --oasis-primary-soft: #eff6ff;
+    --oasis-bg: #f8fafc;
+    --oasis-surface: #ffffff;
+    --oasis-surface-soft: #f1f5f9;
+    --oasis-text: #0f172a;
+    --oasis-muted: #64748b;
+    --oasis-border: #e2e8f0;
+    --oasis-sidebar: #0f172a;
+    --oasis-success: #059669;
+    --oasis-danger: #e11d48;
+    --oasis-radius: 1rem;
+    --oasis-radius-sm: 0.75rem;
+    --oasis-shadow: 0 18px 48px -32px rgba(15, 23, 42, 0.38);
+}
+
+html {
+    background: var(--oasis-bg);
+}
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: Figtree, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:is(.public-site, .auth-site, .guest-shell, .staff-portal) {
+    color: var(--oasis-text);
+    background: var(--oasis-bg);
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.font-serif) {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+    font-style: normal !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(h1, h2, h3, h4).italic,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(h1, h2, h3, h4) .italic {
+    font-style: normal !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.rounded-none) {
+    border-radius: var(--oasis-radius-sm) !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where([class*="tracking-["]) {
+    letter-spacing: 0.075em !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(input, select, textarea) {
+    border-radius: var(--oasis-radius-sm) !important;
+    border-color: #cbd5e1 !important;
+    background: #fff !important;
+    color: var(--oasis-text) !important;
+    box-shadow: none !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(input, select, textarea):focus {
+    border-color: #60a5fa !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.13) !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a) {
+    text-underline-offset: 3px;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-amber-600,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-amber-700,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-amber-800,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-neutral-950 {
+    border-radius: var(--oasis-radius-sm) !important;
+    background: var(--oasis-primary) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 26px -18px rgba(37, 99, 235, 0.9) !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-amber-600:hover,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-amber-700:hover,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-amber-800:hover,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-neutral-950:hover {
+    background: var(--oasis-primary-dark) !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.text-amber-300, .text-amber-400, .text-amber-500, .text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) {
+    color: var(--oasis-primary) !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-amber-50, .bg-amber-100, .bg-amber-200) {
+    background-color: var(--oasis-primary-soft) !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.border-amber-100, .border-amber-200, .border-amber-300, .border-amber-500, .border-amber-600) {
+    border-color: #bfdbfe !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.shadow-none, .shadow-sm, .shadow-md, .shadow-lg) {
+    box-shadow: var(--oasis-shadow) !important;
+}
+
+/* Public website */
+.public-site {
+    min-height: 100vh;
+    background: var(--oasis-bg) !important;
+}
+
+.public-site :where(.bg-\[\#f5f5f3\], .bg-\[\#faf9f6\], .bg-\[\#faf9f5\]) {
+    background-color: var(--oasis-bg) !important;
+}
+
+.public-site :where(.bg-white.border, article.bg-white, section.bg-white, form.bg-white, aside.bg-white) {
+    border-color: var(--oasis-border) !important;
+    border-radius: var(--oasis-radius) !important;
+    box-shadow: var(--oasis-shadow) !important;
+}
+
+.public-site :where(.bg-neutral-950, .bg-neutral-900) {
+    background-color: #0f172a !important;
+}
+
+.public-site :where(section, article, form, aside) {
+    min-width: 0;
+}
+
+.public-site :where(h1, h2, h3) {
+    color: var(--oasis-text);
+    letter-spacing: -0.035em !important;
+}
+
+.public-site :where(p, li) {
+    line-height: 1.7;
+}
+
+.public-site :where(.uppercase) {
+    letter-spacing: 0.075em !important;
+}
+
+.public-site table {
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border: 1px solid var(--oasis-border);
+    border-radius: var(--oasis-radius);
+    background: #fff;
+}
+
+.public-site thead {
+    background: var(--oasis-surface-soft) !important;
+    color: #475569 !important;
+}
+
+/* Authentication */
+.auth-site .auth-card {
+    border-radius: 1.5rem !important;
+    border-color: var(--oasis-border) !important;
+    box-shadow: 0 32px 80px -42px rgba(15, 23, 42, 0.62) !important;
+}
+
+.auth-site :where(button[type="submit"], a.bg-blue-600) {
+    min-height: 48px;
+}
+
+.auth-site :where(.uppercase) {
+    letter-spacing: 0.06em !important;
+}
+
+/* Guest portal */
+.guest-shell {
+    background: #f1f5f9 !important;
+}
+
+.guest-shell aside {
+    background: #fff !important;
+    border-color: var(--oasis-border) !important;
+}
+
+.guest-content {
+    background: #f1f5f9 !important;
+}
+
+.guest-content > div > :where(.min-h-screen, .h-screen) {
+    min-height: 0 !important;
+    height: auto !important;
+}
+
+.guest-content :where(.bg-\[\#f5f5f3\], .bg-\[\#faf9f6\], .bg-\[\#faf9f5\]) {
+    background-color: transparent !important;
+}
+
+.guest-content :where(.bg-white.border, article.bg-white, section.bg-white, aside.bg-white, form.bg-white) {
+    border-color: var(--oasis-border) !important;
+    border-radius: var(--oasis-radius) !important;
+    box-shadow: var(--oasis-shadow) !important;
+}
+
+.guest-content :where(.bg-neutral-950, .bg-neutral-900) {
+    background-color: #172033 !important;
+}
+
+.guest-content :where(.bg-neutral-950, .bg-neutral-900) .text-amber-300,
+.guest-content :where(.bg-neutral-950, .bg-neutral-900) .text-amber-400,
+.guest-content :where(.bg-neutral-950, .bg-neutral-900) .text-amber-500 {
+    color: #93c5fd !important;
+}
+
+.guest-content :where(table) {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border: 1px solid var(--oasis-border);
+    border-radius: var(--oasis-radius);
+    background: #fff;
+}
+
+.guest-content thead {
+    background: #f8fafc !important;
+    color: #475569 !important;
+}
+
+.guest-content tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+.guest-content :where([class*="max-h-"][class*="overflow-y-auto"], [class*="overflow-x-auto"]) {
+    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-width: thin;
+}
+
+.guest-content :where(.fixed.inset-0) > :where(.relative, article) {
+    border-radius: 1.25rem !important;
+}
+
+.guest-content :where(button.uppercase, a.uppercase) {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-size: 0.875rem !important;
+}
+
+.guest-content :where(.text-\[8px\], .text-\[9px\], .text-\[10px\]) {
+    letter-spacing: 0.045em !important;
+}
+
+/* Staff portals */
+.staff-portal {
+    background: var(--oasis-bg) !important;
+}
+
+.staff-portal :where(.bg-\[\#f5f5f3\], .bg-\[\#faf9f6\], .bg-\[\#faf9f5\]) {
+    background-color: var(--oasis-bg) !important;
+}
+
+.staff-portal :where(main, .p-10, .flex-1) {
+    min-width: 0;
+}
+
+.staff-portal :where(main, .p-10) > :where(.bg-white, section, article) {
+    border-radius: var(--oasis-radius) !important;
+}
+
+.staff-portal :where(.bg-white.border, article.bg-white, section.bg-white, form.bg-white, .shadow-sm, .shadow-md) {
+    border-color: var(--oasis-border) !important;
+    border-radius: var(--oasis-radius) !important;
+    box-shadow: var(--oasis-shadow) !important;
+}
+
+.staff-portal :where(.bg-neutral-950, .bg-neutral-900) {
+    background-color: var(--oasis-sidebar) !important;
+}
+
+.staff-portal :where(button.uppercase, a.uppercase) {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.staff-portal :where(h1, h2, h3, h4) {
+    letter-spacing: -0.025em !important;
+}
+
+.staff-portal table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border: 1px solid var(--oasis-border);
+    border-radius: var(--oasis-radius);
+    background: #fff;
+}
+
+.staff-portal thead {
+    background: #f8fafc !important;
+    color: #475569 !important;
+}
+
+.staff-portal th {
+    padding-top: 0.85rem !important;
+    padding-bottom: 0.85rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 650 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: none !important;
+}
+
+.staff-portal td {
+    border-color: #f1f5f9 !important;
+}
+
+.staff-portal tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+.staff-portal :where(.fixed.inset-0) > :where(.relative, .bg-white) {
+    border-radius: 1.25rem !important;
+}
+
+.staff-portal :where(.text-\[8px\], .text-\[9px\], .text-\[10px\]) {
+    letter-spacing: 0.04em !important;
+}
+
+.staff-portal :where(.uppercase) {
+    letter-spacing: 0.055em !important;
+}
+
+.staff-portal :where(.border-l-2) {
+    border-left-width: 0 !important;
+}
+
+/* Shared dialogs */
+.swal2-popup {
+    border-radius: 1.25rem !important;
+    border-color: var(--oasis-border) !important;
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+/* Better responsive spacing for legacy pages */
+@media (max-width: 767px) {
+    .public-site :where(section, header, footer) {
+        scroll-margin-top: 5rem;
+    }
+
+    .guest-content > div,
+    .staff-portal main,
+    .staff-portal .p-10 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    :is(.guest-content, .staff-portal) :where(table) {
+        min-width: 720px;
+    }
+
+    :is(.guest-content, .staff-portal) :where(.overflow-x-auto) {
+        border-radius: var(--oasis-radius);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
