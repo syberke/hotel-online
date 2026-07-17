@@ -15,7 +15,9 @@
         'password.request',
         'password.reset',
         'verification.notice',
+        'verification.*',
         'password.confirm',
+        'auth.otp.*',
     ]);
 @endphp
 
@@ -38,16 +40,11 @@
 
     <style>
         [x-cloak] { display: none !important; }
-
-        html, body {
-            background-color: #f8fafc !important;
-            margin: 0;
-            padding: 0;
-        }
+        html, body { background-color: #f8fafc !important; margin: 0; padding: 0; }
     </style>
 </head>
 
-<body class="{{ $isPublicSite ? 'public-site' : '' }} {{ $isAuthSite ? 'auth-site' : '' }} antialiased min-h-screen bg-slate-50 text-slate-900 m-0 p-0">
+<body class="{{ $isPublicSite ? 'public-site min-h-screen' : '' }} {{ $isAuthSite ? 'auth-site h-dvh overflow-hidden' : '' }} antialiased bg-slate-50 text-slate-900 m-0 p-0">
     <x-node-badge />
     <x-flash-dialogs />
 
