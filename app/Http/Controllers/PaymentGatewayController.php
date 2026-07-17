@@ -88,7 +88,7 @@ class PaymentGatewayController extends Controller
 
                 DB::table('payments')->where('booking_id', $bookingId)->update([
                     'payment_status' => $statusToUpdate === 'confirmed' ? 'paid' : 'failed',
-                    'payment_method' => 'midtrans',
+                    'payment_method' => 'e_wallet',
                     'note' => 'Midtrans status: ' . $transactionStatus,
                     'updated_at' => now(),
                 ]);
@@ -347,7 +347,7 @@ class PaymentGatewayController extends Controller
 
             DB::table('payments')->where('booking_id', $booking->id)->update([
                 'payment_status' => 'paid',
-                'payment_method' => 'midtrans',
+                'payment_method' => 'e_wallet',
                 'note' => 'Payment completed through Midtrans Snap.',
                 'updated_at' => now(),
             ]);
