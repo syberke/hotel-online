@@ -23,6 +23,7 @@
             'Operations' => array_values(array_filter([
                 [Route::has($portalPrefix . '.reservation') ? $portalPrefix . '.reservation' : null, 'fa-calendar-check', 'Reservations'],
                 [Route::has($portalPrefix . '.frontdesk') ? $portalPrefix . '.frontdesk' : null, 'fa-bell-concierge', 'Front Desk'],
+                [Route::has($portalPrefix . '.folio') ? $portalPrefix . '.folio' : null, 'fa-file-invoice', 'Folio'],
                 [Route::has($portalPrefix . '.rooms') ? $portalPrefix . '.rooms' : null, 'fa-bed', 'Rooms & Inventory'],
                 [Route::has($portalPrefix . '.roomservice') ? $portalPrefix . '.roomservice' : null, 'fa-bowl-food', 'Room Service'],
                 [Route::has($portalPrefix . '.restaurant') ? $portalPrefix . '.restaurant' : null, 'fa-utensils', 'Restaurant'],
@@ -89,11 +90,11 @@
             <main class="staff-main-content custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 md:p-5 xl:p-6">
                 <div class="mx-auto w-full max-w-[1600px] space-y-5">
                     @if($isManager && $managerReportSection)
-                        <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-semibold text-blue-600">Manager report export</p><p class="mt-1 text-sm text-slate-500">Export {{ ucwords(str_replace(['_', '-'], ' ', $managerReportSection)) }} using current database records.</p></div><div class="flex flex-wrap gap-2"><a href="{{ route('manager.section-report.excel', ['section' => $managerReportSection]) }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-file-excel text-emerald-600"></i>Excel</a><a href="{{ route('manager.section-report.pdf', ['section' => $managerReportSection]) }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-file-pdf"></i>PDF</a></div></section>
+                        <section class="flex min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><p class="text-sm font-semibold text-blue-600">Manager report export</p><p class="mt-1 text-sm text-slate-500">Export {{ ucwords(str_replace(['_', '-'], ' ', $managerReportSection)) }} using current database records.</p></div><div class="flex flex-wrap gap-2"><a href="{{ route('manager.section-report.excel', ['section' => $managerReportSection]) }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-file-excel text-emerald-600"></i>Excel</a><a href="{{ route('manager.section-report.pdf', ['section' => $managerReportSection]) }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-file-pdf"></i>PDF</a></div></section>
                     @endif
 
                     @if(request()->routeIs('admin.facilities') && !$isManager)
-                        <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-semibold text-blue-600">Facility master data</p><p class="mt-1 text-sm text-slate-500">Add a new facility area to the hotel inventory.</p></div><button type="button" onclick="openCreateFacilityModal()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add facility</button></section>
+                        <section class="flex min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><p class="text-sm font-semibold text-blue-600">Facility master data</p><p class="mt-1 text-sm text-slate-500">Add a new facility area to the hotel inventory.</p></div><button type="button" onclick="openCreateFacilityModal()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add facility</button></section>
                     @endif
 
                     {{ $slot }}
@@ -106,35 +107,6 @@
             </main>
         </section>
     </div>
-
-    @if(request()->routeIs('admin.restaurant', 'manager.restaurant') && isset($menus))
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const links = [...document.querySelectorAll('a')];
-                const orderTab = links.find((link) => link.textContent.trim() === 'Order Management');
-                const menuTab = links.find((link) => link.textContent.trim() === "Today's Menu");
-                const menuPanel = document.getElementById('restaurant-menu-inline-panel');
-                if (!orderTab || !menuTab || !menuPanel) return;
-                const tabHeader = orderTab.parentElement;
-                const card = tabHeader.parentElement;
-                card.appendChild(menuPanel);
-                const orderNodes = [...card.children].filter((node) => node !== tabHeader && node !== menuPanel);
-                const setActiveTab = (view) => {
-                    const showMenu = view === 'menu';
-                    orderNodes.forEach((node) => node.classList.toggle('hidden', showMenu));
-                    menuPanel.classList.toggle('hidden', !showMenu);
-                    orderTab.className = showMenu ? 'rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50' : 'rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700';
-                    menuTab.className = showMenu ? 'rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 cursor-pointer' : 'rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 cursor-pointer';
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('view', showMenu ? 'menu' : 'orders');
-                    window.history.replaceState({}, '', url);
-                };
-                orderTab.addEventListener('click', (event) => { event.preventDefault(); setActiveTab('orders'); });
-                menuTab.addEventListener('click', (event) => { event.preventDefault(); setActiveTab('menu'); });
-                setActiveTab(@json(request('view', 'orders')));
-            });
-        </script>
-    @endif
 
     @if($isManager && request()->routeIs('manager.reports'))
         <script>document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('a').forEach((link) => { if (link.textContent.includes('Export Spreadsheet')) link.href = @json(route('manager.reports.export.excel')); if (link.textContent.includes('Executive Print / PDF')) { link.href = @json(route('manager.reports.export.pdf')); link.removeAttribute('target'); } }); });</script>
