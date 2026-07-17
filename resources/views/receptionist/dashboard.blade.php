@@ -1,233 +1,100 @@
 <x-receptionist-dashboard-layout>
+    @php
+        $vacantCleanPct = $totalRooms > 0 ? ($vacantClean / $totalRooms) * 100 : 0;
+        $vacantDirtyPct = $totalRooms > 0 ? ($vacantDirty / $totalRooms) * 100 : 0;
+        $outOfOrderPct = $totalRooms > 0 ? ($outOfOrder / $totalRooms) * 100 : 0;
+        $occupiedPct = $totalRooms > 0 ? ($occupiedRooms / $totalRooms) * 100 : 0;
+    @endphp
 
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-bed"></i></div>
-            <div>
-                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Room Occupancy</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $occupancyRate }}%</span>
-                <span class="text-[9px] text-neutral-400 font-mono block">{{ $occupiedRooms }} / {{ $totalRooms }} Rooms</span>
+    <div class="space-y-6">
+        <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+            <div><p class="text-sm font-medium text-blue-600">Front office overview</p><h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Reception dashboard</h2><p class="mt-2 text-sm text-slate-500">Manage today’s arrivals, check-ins, check-outs, in-house guests, payments, and room readiness.</p></div>
+            <div class="flex flex-wrap gap-2"><a href="{{ route('receptionist.checkin') }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-right-to-bracket text-xs"></i>Check-in</a><a href="{{ route('receptionist.roomavailability') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-table-cells text-xs"></i>Room availability</a></div>
+        </section>
+
+        <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            @foreach([
+                ['Room occupancy', $occupancyRate . '%', $occupiedRooms . ' / ' . $totalRooms . ' rooms', 'fa-bed', 'bg-blue-50 text-blue-600'],
+                ['Check-ins today', $checkinsToday, $expectedCheckins . ' expected', 'fa-right-to-bracket', 'bg-emerald-50 text-emerald-600'],
+                ['Check-outs today', $checkoutsToday, $expectedCheckouts . ' expected', 'fa-right-from-bracket', 'bg-amber-50 text-amber-600'],
+                ['In-house guests', $inhouseGuests, $inhouseReservations . ' active stays', 'fa-users', 'bg-violet-50 text-violet-600'],
+                ['Revenue today', 'Rp ' . number_format($revenueToday, 0, ',', '.'), ($revenueDiffPct >= 0 ? '+' : '') . $revenueDiffPct . '% vs yesterday', 'fa-wallet', 'bg-cyan-50 text-cyan-600'],
+            ] as [$label, $value, $support, $icon, $classes])
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div class="flex items-start justify-between gap-4"><div><p class="text-xs font-medium text-slate-500">{{ $label }}</p><p class="mt-2 text-xl font-semibold tracking-tight text-slate-900">{{ $value }}</p><p class="mt-2 text-xs text-slate-400">{{ $support }}</p></div><span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl {{ $classes }}"><i class="fa-solid {{ $icon }}"></i></span></div></article>
+            @endforeach
+        </section>
+
+        <section class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+            <div class="space-y-6">
+                <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <header class="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div><p class="text-xs font-medium text-slate-500">Today’s front desk flow</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Expected arrivals</h3></div>
+                        <form action="{{ url()->current() }}" method="GET" class="relative w-full sm:w-72"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input type="search" name="search" value="{{ request('search') }}" placeholder="Search guest or room" class="w-full py-2.5 pl-10 pr-4 text-sm"></form>
+                    </header>
+                    <div class="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 p-3 text-xs font-semibold"><span class="rounded-lg bg-white px-3 py-2 text-blue-700 shadow-sm">Arrivals {{ $arrivalsCount }}</span><span class="rounded-lg px-3 py-2 text-slate-500">In house {{ $inHouseTabCount }}</span><span class="rounded-lg px-3 py-2 text-slate-500">Departures {{ $departuresTabCount }}</span><span class="rounded-lg px-3 py-2 text-slate-500">No show {{ $noShowTabCount }}</span></div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">Arrival</th><th class="px-4 py-3">Guest</th><th class="px-4 py-3">Reservation</th><th class="px-4 py-3">Room</th><th class="px-4 py-3">Status</th><th class="px-5 py-3 text-right">Action</th></tr></thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($arrivals as $booking)
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-5 py-4 font-semibold text-slate-900">{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y') }}<p class="mt-1 text-xs font-normal text-slate-400">{{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) ?: 1 }} night(s)</p></td>
+                                        <td class="px-4 py-4"><div class="flex items-center gap-3"><img src="{{ $booking->guest_avatar ?? 'https://ui-avatars.com/api/?name='.urlencode($booking->guest_name).'&background=2563eb&color=ffffff' }}" alt="{{ $booking->guest_name }}" class="h-9 w-9 rounded-xl object-cover"><div><p class="font-semibold text-slate-900">{{ $booking->guest_name }}</p><p class="mt-1 text-xs text-slate-500">{{ $booking->guest_phone ?? 'No phone' }}</p></div></div></td>
+                                        <td class="px-4 py-4"><p class="font-mono text-xs font-semibold text-slate-900">#RES-OA-{{ $booking->booking_id }}</p><p class="mt-1 text-xs text-slate-500">{{ $booking->room_type }}</p></td>
+                                        <td class="px-4 py-4"><p class="font-semibold text-slate-900">{{ $booking->room_number ?? 'Unassigned' }}</p></td>
+                                        <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $booking->booking_status === 'checked_in' ? 'bg-blue-50 text-blue-700' : ($booking->booking_status === 'checked_out' ? 'bg-slate-100 text-slate-600' : ($booking->booking_status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' : ($booking->booking_status === 'pending' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'))) }}">{{ ucwords(str_replace('_', ' ', $booking->booking_status)) }}</span></td>
+                                        <td class="px-5 py-4 text-right">
+                                            @if($booking->booking_status === 'pending')
+                                                <a href="{{ route('receptionist.payments', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"><i class="fa-solid fa-credit-card"></i>Settle bill</a>
+                                            @elseif($booking->booking_status === 'confirmed')
+                                                <a href="{{ route('receptionist.checkin', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-right-to-bracket"></i>Check in</a>
+                                            @elseif($booking->booking_status === 'checked_in')
+                                                <a href="{{ route('receptionist.folio', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-file-invoice"></i>Folio</a>
+                                            @else
+                                                <span class="text-xs text-slate-400">Closed</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="6" class="px-5 py-12 text-center text-sm text-slate-500">No expected arrivals found.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4"><div><p class="text-xs font-medium text-slate-500">Five-day movement</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Occupancy trend</h3></div><span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Live</span></div>
+                    <div class="mt-6 h-48 overflow-hidden rounded-xl bg-slate-50 p-5"><svg viewBox="0 0 500 100" class="h-full w-full overflow-visible fill-none stroke-blue-600" preserveAspectRatio="none"><path d="{{ $svgPathD }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+                    <div class="mt-3 flex justify-between text-xs font-medium text-slate-400">@foreach($trendDates as $dateLabel)<span>{{ $dateLabel }}</span>@endforeach</div>
+                </article>
             </div>
-        </div>
-        <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i class="fa-solid fa-right-to-bracket"></i></div>
-            <div>
-                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Check-ins Today</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $checkinsToday }}</span>
-                <span class="text-[9px] text-neutral-400 font-mono block">Expected Base: <span class="text-neutral-700 font-bold">{{ $expectedCheckins }}</span></span>
-            </div>
-        </div>
-        <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-amber-50 flex items-center justify-center text-amber-600 text-lg"><i class="fa-solid fa-right-from-bracket"></i></div>
-            <div>
-                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Check-outs Today</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $checkoutsToday }}</span>
-                <span class="text-[9px] text-neutral-400 font-mono block">Expected Base: <span class="text-neutral-700 font-bold">{{ $expectedCheckouts }}</span></span>
-            </div>
-        </div>
-        <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-purple-50 flex items-center justify-center text-purple-600 text-lg"><i class="fa-solid fa-users"></i></div>
-            <div>
-                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">In-house Guests</span>
-                <span class="text-xl font-bold text-neutral-900 block font-mono mt-0.5">{{ $inhouseGuests }}</span>
-                <span class="text-[9px] text-neutral-400 font-mono block">{{ $inhouseReservations }} Active Folios</span>
-            </div>
-        </div>
-        <div class="bg-white p-4 border border-neutral-200 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-cyan-50 flex items-center justify-center text-cyan-600 text-lg"><i class="fa-solid fa-wallet"></i></div>
-            <div>
-                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wide block">Revenue Today</span>
-                <span class="text-sm font-bold text-neutral-900 block font-mono mt-1">Rp {{ number_format($revenueToday, 0, ',', '.') }}</span>
-                <span class="text-[9px] {{ $revenueDiffPct >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-mono block">
-                    <i class="fa-solid {{ $revenueDiffPct >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} text-[8px]"></i> 
-                    {{ abs($revenueDiffPct) }}% <span class="text-neutral-400 font-sans">vs yesterday</span>
-                </span>
-            </div>
-        </div>
+
+            <aside class="space-y-6">
+                <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="border-b border-slate-100 pb-4"><p class="text-xs font-medium text-slate-500">Current inventory</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Room status</h3></div>
+                    <div class="mt-5 space-y-5">
+                        @foreach([
+                            ['Occupied', $occupiedRooms, $occupiedPct, 'bg-blue-600'],
+                            ['Vacant clean', $vacantClean, $vacantCleanPct, 'bg-emerald-500'],
+                            ['Vacant dirty', $vacantDirty, $vacantDirtyPct, 'bg-amber-500'],
+                            ['Out of order', $outOfOrder, $outOfOrderPct, 'bg-rose-500'],
+                        ] as [$label, $count, $percentage, $barClass])
+                            <div><div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-600">{{ $label }}</span><span class="font-semibold text-slate-900">{{ $count }} · {{ round($percentage) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $barClass }}" style="width: {{ min(100, $percentage) }}%"></div></div></div>
+                        @endforeach
+                    </div>
+                    <div class="mt-5 rounded-xl bg-slate-50 p-4 text-center"><p class="text-xs text-slate-500">Total rooms</p><p class="mt-1 text-2xl font-semibold text-slate-900">{{ $totalRooms }}</p></div>
+                </article>
+
+                <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="border-b border-slate-100 pb-4"><p class="text-xs font-medium text-slate-500">Needs attention</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Tasks & alerts</h3></div>
+                    <div class="mt-4 space-y-3">
+                        @if($outOfOrder > 0)<div class="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4"><i class="fa-solid fa-triangle-exclamation mt-0.5 text-rose-600"></i><div><p class="text-sm font-semibold text-rose-900">{{ $outOfOrder }} room(s) out of order</p><p class="mt-1 text-xs leading-5 text-rose-700">Review maintenance and availability status.</p></div></div>@endif
+                        @if($vacantDirty > 0)<div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4"><i class="fa-solid fa-broom mt-0.5 text-amber-600"></i><div><p class="text-sm font-semibold text-amber-900">{{ $vacantDirty }} room(s) awaiting cleaning</p><p class="mt-1 text-xs leading-5 text-amber-700">Coordinate with housekeeping before assignment.</p></div></div>@endif
+                        @if($outOfOrder === 0 && $vacantDirty === 0)<div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center text-sm font-medium text-emerald-700"><i class="fa-solid fa-circle-check mr-2"></i>No urgent room alerts.</div>@endif
+                    </div>
+                </article>
+            </aside>
+        </section>
     </div>
-
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start w-full mt-6">
-        
-        <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
-                <form action="{{ url()->current() }}" method="GET" class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-3">
-                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Front Desk Monitor</h3>
-                    <div class="relative min-w-[240px]">
-                        <i class="fa-solid fa-magnifying-glass text-neutral-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search guest name, room..." class="w-full pl-9 pr-4 py-1.5 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
-                    </div>
-                </form>
-
-                <div class="flex text-[11px] font-bold uppercase tracking-wider text-neutral-400 gap-5 border-b border-neutral-100 pb-1">
-                    <button class="text-blue-600 border-b-2 border-blue-600 pb-2 px-0.5">Arrivals ({{ $arrivalsCount }})</button>
-                    <button class="pb-2 px-0.5 opacity-60 cursor-not-allowed">In House ({{ $inHouseTabCount }})</button>
-                    <button class="pb-2 px-0.5 opacity-60 cursor-not-allowed">Departures ({{ $departuresTabCount }})</button>
-                    <button class="pb-2 px-0.5 opacity-60 cursor-not-allowed">No Show ({{ $noShowTabCount }})</button>
-                </div>
-
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-xs whitespace-nowrap">
-                        <thead>
-                            <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/40">
-                                <th class="py-3 px-3 font-semibold">Arrival Date</th>
-                                <th class="py-3 px-3 font-semibold">Guest Profile</th>
-                                <th class="py-3 px-3 font-semibold">Reservation Code</th>
-                                <th class="py-3 px-3 font-semibold">Room Mapping</th>
-                                <th class="py-3 px-4 font-semibold">Room Class Type</th>
-                                <th class="py-3 px-3 font-semibold">Nights</th>
-                                <th class="py-3 px-3 font-semibold">Status</th>
-                                <th class="py-3 px-3 text-center font-semibold">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
-                            @forelse($arrivals as $booking)
-                                <tr class="hover:bg-neutral-50/30 transition-colors">
-                                    <td class="py-3.5 px-3 font-mono text-neutral-900 font-bold">{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y') }}</td>
-                                    <td class="py-3.5 px-3 flex items-center gap-2.5">
-                                        <img src="{{ $booking->guest_avatar ?? 'https://ui-avatars.com/api/?name='.urlencode($booking->guest_name).'&background=2563eb&color=ffffff' }}" class="w-6 h-6 border object-cover rounded-sm">
-                                        <div>
-                                            <span class="text-neutral-900 font-bold block">{{ $booking->guest_name }}</span>
-                                            <span class="text-[9px] text-amber-700 font-mono font-bold block mt-0.5">
-                                                {{ $booking->guest_record_id ? '#GST-'.str_pad($booking->guest_record_id, 5, '0', STR_PAD_LEFT) : 'Guest ID pending' }}
-                                                &bull; {{ $booking->identity_number ?: 'Identity pending' }}
-                                            </span>
-                                            <span class="text-[9px] text-neutral-400 font-mono block mt-0.5">{{ $booking->guest_phone ?? 'No phone logged' }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3.5 px-3 font-mono text-neutral-500">#RES-OA-{{ $booking->booking_id }}</td>
-                                    <td class="py-3.5 px-3 font-mono font-bold text-neutral-900">
-                                        {{ $booking->room_number ?? 'UNASSIGNED' }}
-                                    </td>
-                                    <td class="py-3.5 px-4 text-neutral-500">{{ $booking->room_type }}</td>
-                                    <td class="py-3.5 px-3 font-mono">
-                                        {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) ?: 1 }}
-                                    </td>
-                                   <td class="py-3.5 px-3">
-    @if($booking->booking_status == 'checked_in')
-        <span class="bg-blue-50 text-blue-800 border border-blue-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">In House</span>
-    @elseif($booking->booking_status == 'checked_out')
-        <span class="bg-neutral-100 text-neutral-500 border border-neutral-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">Checked Out (Archived)</span>
-    @elseif($booking->booking_status == 'confirmed')
-        <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">Confirmed (Paid)</span>
-    @elseif($booking->booking_status == 'pending')
-        <span class="bg-rose-50 text-rose-800 border border-rose-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">Unpaid (Pending)</span>
-    @else
-        <span class="bg-neutral-50 text-neutral-800 border border-neutral-200 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wider">{{ str_replace('_', ' ', $booking->booking_status) }}</span>
-    @endif
-</td>
-
-<td class="py-3.5 px-3 text-center">
-    @if($booking->booking_status == 'checked_in')
-        <span class="inline-flex items-center justify-center border border-neutral-200 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none select-none">Active Stay</span>
-    @elseif($booking->booking_status == 'checked_out')
-        <span class="inline-flex items-center justify-center bg-neutral-100 border border-neutral-300 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none select-none" title="Reservasi ini telah selesai dan diarsipkan.">
-            <i class="fa-solid fa-archive mr-1 text-[8px]"></i> Folio Closed
-        </span>
-    @elseif($booking->booking_status == 'pending')
-        <a href="{{ route('receptionist.payments', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors" title="Tamu harus menyelesaikan pelunasan invoice sebelum check-in">
-            <i class="fa-solid fa-lock mr-1 text-[8px]"></i> Settle Bill First
-        </a>
-    @elseif(auth()->user()->role !== 'manager')
-        <a href="{{ route('receptionist.checkin', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-3 py-1 uppercase rounded-none cursor-pointer transition-colors">
-            Execute Check-In
-        </a>
-    @else
-        <span class="inline-flex items-center justify-center border border-neutral-200 text-neutral-400 text-[10px] px-3 py-1 uppercase rounded-none">Read Only</span>
-    @endif
-</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="py-6 text-center text-neutral-400">No expected front-desk arrivals logged for today.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white border border-neutral-200 p-6 shadow-sm">
-                <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
-                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Live Occupancy Metrics Matrix</h3>
-                    <span class="text-[9px] bg-neutral-50 border px-2 py-1 text-neutral-500 font-bold uppercase font-mono">Dynamic Enclave 5-Day Analytics</span>
-                </div>
-                <div class="h-36 w-full flex items-end gap-1 relative pt-4 font-mono font-bold text-[9px] text-neutral-400 text-center">
-                    <div class="w-full flex justify-between absolute h-full bottom-6 left-0 border-b border-neutral-100/70"><span>50%</span></div>
-                    <div class="w-full flex justify-between absolute h-full top-2 left-0 border-b border-neutral-100/70"><span>100%</span></div>
-                    
-                    <svg viewBox="0 0 500 100" class="w-full h-24 overflow-visible stroke-blue-500 stroke-2 fill-none">
-                        <path d="{{ $svgPathD }}" stroke-width="2" />
-                    </svg>
-                </div>
-                <div class="flex justify-between text-[9px] font-bold text-neutral-400 font-mono mt-3 border-t pt-2">
-                    @foreach($trendDates as $dateLabel)
-                        <span>{{ $dateLabel }}</span>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-
-        <div class="space-y-6">
-            
-            <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
-                <h3 class="font-serif text-sm text-neutral-900 font-bold border-b pb-3 mb-4">Room Status Allocation</h3>
-                
-                @php
-                    $vacantCleanPct = $totalRooms > 0 ? ($vacantClean / $totalRooms) * 100 : 0;
-                    $vacantDirtyPct = $totalRooms > 0 ? ($vacantDirty / $totalRooms) * 100 : 0;
-                    $outOfOrderPct = $totalRooms > 0 ? ($outOfOrder / $totalRooms) * 100 : 0;
-                    $occupiedPct = $totalRooms > 0 ? ($occupiedRooms / $totalRooms) * 100 : 0;
-                @endphp
-                <div class="flex items-center gap-4">
-                    <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                        <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="4.5" stroke-dasharray="{{ $occupiedPct }} {{ 100 - $occupiedPct }}" stroke-dashoffset="0"></circle>
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#10b981" stroke-width="4.5" stroke-dasharray="{{ $vacantCleanPct }} {{ 100 - $vacantCleanPct }}" stroke-dashoffset="-{{ $occupiedPct }}"></circle>
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f59e0b" stroke-width="4.5" stroke-dasharray="{{ $vacantDirtyPct }} {{ 100 - $vacantDirtyPct }}" stroke-dashoffset="-{{ $occupiedPct + $vacantCleanPct }}"></circle>
-                            <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#ef4444" stroke-width="4.5" stroke-dasharray="{{ $outOfOrderPct }} {{ 100 - $outOfOrderPct }}" stroke-dashoffset="-{{ $occupiedPct + $vacantCleanPct + $vacantDirtyPct }}"></circle>
-                        </svg>
-                        <div class="absolute text-center">
-                            <span class="text-lg font-bold font-mono text-neutral-900 block leading-none">{{ $totalRooms }}</span>
-                            <span class="text-[8px] text-neutral-400 uppercase font-bold mt-0.5 block">Rooms</span>
-                        </div>
-                    </div>
-                    <div class="space-y-1 w-full text-[10px] font-bold text-neutral-500">
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-blue-600 inline-block mr-1.5"></span>Occupied</span><span class="text-neutral-900 font-mono">{{ $occupiedRooms }} ({{ round($occupiedPct) }}%)</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-emerald-500 inline-block mr-1.5"></span>Vacant Clean</span><span class="text-neutral-900 font-mono">{{ $vacantClean }} ({{ round($vacantCleanPct) }}%)</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-amber-500 inline-block mr-1.5"></span>Vacant Dirty</span><span class="text-neutral-900 font-mono">{{ $vacantDirty }} ({{ round($vacantDirtyPct) }}%)</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>Out of Order</span><span class="text-neutral-900 font-mono">{{ $outOfOrder }} ({{ round($outOfOrderPct) }}%)</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white border border-neutral-200 p-6 shadow-sm space-y-4">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Tasks & System Alerts</h3>
-                </div>
-                <div class="space-y-3">
-                    @if($outOfOrder > 0)
-                        <div class="p-3 bg-red-50 border border-red-100 flex items-start gap-3">
-                            <i class="fa-solid fa-triangle-exclamation text-red-600 text-xs mt-0.5"></i>
-                            <div class="text-[11px] font-medium text-red-900">
-                                <span class="font-bold block">{{ $outOfOrder }} units are flagged Out-of-Order</span>
-                                <span class="text-[10px] text-red-700/80 mt-0.5 block">Requires routine technical block validation log reviews.</span>
-                            </div>
-                        </div>
-                    @endif
-                    @if($vacantDirty > 0)
-                        <div class="p-3 bg-amber-50 border border-amber-100 flex items-start gap-3">
-                            <i class="fa-solid fa-circle-exclamation text-amber-600 text-xs mt-0.5"></i>
-                            <div class="text-[11px] font-medium text-amber-900">
-                                <span class="font-bold block">Housekeeping Queue Warning</span>
-                                <span class="text-[10px] text-amber-700/80 mt-0.5 block">{{ $vacantDirty }} rooms are currently pending cleaning deployment.</span>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-         
-
-    </div>
-
 </x-receptionist-dashboard-layout>
