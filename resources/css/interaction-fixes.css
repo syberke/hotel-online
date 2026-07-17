@@ -1,0 +1,54 @@
+/* Interaction fixes loaded last. */
+
+:is(.public-site, .auth-site, .guest-shell, .staff-portal) input[type="checkbox"],
+:is(.public-site, .auth-site, .guest-shell, .staff-portal) input[type="radio"] {
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+    flex: 0 0 1rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0.25rem !important;
+    accent-color: #2563eb;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+:is(.public-site, .auth-site, .guest-shell, .staff-portal) label:has(input[type="checkbox"]),
+:is(.public-site, .auth-site, .guest-shell, .staff-portal) label:has(input[type="radio"]) {
+    cursor: pointer;
+}
+
+/* Prevent search placeholders from colliding with the magnifying-glass icon. */
+:is(.public-site, .guest-content, .staff-portal) .relative:has(.fa-magnifying-glass) > input,
+:is(.public-site, .guest-content, .staff-portal) .relative:has(.fa-search) > input,
+:is(.public-site, .guest-content, .staff-portal) .relative:has(.fa-magnifying-glass) > select {
+    padding-left: 2.8rem !important;
+}
+
+:is(.public-site, .guest-content, .staff-portal) .relative:has(.fa-magnifying-glass) > input::placeholder,
+:is(.public-site, .guest-content, .staff-portal) .relative:has(.fa-search) > input::placeholder {
+    text-overflow: ellipsis;
+}
+
+/* Keep transparent logo files transparent in every shell. */
+.oasis-logo-transparent,
+.oasis-logo-transparent img {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 420px) {
+    :is(.public-site, .auth-site, .guest-shell, .staff-portal) input[type="checkbox"],
+    :is(.public-site, .auth-site, .guest-shell, .staff-portal) input[type="radio"] {
+        width: 1.1rem !important;
+        height: 1.1rem !important;
+        min-width: 1.1rem !important;
+        min-height: 1.1rem !important;
+        flex-basis: 1.1rem !important;
+    }
+}
