@@ -11,28 +11,36 @@ use Tests\TestCase;
 
 class RolePathGuardTest extends TestCase
 {
-    public function test_manager_can_read_shared_admin_room_json_endpoint(): void
+    public function test_manager_can_read_shared_admin_detail_endpoints(): void
     {
-        $request = Request::create('/admin/rooms/1/json-detail', 'GET');
-        $route = (new Route(['GET'], '/admin/rooms/{id}/json-detail', fn () => null))
-            ->name('admin.room.json');
+        $sharedRoutes = [
+            ['admin.room.json', '/admin/rooms/1/json-detail'],
+            ['admin.reservations.json', '/admin/reservations/1/json-detail'],
+            ['admin.restaurant.order.json', '/admin/restaurant-order/1/json-detail'],
+            ['admin.users.json', '/admin/users/1/json-detail'],
+            ['admin.facilities.booking.detail', '/admin/facilities/booking/1/detail'],
+        ];
 
-        $manager = new User();
-        $manager->role = 'manager';
+        foreach ($sharedRoutes as [$routeName, $uri]) {
+            $request = Request::create($uri, 'GET');
+            $route = (new Route(['GET'], $uri, fn () => null))->name($routeName);
+            $manager = new User();
+            $manager->role = 'manager';
 
-        $request->setRouteResolver(fn () => $route);
-        $request->setUserResolver(fn () => $manager);
+            $request->setRouteResolver(fn () => $route);
+            $request->setUserResolver(fn () => $manager);
 
-        $response = (new RolePathGuard())->handle(
-            $request,
-            fn () => new Response('allowed', 200),
-        );
+            $response = (new RolePathGuard())->handle(
+                $request,
+                fn () => new Response('allowed', 200),
+            );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('allowed', $response->getContent());
+            $this->assertSame(200, $response->getStatusCode(), $routeName . ' should be readable by Manager.');
+            $this->assertSame('allowed', $response->getContent());
+        }
     }
 
-    public function test_manager_is_still_redirected_from_other_admin_routes(): void
+    public function test_manager_is_still_redirected_from_admin_mutations(): void
     {
         $request = Request::create('/admin/users/1/update', 'POST');
         $route = (new Route(['POST'], '/admin/users/{id}/update', fn () => null))
