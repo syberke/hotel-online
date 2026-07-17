@@ -13,6 +13,7 @@ ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 VIEWPORTS = {
     "mobile": {"width": 390, "height": 844},
     "tablet": {"width": 768, "height": 1024},
+    "laptop": {"width": 1366, "height": 768},
     "desktop": {"width": 1440, "height": 900},
 }
 
@@ -106,6 +107,7 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
             const html = document.documentElement;
             const body = document.body;
             const scrollWidth = Math.max(html.scrollWidth, body ? body.scrollWidth : 0);
+            const scrollHeight = Math.max(html.scrollHeight, body ? body.scrollHeight : 0);
             const visibleAsides = [...document.querySelectorAll('aside')]
                 .map((aside) => {
                     const rect = aside.getBoundingClientRect();
@@ -134,8 +136,12 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
             const widestAside = visibleAsides.sort((a, b) => b.width - a.width)[0] || null;
             return {
                 width: window.innerWidth,
+                height: window.innerHeight,
                 scrollWidth,
+                scrollHeight,
                 overflowX: Math.max(0, scrollWidth - window.innerWidth),
+                overflowY: Math.max(0, scrollHeight - window.innerHeight),
+                bodyOverflowY: body ? getComputedStyle(body).overflowY : '',
                 viewportMeta: document.querySelector('meta[name="viewport"]')?.getAttribute('content') || '',
                 title: document.title,
                 widestAside,
@@ -153,6 +159,8 @@ def audit_page(page, route: str, viewport_name: str, scope: str) -> dict:
         failures.append(f"horizontal overflow {metrics['overflowX']}px")
     if "width=device-width" not in metrics["viewportMeta"]:
         failures.append("missing responsive viewport meta")
+    if route == "/login" and viewport_name in {"laptop", "desktop"} and metrics["overflowY"] > 4:
+        failures.append(f"login page scrolls by {metrics['overflowY']}px at 100% zoom")
 
     aside = metrics.get("widestAside")
     if metrics["width"] <= 480 and aside and aside["width"] >= 180 and aside["siblingWidth"] < metrics["width"] * 0.7:
