@@ -40,7 +40,7 @@ Route::get('/rooms', [PublicPortalController::class, 'allRoomsView'])->name('roo
 Route::get('/rooms/{id}', [PublicPortalController::class, 'roomShow'])->name('rooms.show');
 Route::post('/rooms/check', [PublicPortalController::class, 'checkAvailability'])->name('rooms.check');
 Route::get('/restaurant', [RestaurantCatalogController::class, 'index'])->name('restaurant');
-Route::get('/restaurant/menu/{id}', [PublicPortalController::class, 'menuShow'])->name('restaurant.detail');
+Route::get('/restaurant/menu/{id}', [RestaurantCatalogController::class, 'show'])->name('restaurant.detail');
 Route::get('/facilities', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities');
 Route::get('/contact', fn () => view('page.contact'))->name('contact');
 Route::post('/contact', [ContactMessageController::class, 'store'])->middleware('throttle:10,1')->name('contact.store');
