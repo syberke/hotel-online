@@ -30,7 +30,7 @@ jobs:
           php artisan key:generate
 
       - name: Lint application PHP
-        run: find app config routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find app config routes tests database/migrations database/seeders -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Install frontend dependencies
         run: npm ci
@@ -40,3 +40,6 @@ jobs:
 
       - name: Run receipt regression test
         run: php artisan test --filter=RoomReceiptRouteTest
+
+      - name: Run operational content regression test
+        run: php artisan test --filter=OperationalContentRoutesTest
