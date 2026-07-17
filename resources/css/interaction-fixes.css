@@ -34,12 +34,25 @@
     text-overflow: ellipsis;
 }
 
-/* Keep transparent logo files transparent in every shell. */
+/* Keep transparent logo files transparent in every shell and in the PWA card. */
 .oasis-logo-transparent,
-.oasis-logo-transparent img {
+.oasis-logo-transparent img,
+.oasis-pwa-card__logo,
+.oasis-pwa-card__logo img {
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
+}
+
+.oasis-pwa-card__logo {
+    width: 66px !important;
+    height: 46px !important;
+    overflow: visible !important;
+}
+
+.oasis-pwa-card__logo img {
+    width: 66px !important;
+    max-height: 40px !important;
 }
 
 @media (max-width: 420px) {
