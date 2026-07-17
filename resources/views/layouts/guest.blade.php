@@ -7,6 +7,8 @@
         'restaurant.detail',
         'facilities',
         'contact',
+        'privacy',
+        'terms',
     ]);
 
     $isAuthSite = request()->routeIs([
