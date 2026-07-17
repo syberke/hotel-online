@@ -47,11 +47,11 @@
 
         <aside class="fixed inset-y-0 left-0 z-50 flex h-dvh w-[16rem] flex-col overflow-hidden border-r border-slate-800 bg-slate-950 text-slate-300 shadow-2xl transition-transform duration-300 lg:static lg:z-30 lg:translate-x-0 lg:shadow-none" :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full'">
             <div class="flex h-[4.5rem] shrink-0 items-center justify-between border-b border-slate-800 px-5">
-                <a href="{{ route('receptionist.dashboard') }}" class="inline-flex rounded-xl bg-white px-3 py-2 shadow-sm"><x-brand-logo class="h-8 w-auto" /></a>
+                <a href="{{ route('receptionist.dashboard') }}" class="oasis-logo-transparent inline-flex"><x-brand-logo class="h-9 w-auto brightness-0 invert" /></a>
                 <button type="button" class="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden" @click="mobileNavOpen = false" aria-label="Close navigation"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4">
+            <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4" data-preserve-scroll="receptionist-sidebar">
                 <div class="mb-4 rounded-xl border border-slate-800 bg-slate-900/70 p-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Reception workspace</p>
                     <p class="mt-1 text-sm font-semibold text-white">{{ auth()->user()->name }}</p>
@@ -64,8 +64,9 @@
                             <p class="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">{{ $groupLabel }}</p>
                             <div class="space-y-1">
                                 @foreach($items as [$routeName, $icon, $label])
-                                    <a href="{{ route($routeName) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ request()->routeIs($routeName) ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg {{ request()->routeIs($routeName) ? 'bg-white/15' : 'bg-slate-900 text-slate-400' }}"><i class="fa-solid {{ $icon }} text-xs"></i></span>
+                                    @php($isActive = request()->routeIs($routeName))
+                                    <a href="{{ route($routeName) }}" @if($isActive) aria-current="page" @endif class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ $isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg {{ $isActive ? 'bg-white/15' : 'bg-slate-900 text-slate-400' }}"><i class="fa-solid {{ $icon }} text-xs"></i></span>
                                         <span class="truncate">{{ $label }}</span>
                                     </a>
                                 @endforeach
@@ -83,10 +84,7 @@
 
         <section class="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
             <header class="staff-topbar flex h-[4.5rem] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6">
-                <div class="flex min-w-0 items-center gap-3">
-                    <button type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm lg:hidden" @click="mobileNavOpen = true" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
-                    <div class="min-w-0"><p class="text-xs font-medium text-slate-500">Front office</p><h1 class="truncate text-lg font-semibold tracking-tight text-slate-900">Reception Desk</h1></div>
-                </div>
+                <div class="flex min-w-0 items-center gap-3"><button type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm lg:hidden" @click="mobileNavOpen = true" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button><div class="min-w-0"><p class="text-xs font-medium text-slate-500">Front office</p><h1 class="truncate text-lg font-semibold tracking-tight text-slate-900">Reception Desk</h1></div></div>
                 <div class="flex items-center gap-2 sm:gap-3"><span class="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:inline-flex"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Online</span><a href="{{ route('home') }}" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50"><span class="hidden sm:inline">Hotel website</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a></div>
             </header>
 
