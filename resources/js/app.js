@@ -6,6 +6,7 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 import '../css/design-system.css';
 import '../css/staff-modules.css';
 import '../css/responsive-fixes.css';
+import '../css/contrast-final.css';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
