@@ -4,13 +4,12 @@
     --pwa-slate: #0f172a;
     --pwa-muted: #64748b;
     --pwa-border: #e2e8f0;
-    --pwa-surface: #ffffff;
 }
 
 #oasis-pwa-install-card,
 #oasis-pwa-connection-status {
-    font-family: Figtree, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     box-sizing: border-box;
+    font-family: Figtree, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 #oasis-pwa-install-card *,
@@ -24,7 +23,7 @@
     right: max(18px, env(safe-area-inset-right));
     bottom: max(18px, env(safe-area-inset-bottom));
     z-index: 99998;
-    width: min(370px, calc(100vw - 32px));
+    width: min(390px, calc(100vw - 32px));
     overflow: hidden;
     border: 1px solid var(--pwa-border);
     border-radius: 20px;
@@ -41,9 +40,7 @@
     background: linear-gradient(90deg, #2563eb, #60a5fa, #22c55e);
 }
 
-.oasis-pwa-card__body {
-    padding: 18px;
-}
+.oasis-pwa-card__body { padding: 18px; }
 
 .oasis-pwa-card__header {
     display: flex;
@@ -51,73 +48,46 @@
     gap: 13px;
 }
 
+/* The user-provided logo already has a transparent background. */
 .oasis-pwa-card__logo {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    flex: 0 0 auto;
-    overflow: hidden;
-    border: 1px solid var(--pwa-border);
-    border-radius: 15px;
-    background: #fff;
-    box-shadow: 0 12px 30px -22px rgba(15, 23, 42, .65);
+    display: flex;
+    width: 72px;
+    min-width: 72px;
+    height: 44px;
+    align-items: center;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .oasis-pwa-card__logo img {
     display: block;
-    width: 44px;
-    max-height: 34px;
+    width: 72px;
+    max-height: 40px;
     object-fit: contain;
+    background: transparent;
 }
 
-.oasis-pwa-card__copy {
-    min-width: 0;
-    flex: 1;
-}
-
-.oasis-pwa-card__eyebrow {
-    margin: 0;
-    color: var(--pwa-blue);
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.3;
-}
-
-.oasis-pwa-card__title {
-    margin: 4px 0 0;
-    color: var(--pwa-slate);
-    font-size: 17px;
-    font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: -.02em;
-}
-
-.oasis-pwa-card__description {
-    margin: 7px 0 0;
-    color: var(--pwa-muted);
-    font-size: 13px;
-    line-height: 1.55;
-}
+.oasis-pwa-card__copy { min-width: 0; flex: 1; }
+.oasis-pwa-card__eyebrow { margin: 0; color: var(--pwa-blue); font-size: 11px; font-weight: 700; line-height: 1.3; }
+.oasis-pwa-card__title { margin: 4px 0 0; color: var(--pwa-slate); font-size: 17px; font-weight: 700; line-height: 1.25; letter-spacing: -.02em; }
+.oasis-pwa-card__description { margin: 7px 0 0; color: var(--pwa-muted); font-size: 13px; line-height: 1.55; }
 
 .oasis-pwa-card__close {
     display: grid;
-    place-items: center;
     width: 34px;
     height: 34px;
     flex: 0 0 auto;
+    place-items: center;
     border: 0;
     border-radius: 10px;
     background: #f8fafc;
     color: #64748b;
     cursor: pointer;
-    transition: background .18s ease, color .18s ease;
 }
-
-.oasis-pwa-card__close:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-}
+.oasis-pwa-card__close:hover { background: #f1f5f9; color: #0f172a; }
 
 .oasis-pwa-card__benefits {
     display: grid;
@@ -125,7 +95,6 @@
     gap: 8px;
     margin-top: 15px;
 }
-
 .oasis-pwa-card__benefit {
     min-width: 0;
     border-radius: 11px;
@@ -144,7 +113,6 @@
     gap: 9px;
     margin-top: 16px;
 }
-
 .oasis-pwa-card__install,
 .oasis-pwa-card__later {
     min-height: 44px;
@@ -154,32 +122,11 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
 }
-
-.oasis-pwa-card__install {
-    border: 1px solid var(--pwa-blue);
-    background: var(--pwa-blue);
-    color: #fff;
-    box-shadow: 0 13px 26px -19px rgba(37, 99, 235, .95);
-}
-
-.oasis-pwa-card__install:hover {
-    border-color: var(--pwa-blue-dark);
-    background: var(--pwa-blue-dark);
-    transform: translateY(-1px);
-}
-
-.oasis-pwa-card__later {
-    border: 1px solid var(--pwa-border);
-    background: #fff;
-    color: #475569;
-}
-
-.oasis-pwa-card__later:hover {
-    background: #f8fafc;
-    color: #0f172a;
-}
+.oasis-pwa-card__install { border: 1px solid var(--pwa-blue); background: var(--pwa-blue); color: #fff; box-shadow: 0 13px 26px -19px rgba(37, 99, 235, .95); }
+.oasis-pwa-card__install:hover { border-color: var(--pwa-blue-dark); background: var(--pwa-blue-dark); transform: translateY(-1px); }
+.oasis-pwa-card__later { border: 1px solid var(--pwa-border); background: #fff; color: #475569; }
+.oasis-pwa-card__later:hover { background: #f8fafc; color: #0f172a; }
 
 #oasis-pwa-connection-status {
     position: fixed;
@@ -187,9 +134,9 @@
     top: max(14px, env(safe-area-inset-top));
     z-index: 99999;
     display: inline-flex;
+    max-width: calc(100vw - 32px);
     align-items: center;
     gap: 8px;
-    max-width: calc(100vw - 32px);
     transform: translateX(-50%);
     border: 1px solid var(--pwa-border);
     border-radius: 999px;
@@ -200,70 +147,30 @@
     font-weight: 700;
     line-height: 1;
     box-shadow: 0 16px 35px -24px rgba(15, 23, 42, .65);
-    backdrop-filter: blur(14px);
-    animation: oasis-pwa-status-enter .2s ease-out both;
 }
-
-#oasis-pwa-connection-status::before {
-    width: 8px;
-    height: 8px;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background: #22c55e;
-    content: '';
-}
-
-#oasis-pwa-connection-status[data-online="false"]::before {
-    background: #f59e0b;
-}
-
-#oasis-pwa-connection-status[data-online="false"] {
-    border-color: #fde68a;
-    background: #fffbeb;
-    color: #92400e;
-}
+#oasis-pwa-connection-status::before { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: #22c55e; content: ''; }
+#oasis-pwa-connection-status[data-online="false"] { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+#oasis-pwa-connection-status[data-online="false"]::before { background: #f59e0b; }
 
 @keyframes oasis-pwa-enter {
     from { opacity: 0; transform: translateY(14px) scale(.98); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes oasis-pwa-status-enter {
-    from { opacity: 0; transform: translate(-50%, -8px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
-}
-
 @media (max-width: 640px) {
-    #oasis-pwa-install-card {
-        right: 12px;
-        bottom: max(12px, env(safe-area-inset-bottom));
-        left: 12px;
-        width: auto;
-        border-radius: 18px;
-    }
-
-    .oasis-pwa-card__body {
-        padding: 15px;
-    }
-
-    .oasis-pwa-card__benefits {
-        display: none;
-    }
+    #oasis-pwa-install-card { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; width: auto; border-radius: 18px; }
+    .oasis-pwa-card__body { padding: 15px; }
+    .oasis-pwa-card__benefits { display: none; }
+    .oasis-pwa-card__logo { width: 62px; min-width: 62px; }
+    .oasis-pwa-card__logo img { width: 62px; }
 }
 
 @media (max-height: 650px) and (min-width: 641px) {
-    #oasis-pwa-install-card {
-        bottom: 12px;
-    }
-
-    .oasis-pwa-card__benefits {
-        display: none;
-    }
+    #oasis-pwa-install-card { bottom: 12px; }
+    .oasis-pwa-card__benefits { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     #oasis-pwa-install-card,
-    #oasis-pwa-connection-status {
-        animation: none;
-    }
+    #oasis-pwa-connection-status { animation: none; }
 }
