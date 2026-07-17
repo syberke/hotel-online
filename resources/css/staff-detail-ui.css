@@ -1,0 +1,91 @@
+/* Shared sizing and interaction rules for staff detail actions and receipts. */
+.staff-portal .staff-view-action,
+.staff-portal :is(button, a):has(> i.fa-eye) {
+    display: inline-grid !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-width: 2.5rem !important;
+    min-height: 2.5rem !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid rgb(226 232 240) !important;
+    border-radius: 0.75rem !important;
+    background: #fff !important;
+    color: rgb(37 99 235) !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.05) !important;
+    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease !important;
+}
+
+.staff-portal .staff-view-action:hover,
+.staff-portal :is(button, a):has(> i.fa-eye):hover {
+    border-color: rgb(191 219 254) !important;
+    background: rgb(239 246 255) !important;
+    color: rgb(29 78 216) !important;
+    transform: translateY(-1px);
+}
+
+.staff-portal .staff-view-action > i,
+.staff-portal :is(button, a):has(> i.fa-eye) > i {
+    font-size: 0.875rem !important;
+    line-height: 1 !important;
+}
+
+.staff-detail-panel,
+.staff-portal [data-staff-detail-panel] {
+    width: min(46rem, calc(100vw - 2rem)) !important;
+    max-width: min(46rem, calc(100vw - 2rem)) !important;
+    max-height: calc(100dvh - 2rem) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+}
+
+.oasis-receipt,
+#booking-receipt,
+#room-receipt {
+    width: min(48rem, calc(100vw - 2rem)) !important;
+    max-width: min(48rem, calc(100vw - 2rem)) !important;
+    max-height: calc(100dvh - 2rem) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+}
+
+.staff-portal :where(.fixed.inset-0) {
+    overflow-y: auto;
+}
+
+.staff-portal :where(.fixed.inset-0) > :where(section, article, div):not(.absolute) {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+@media (max-width: 639px) {
+    .staff-detail-panel,
+    .staff-portal [data-staff-detail-panel],
+    .oasis-receipt,
+    #booking-receipt,
+    #room-receipt {
+        width: calc(100vw - 1rem) !important;
+        max-width: calc(100vw - 1rem) !important;
+        max-height: calc(100dvh - 1rem) !important;
+        border-radius: 1rem !important;
+    }
+
+    .staff-portal .staff-view-action,
+    .staff-portal :is(button, a):has(> i.fa-eye) {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        min-width: 2.75rem !important;
+        min-height: 2.75rem !important;
+    }
+}
+
+@media print {
+    .oasis-receipt,
+    #booking-receipt,
+    #room-receipt {
+        width: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}
