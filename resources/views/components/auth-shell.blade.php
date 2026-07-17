@@ -19,15 +19,18 @@
         <div class="relative z-10 grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(520px,0.72fr)]">
             <section class="hidden flex-col justify-end p-12 text-white lg:flex xl:p-16">
                 <div class="max-w-xl">
-                    <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-blue-100 backdrop-blur">
+                    <div class="inline-flex rounded-2xl bg-white p-3 shadow-xl shadow-slate-950/20">
+                        <x-brand-logo class="h-10 w-auto" />
+                    </div>
+                    <span class="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-blue-100 backdrop-blur">
                         <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-                        Secure guest access
+                        Secure account access
                     </span>
-                    <h2 class="mt-6 text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">
-                        Your stay is easier to manage when everything is connected.
+                    <h2 class="mt-5 text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">
+                        Manage every part of your stay from one connected portal.
                     </h2>
                     <p class="mt-4 max-w-lg text-sm leading-7 text-slate-300">
-                        Access reservations, hotel services, dining orders, facilities, and account settings from one secure portal.
+                        Reservations, dining, facilities, receipts, and account security stay organized in one place.
                     </p>
 
                     <div class="mt-8 grid max-w-lg grid-cols-3 gap-3">
@@ -40,8 +43,8 @@
                             <p class="mt-3 text-xs font-medium text-slate-200">Dining</p>
                         </div>
                         <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                            <i class="fa-solid fa-spa text-blue-300"></i>
-                            <p class="mt-3 text-xs font-medium text-slate-200">Facilities</p>
+                            <i class="fa-solid fa-receipt text-blue-300"></i>
+                            <p class="mt-3 text-xs font-medium text-slate-200">Receipts</p>
                         </div>
                     </div>
                 </div>
@@ -50,14 +53,9 @@
             <section class="flex min-h-screen items-center justify-center px-4 py-20 sm:px-8 lg:bg-slate-50/95 lg:px-10">
                 <div class="auth-card {{ $maxWidth }} w-full p-6 sm:p-8 lg:p-10">
                     <div class="mb-7">
-                        <div class="mb-5 flex items-center gap-3">
-                            <span class="grid h-11 w-11 place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200/60">
-                                <i class="fa-solid fa-hotel text-sm"></i>
-                            </span>
-                            <div>
-                                <p class="text-sm font-semibold text-slate-900">Oasis Hotel</p>
-                                <p class="text-xs text-slate-500">Guest account</p>
-                            </div>
+                        <div class="mb-6 flex items-center justify-between gap-4">
+                            <x-brand-logo class="h-10 w-auto" />
+                            <span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700">Secure portal</span>
                         </div>
 
                         <p class="text-sm font-medium text-blue-600">{{ $eyebrow }}</p>
