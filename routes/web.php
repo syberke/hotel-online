@@ -31,6 +31,7 @@ use App\Http\Controllers\CoreDashboardController;
 use App\Http\Controllers\CoreFacilityViewController;
 use App\Http\Controllers\LiveReportViewController;
 use App\Http\Controllers\CoreManagerReportController;
+use App\Http\Controllers\StaffRoomDetailController;
 
 Route::post('/midtrans/callback', [PaymentGatewayController::class, 'handleMidtransCallback']);
 
@@ -191,7 +192,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin/facilities/booking/{id}/detail', [CoreFacilityViewController::class, 'adminFacilityBookingDetail']);
     Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
     Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
-    Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
+    Route::get('/admin/rooms/{id}/json-detail', [StaffRoomDetailController::class, 'show'])->name('admin.room.json');
 });
 
 require __DIR__.'/auth.php';
