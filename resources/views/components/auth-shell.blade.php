@@ -19,9 +19,7 @@
         <div class="relative z-10 grid min-h-dvh grid-cols-1 lg:h-dvh lg:min-h-0 lg:grid-cols-[minmax(0,0.82fr)_minmax(480px,0.72fr)] xl:grid-cols-[minmax(0,0.95fr)_minmax(500px,0.68fr)]">
             <section class="auth-visual hidden min-h-0 flex-col justify-end overflow-hidden p-8 text-white lg:flex xl:p-12 2xl:p-16">
                 <div class="max-w-xl">
-                    <div class="inline-flex rounded-2xl bg-white p-3 shadow-xl shadow-slate-950/20">
-                        <x-brand-logo class="h-9 w-auto xl:h-10" />
-                    </div>
+                    <x-brand-logo class="oasis-logo-transparent h-12 w-auto brightness-0 invert xl:h-14" />
                     <span class="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-blue-100 backdrop-blur">
                         <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
                         Secure account access
@@ -54,7 +52,7 @@
                 <div class="auth-card {{ $maxWidth }} w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-950/20 sm:p-6 lg:p-7 xl:p-8">
                     <div class="auth-heading mb-5 lg:mb-6">
                         <div class="mb-4 flex items-center justify-between gap-4">
-                            <x-brand-logo class="h-8 w-auto sm:h-9" />
+                            <x-brand-logo class="oasis-logo-transparent h-8 w-auto sm:h-9" />
                             <span class="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700">Secure portal</span>
                         </div>
 
