@@ -1,105 +1,89 @@
-<div id="restaurant-menu-inline-panel" class="hidden space-y-5 pt-1">
-    <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+<section id="restaurant-menu-inline-panel" class="hidden space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    @php($menuCategories = ['Appetizers', 'Main Courses', 'Seafood', 'Steak Selection', 'Desserts', 'Beverages'])
+
+    <div class="flex flex-col gap-5 border-b border-slate-100 pb-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-            <h3 class="font-serif text-sm text-neutral-900 font-bold tracking-wide">Today's Menu Master Data</h3>
-            <p class="text-[10px] text-neutral-400 mt-1">Tambah dan edit menu langsung dari halaman Restaurant Gastronomy.</p>
+            <p class="text-sm font-semibold text-blue-600">Restaurant master data</p>
+            <h3 class="mt-1 text-xl font-semibold tracking-tight text-slate-900">Menu catalog</h3>
+            <p class="mt-2 text-sm text-slate-500">Category and availability are stored in the database and drive the public menu filters.</p>
         </div>
 
-        @if(auth()->user()->role !== 'manager')
-            <form action="{{ route('admin.restaurant.menu.store') }}" method="POST" class="bg-neutral-50 border border-neutral-200 p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 w-full xl:max-w-4xl">
+        @if(auth()->user()->role === 'admin')
+            <form action="{{ route('admin.restaurant.menu.store') }}" method="POST" class="grid w-full gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2 xl:max-w-5xl xl:grid-cols-6">
                 @csrf
-                <input type="text" name="name" required placeholder="Menu name" class="px-3 py-2 text-xs border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900">
-                <input type="number" name="price" min="0" step="0.01" required placeholder="Price" class="px-3 py-2 text-xs border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 font-mono">
-                <input type="text" name="description" placeholder="Description" class="px-3 py-2 text-xs border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900">
-                <input type="url" name="foto_url" placeholder="Image URL" class="px-3 py-2 text-xs border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900">
-                <button type="submit" class="bg-neutral-950 hover:bg-neutral-800 text-white px-4 py-2 text-[10px] font-bold uppercase tracking-wider cursor-pointer">
-                    <i class="fa-solid fa-plus mr-1"></i> Add Menu
-                </button>
+                <input type="text" name="name" required placeholder="Menu name" class="px-3 py-2.5 text-sm xl:col-span-2">
+                <select name="category" required class="px-3 py-2.5 text-sm"><option value="">Category</option>@foreach($menuCategories as $category)<option value="{{ $category }}">{{ $category }}</option>@endforeach</select>
+                <input type="number" name="price" min="0" step="0.01" required placeholder="Price" class="px-3 py-2.5 text-sm">
+                <input type="url" name="foto_url" placeholder="Image URL" class="px-3 py-2.5 text-sm xl:col-span-2">
+                <textarea name="description" rows="2" placeholder="Description" class="px-3 py-2.5 text-sm sm:col-span-2 xl:col-span-4"></textarea>
+                <label class="flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm text-slate-600"><input type="checkbox" name="is_available" value="1" checked>Available</label>
+                <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add menu</button>
             </form>
         @endif
     </div>
 
-    <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left text-xs whitespace-nowrap">
-            <thead>
-                <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/30">
-                    <th class="py-3 px-3">Picture</th>
-                    <th class="py-3 px-3">Item Name</th>
-                    <th class="py-3 px-3">Description</th>
-                    <th class="py-3 px-3">Image URL</th>
-                    <th class="py-3 px-3">Unit Price</th>
-                    @if(auth()->user()->role !== 'manager')
-                        <th class="py-3 px-3 text-center">Actions</th>
-                    @endif
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
+    <div class="overflow-x-auto">
+        <table class="min-w-[1100px] text-left text-sm">
+            <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-4 py-3">Menu item</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Description</th><th class="px-4 py-3">Price</th><th class="px-4 py-3">Availability</th>@if(auth()->user()->role === 'admin')<th class="px-4 py-3 text-right">Actions</th>@endif</tr></thead>
+            <tbody class="divide-y divide-slate-100">
                 @forelse($menus as $menu)
                     @php($updateFormId = 'inline-menu-update-' . $menu->id)
-                    <tr class="hover:bg-neutral-50/40">
-                        <td class="py-3 px-3">
-                            <img src="{{ $menu->foto_url ?? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=100' }}" alt="{{ $menu->name }}" class="w-12 h-10 object-cover border border-neutral-200">
-                            @if(auth()->user()->role !== 'manager')
-                                <form id="{{ $updateFormId }}" action="{{ route('admin.restaurant.menu.update', $menu->id) }}" method="POST" class="hidden">
-                                    @csrf
-                                </form>
-                            @endif
-                        </td>
-                        <td class="py-3 px-3">
-                            @if(auth()->user()->role !== 'manager')
-                                <input form="{{ $updateFormId }}" type="text" name="name" value="{{ $menu->name }}" required class="w-44 px-2 py-1.5 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 font-bold text-neutral-900">
-                            @else
-                                <span class="font-bold text-neutral-900">{{ $menu->name }}</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-3">
-                            @if(auth()->user()->role !== 'manager')
-                                <input form="{{ $updateFormId }}" type="text" name="description" value="{{ $menu->description }}" class="w-60 px-2 py-1.5 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 text-neutral-600">
-                            @else
-                                <span class="block max-w-xs truncate" title="{{ $menu->description }}">{{ $menu->description ?: '-' }}</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-3">
-                            @if(auth()->user()->role !== 'manager')
-                                <input form="{{ $updateFormId }}" type="url" name="foto_url" value="{{ $menu->foto_url }}" class="w-52 px-2 py-1.5 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 text-[10px] font-mono">
-                            @else
-                                <span class="block max-w-40 truncate text-[10px] font-mono" title="{{ $menu->foto_url }}">{{ $menu->foto_url ?: '-' }}</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-3">
-                            @if(auth()->user()->role !== 'manager')
-                                <input form="{{ $updateFormId }}" type="number" name="price" value="{{ $menu->price }}" min="0" step="0.01" required class="w-32 px-2 py-1.5 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 font-mono font-bold text-neutral-900">
-                            @else
-                                <span class="font-mono font-bold text-neutral-900">Rp {{ number_format($menu->price, 0, ',', '.') }}</span>
-                            @endif
-                        </td>
-                        @if(auth()->user()->role !== 'manager')
-                            <td class="py-3 px-3 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <button form="{{ $updateFormId }}" type="submit" class="text-blue-600 hover:text-blue-800 text-[10px] font-bold uppercase cursor-pointer">
-                                        <i class="fa-regular fa-floppy-disk mr-1"></i> Save
-                                    </button>
-                                    <form action="{{ route('admin.restaurant.menu.delete', $menu->id) }}" method="POST" class="inline-block" data-confirm="Hapus menu {{ $menu->name }}?" data-confirm-title="Hapus Menu">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-rose-600 hover:text-rose-800 text-[10px] font-bold uppercase cursor-pointer">
-                                            <i class="fa-regular fa-trash-can mr-1"></i> Delete
-                                        </button>
-                                    </form>
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-4 align-top">
+                            <div class="flex min-w-72 items-start gap-3">
+                                <img src="{{ $menu->foto_url ?: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=300' }}" alt="{{ $menu->name }}" class="h-16 w-20 rounded-xl object-cover">
+                                <div class="min-w-0">
+                                    @if(auth()->user()->role === 'admin')
+                                        <input form="{{ $updateFormId }}" type="text" name="name" value="{{ $menu->name }}" required class="w-full px-3 py-2 text-sm font-semibold">
+                                        <input form="{{ $updateFormId }}" type="url" name="foto_url" value="{{ $menu->foto_url }}" class="mt-2 w-full px-3 py-2 text-xs" placeholder="Image URL">
+                                    @else
+                                        <p class="font-semibold text-slate-900">{{ $menu->name }}</p>
+                                        <p class="mt-1 max-w-xs truncate text-xs text-slate-400" title="{{ $menu->foto_url }}">{{ $menu->foto_url }}</p>
+                                    @endif
                                 </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 align-top">
+                            @if(auth()->user()->role === 'admin')
+                                <select form="{{ $updateFormId }}" name="category" required class="w-44 px-3 py-2 text-sm">@foreach($menuCategories as $category)<option value="{{ $category }}" {{ $menu->category === $category ? 'selected' : '' }}>{{ $category }}</option>@endforeach</select>
+                            @else
+                                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{{ $menu->category }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-4 align-top">
+                            @if(auth()->user()->role === 'admin')
+                                <textarea form="{{ $updateFormId }}" name="description" rows="3" class="w-72 px-3 py-2 text-sm">{{ $menu->description }}</textarea>
+                            @else
+                                <p class="max-w-sm whitespace-normal text-sm leading-6 text-slate-500">{{ $menu->description ?: '-' }}</p>
+                            @endif
+                        </td>
+                        <td class="px-4 py-4 align-top">
+                            @if(auth()->user()->role === 'admin')
+                                <input form="{{ $updateFormId }}" type="number" name="price" value="{{ $menu->price }}" min="0" step="0.01" required class="w-36 px-3 py-2 text-sm font-semibold">
+                            @else
+                                <span class="font-semibold text-slate-900">Rp {{ number_format($menu->price, 0, ',', '.') }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-4 align-top">
+                            @if(auth()->user()->role === 'admin')
+                                <label class="flex items-center gap-2 text-sm text-slate-600"><input form="{{ $updateFormId }}" type="checkbox" name="is_available" value="1" {{ $menu->is_available ? 'checked' : '' }}>Available</label>
+                            @else
+                                <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $menu->is_available ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $menu->is_available ? 'Available' : 'Hidden' }}</span>
+                            @endif
+                        </td>
+                        @if(auth()->user()->role === 'admin')
+                            <td class="px-4 py-4 text-right align-top">
+                                <form id="{{ $updateFormId }}" action="{{ route('admin.restaurant.menu.update', $menu->id) }}" method="POST" class="hidden">@csrf</form>
+                                <div class="flex justify-end gap-2"><button form="{{ $updateFormId }}" type="submit" class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Save</button><form action="{{ route('admin.restaurant.menu.delete', $menu->id) }}" method="POST" data-confirm="Hapus menu {{ $menu->name }}?" data-confirm-title="Hapus Menu">@csrf @method('DELETE')<button type="submit" class="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600">Delete</button></form></div>
                             </td>
                         @endif
                     </tr>
                 @empty
-                    <tr>
-                        <td colspan="6" class="py-12 text-center text-neutral-400 italic">Belum ada menu pada master data.</td>
-                    </tr>
+                    <tr><td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">No menu items are stored yet.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <div class="bg-neutral-50 border border-neutral-100 px-4 py-3 text-[10px] text-neutral-500">
-        Total master menu: <strong class="font-mono text-neutral-900">{{ $menus->count() }}</strong> item.
-    </div>
-</div>
+    <div class="rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">Total menu items: <strong class="text-slate-900">{{ $menus->count() }}</strong>. Public menu only shows items marked available.</div>
+</section>
