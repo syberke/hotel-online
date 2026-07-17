@@ -17,7 +17,6 @@ use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\ReceptionistReservationController;
 use App\Http\Controllers\ReceptionistDashboardController;
 use App\Http\Controllers\ReceptionistGuestHistoryController;
-use App\Http\Controllers\WalkInController;
 use App\Http\Controllers\FolioController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\FrontOfficeFlowController;
@@ -89,8 +88,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDashboardController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
-        Route::get('/walk-in', [WalkInController::class, 'create'])->name('walkin');
-        Route::post('/walk-in/store', [WalkInController::class, 'store'])->name('walkin.store');
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
         Route::match(['get', 'post'], '/room-assignment', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment');
@@ -112,6 +109,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [CoreDashboardController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [AdminReservationController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [OperationalViewController::class, 'adminFrontDeskView'])->name('frontdesk');
+        Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
@@ -135,6 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [CoreDashboardController::class, 'adminDashboardView'])->name('dashboard');
         Route::get('/reservations', [AdminReservationController::class, 'adminReservationsView'])->name('reservation');
         Route::get('/front-desk', [OperationalViewController::class, 'adminFrontDeskView'])->name('frontdesk');
+        Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
