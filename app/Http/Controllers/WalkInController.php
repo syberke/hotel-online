@@ -115,8 +115,6 @@ class WalkInController extends Controller
                 'room_id' => $room->id,
                 'check_in' => $validated['check_in'],
                 'check_out' => $validated['check_out'],
-                'check_in_date' => $validated['check_in'],
-                'check_out_date' => $validated['check_out'],
                 'guests_count' => $validated['guests_count'],
                 'total_price' => $total,
                 'status' => 'checked_in',
