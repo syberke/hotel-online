@@ -132,6 +132,9 @@ class FolioController extends Controller
         }
 
         $departmentShares = $this->departmentShares($departmentTotals);
+        $folioLayout = in_array($request->user()?->role, ['admin', 'manager'], true)
+            ? 'admin-dashboard-layout'
+            : 'receptionist-dashboard-layout';
 
         return view('receptionist.folio', compact(
             'selectedBooking',
@@ -142,6 +145,7 @@ class FolioController extends Controller
             'departmentTotals',
             'departmentShares',
             'facilityReservations',
+            'folioLayout',
         ));
     }
 
