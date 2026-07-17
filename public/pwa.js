@@ -1,98 +1,143 @@
 (() => {
+    const DISMISS_KEY = 'oasis-pwa-install-dismissed-until';
+    const DISMISS_DURATION = 3 * 24 * 60 * 60 * 1000;
+
     let deferredInstallPrompt = null;
     let registration = null;
 
-    function setStyles(element, styles) {
-        Object.assign(element.style, styles);
+    function whenBodyReady(callback) {
+        if (document.body) {
+            callback();
+            return;
+        }
+
+        document.addEventListener('DOMContentLoaded', callback, { once: true });
+    }
+
+    function wasRecentlyDismissed() {
+        const dismissedUntil = Number.parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+        return Number.isFinite(dismissedUntil) && dismissedUntil > Date.now();
+    }
+
+    function dismissInstallCard(remember = true) {
+        if (remember) {
+            localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DURATION));
+        }
+
+        document.getElementById('oasis-pwa-install-card')?.remove();
     }
 
     function showConnectionStatus(isOnline) {
-        let banner = document.getElementById('oasis-pwa-connection-status');
+        whenBodyReady(() => {
+            let banner = document.getElementById('oasis-pwa-connection-status');
 
-        if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'oasis-pwa-connection-status';
-            banner.setAttribute('role', 'status');
-            banner.setAttribute('aria-live', 'polite');
-            document.body.appendChild(banner);
-        }
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'oasis-pwa-connection-status';
+                banner.setAttribute('role', 'status');
+                banner.setAttribute('aria-live', 'polite');
+                document.body.appendChild(banner);
+            }
 
-        banner.textContent = isOnline ? 'Back online' : 'Offline mode';
-        setStyles(banner, {
-            position: 'fixed',
-            left: '50%',
-            top: '16px',
-            transform: 'translateX(-50%)',
-            zIndex: '99999',
-            padding: '9px 14px',
-            border: '1px solid',
-            borderColor: isOnline ? '#a7f3d0' : '#fcd34d',
-            background: isOnline ? '#ecfdf5' : '#fffbeb',
-            color: isOnline ? '#047857' : '#92400e',
-            fontSize: '10px',
-            fontWeight: '700',
-            letterSpacing: '.14em',
-            textTransform: 'uppercase',
-            boxShadow: '0 8px 24px rgba(0,0,0,.08)',
+            banner.dataset.online = String(isOnline);
+            banner.textContent = isOnline ? 'Connection restored' : 'You are currently offline';
+
+            window.clearTimeout(showConnectionStatus.timeoutId);
+            showConnectionStatus.timeoutId = window.setTimeout(
+                () => banner.remove(),
+                isOnline ? 2600 : 5200,
+            );
         });
-
-        window.clearTimeout(showConnectionStatus.timeoutId);
-        showConnectionStatus.timeoutId = window.setTimeout(() => banner.remove(), isOnline ? 2400 : 5000);
     }
 
-    function ensureInstallButton() {
-        let button = document.getElementById('oasis-pwa-install');
+    function buildInstallCard() {
+        const card = document.createElement('aside');
+        card.id = 'oasis-pwa-install-card';
+        card.setAttribute('role', 'dialog');
+        card.setAttribute('aria-modal', 'false');
+        card.setAttribute('aria-labelledby', 'oasis-pwa-install-title');
+        card.innerHTML = `
+            <div class="oasis-pwa-card__accent"></div>
+            <div class="oasis-pwa-card__body">
+                <div class="oasis-pwa-card__header">
+                    <div class="oasis-pwa-card__logo">
+                        <img src="/logo.svg" alt="Oasis Hotel & Resort">
+                    </div>
+                    <div class="oasis-pwa-card__copy">
+                        <p class="oasis-pwa-card__eyebrow">Oasis app</p>
+                        <h2 class="oasis-pwa-card__title" id="oasis-pwa-install-title">Install for quicker access</h2>
+                        <p class="oasis-pwa-card__description">Open the hotel portal from your home screen with a clean standalone app experience.</p>
+                    </div>
+                    <button type="button" class="oasis-pwa-card__close" aria-label="Close install suggestion">×</button>
+                </div>
+                <div class="oasis-pwa-card__benefits" aria-hidden="true">
+                    <div class="oasis-pwa-card__benefit">Fast launch</div>
+                    <div class="oasis-pwa-card__benefit">Standalone view</div>
+                    <div class="oasis-pwa-card__benefit">Offline public pages</div>
+                </div>
+                <div class="oasis-pwa-card__actions">
+                    <button type="button" class="oasis-pwa-card__install">Install Oasis</button>
+                    <button type="button" class="oasis-pwa-card__later">Later</button>
+                </div>
+            </div>
+        `;
 
-        if (button) {
-            return button;
-        }
+        card.querySelector('.oasis-pwa-card__close')?.addEventListener('click', () => dismissInstallCard(true));
+        card.querySelector('.oasis-pwa-card__later')?.addEventListener('click', () => dismissInstallCard(true));
+        card.querySelector('.oasis-pwa-card__install')?.addEventListener('click', async (event) => {
+            const button = event.currentTarget;
 
-        button = document.createElement('button');
-        button.id = 'oasis-pwa-install';
-        button.type = 'button';
-        button.textContent = 'Install Oasis App';
-        button.setAttribute('aria-label', 'Install Oasis Hotel app');
-        setStyles(button, {
-            position: 'fixed',
-            right: '16px',
-            bottom: '16px',
-            zIndex: '99998',
-            border: '1px solid #d4a72c',
-            background: '#0a0a0a',
-            color: '#ffffff',
-            padding: '12px 16px',
-            fontSize: '10px',
-            fontWeight: '700',
-            letterSpacing: '.14em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            boxShadow: '0 14px 36px rgba(0,0,0,.2)',
-        });
-
-        button.addEventListener('click', async () => {
             if (!deferredInstallPrompt) {
+                dismissInstallCard(false);
                 return;
             }
 
-            deferredInstallPrompt.prompt();
-            await deferredInstallPrompt.userChoice;
-            deferredInstallPrompt = null;
-            button.remove();
+            button.disabled = true;
+            button.textContent = 'Opening install…';
+
+            try {
+                deferredInstallPrompt.prompt();
+                const result = await deferredInstallPrompt.userChoice;
+
+                if (result.outcome === 'accepted') {
+                    localStorage.removeItem(DISMISS_KEY);
+                } else {
+                    localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DURATION));
+                }
+            } finally {
+                deferredInstallPrompt = null;
+                card.remove();
+            }
         });
 
-        document.body.appendChild(button);
-        return button;
+        return card;
+    }
+
+    function showInstallCard() {
+        if (!deferredInstallPrompt || wasRecentlyDismissed()) {
+            return null;
+        }
+
+        let card = document.getElementById('oasis-pwa-install-card');
+        if (card) {
+            return card;
+        }
+
+        card = buildInstallCard();
+        whenBodyReady(() => document.body.appendChild(card));
+        return card;
     }
 
     window.addEventListener('beforeinstallprompt', (event) => {
         event.preventDefault();
         deferredInstallPrompt = event;
-        ensureInstallButton();
+        showInstallCard();
     });
 
     window.addEventListener('appinstalled', () => {
         deferredInstallPrompt = null;
-        document.getElementById('oasis-pwa-install')?.remove();
+        localStorage.removeItem(DISMISS_KEY);
+        document.getElementById('oasis-pwa-install-card')?.remove();
     });
 
     window.addEventListener('online', () => showConnectionStatus(true));
@@ -105,6 +150,7 @@
         get canInstall() {
             return Boolean(deferredInstallPrompt);
         },
+        showInstallCard,
         async install() {
             if (!deferredInstallPrompt) {
                 return false;
@@ -113,7 +159,7 @@
             deferredInstallPrompt.prompt();
             const result = await deferredInstallPrompt.userChoice;
             deferredInstallPrompt = null;
-            document.getElementById('oasis-pwa-install')?.remove();
+            document.getElementById('oasis-pwa-install-card')?.remove();
             return result.outcome === 'accepted';
         },
     };
