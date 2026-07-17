@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             GuestUserSeeder::class,
             RoomTypeSeeder::class,
             FacilitySeeder::class,
+            RestaurantVenueSeeder::class,
             RestaurantMenuSeeder::class,
         ]);
     }
