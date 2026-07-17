@@ -57,4 +57,16 @@ class RestaurantCatalogController extends Controller
 
         return view('page.restaurant', compact('culinaryMenus', 'venues', 'menuCategories', 'totalMenuItems'));
     }
+
+    public function show(int $id): View
+    {
+        $menu = DB::table('restaurant_menus')
+            ->where('id', $id)
+            ->where('is_available', true)
+            ->first();
+
+        abort_unless($menu, 404);
+
+        return view('page.restaurants-detail', compact('menu'));
+    }
 }
