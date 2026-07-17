@@ -8,7 +8,6 @@ use App\Http\Controllers\RestaurantCatalogController;
 use App\Http\Controllers\RestaurantMenuController;
 use App\Http\Controllers\RestaurantReservationController;
 use App\Http\Controllers\RestaurantVenueController;
-use App\Http\Controllers\WalkInController;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -34,23 +33,17 @@ class OperationalContentRoutesTest extends TestCase
         );
     }
 
-    public function test_front_office_routes_do_not_reference_missing_or_dummy_controller_methods(): void
+    public function test_staff_folio_routes_use_the_real_folio_controller(): void
     {
-        $this->assertSame(
-            WalkInController::class . '@create',
-            Route::getRoutes()->getByName('receptionist.walkin')?->getActionName(),
-        );
-        $this->assertSame(
-            WalkInController::class . '@store',
-            Route::getRoutes()->getByName('receptionist.walkin.store')?->getActionName(),
-        );
-        $this->assertSame(
-            FolioController::class . '@show',
-            Route::getRoutes()->getByName('receptionist.folio')?->getActionName(),
-        );
+        foreach (['receptionist.folio', 'manager.folio', 'admin.folio'] as $routeName) {
+            $this->assertSame(
+                FolioController::class . '@show',
+                Route::getRoutes()->getByName($routeName)?->getActionName(),
+            );
+        }
 
-        $this->assertTrue(method_exists(WalkInController::class, 'create'));
-        $this->assertTrue(method_exists(WalkInController::class, 'store'));
+        $this->assertNull(Route::getRoutes()->getByName('receptionist.walkin'));
+        $this->assertNull(Route::getRoutes()->getByName('receptionist.walkin.store'));
         $this->assertTrue(method_exists(FolioController::class, 'show'));
     }
 
@@ -84,17 +77,18 @@ class OperationalContentRoutesTest extends TestCase
         $home = file_get_contents(resource_path('views/page/home.blade.php'));
         $contact = file_get_contents(resource_path('views/page/contact.blade.php'));
         $restaurant = file_get_contents(resource_path('views/page/restaurant.blade.php'));
-        $walkIn = file_get_contents(resource_path('views/receptionist/walkin.blade.php'));
         $folio = file_get_contents(resource_path('views/receptionist/folio.blade.php'));
+        $report = file_get_contents(resource_path('views/admin/reports-modern.blade.php'));
 
         $this->assertStringNotContainsString("route('rooms.check')", $home);
         $this->assertStringContainsString("route('contact.store')", $contact);
         $this->assertStringContainsString('$venues', $restaurant);
         $this->assertStringContainsString('$menuCategories', $restaurant);
         $this->assertStringContainsString("route('restaurant.reservations.store')", $restaurant);
-        $this->assertStringContainsString("route('receptionist.walkin.store')", $walkIn);
-        $this->assertStringNotContainsString('John Anderson', $walkIn);
         $this->assertStringNotContainsString('Breakfast & Laundry Pack', $folio);
         $this->assertStringContainsString('$charges as $charge', $folio);
+        $this->assertStringNotContainsString('@elif', $report);
+        $this->assertStringContainsString('Top menu item', $report);
+        $this->assertStringContainsString('Top facility', $report);
     }
 }
