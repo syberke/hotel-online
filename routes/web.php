@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicPortalController;
+use App\Http\Controllers\RestaurantCatalogController;
+use App\Http\Controllers\RestaurantVenueController;
+use App\Http\Controllers\RestaurantReservationController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\GuestStayController;
 use App\Http\Controllers\GuestServiceController;
 use App\Http\Controllers\GuestFacilityController;
@@ -32,10 +36,11 @@ Route::get('/', [PublicPortalController::class, 'index'])->name('home');
 Route::get('/rooms', [PublicPortalController::class, 'allRoomsView'])->name('rooms');
 Route::get('/rooms/{id}', [PublicPortalController::class, 'roomShow'])->name('rooms.show');
 Route::post('/rooms/check', [PublicPortalController::class, 'checkAvailability'])->name('rooms.check');
-Route::get('/restaurant', [PublicPortalController::class, 'restaurantIndex'])->name('restaurant');
+Route::get('/restaurant', [RestaurantCatalogController::class, 'index'])->name('restaurant');
 Route::get('/restaurant/menu/{id}', [PublicPortalController::class, 'menuShow'])->name('restaurant.detail');
 Route::get('/facilities', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities');
-Route::get('/contact', function () { return view('page.contact'); })->name('contact');
+Route::get('/contact', fn () => view('page.contact'))->name('contact');
+Route::post('/contact', [ContactMessageController::class, 'store'])->middleware('throttle:10,1')->name('contact.store');
 
 Route::get('/dashboard', function () {
     $role = auth()->user()->role ?: 'guest';
@@ -56,7 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/restaurant-orders', [GuestServiceController::class, 'restaurantOrders'])->name('restaurant.orders');
         Route::get('/facilities-booking', [GuestFacilityController::class, 'index'])->name('facilities.booking');
         Route::get('/facilities-portal', [PublicPortalController::class, 'facilitiesIndex'])->name('facilities.portal');
-        Route::get('/billing-matrix', function () { return view('guest.billingmatrix'); })->name('billing.matrix');
+        Route::get('/billing-matrix', fn () => view('guest.billingmatrix'))->name('billing.matrix');
         Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
     });
 
@@ -66,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/room-order/{id}/details', [PaymentGatewayController::class, 'getRoomInvoiceDetails'])->name('room.invoice.details');
 
     Route::post('/restaurant/order', [GuestServiceController::class, 'placeGastronomyOrder'])->name('restaurant.order');
+    Route::post('/restaurant/reservations', [RestaurantReservationController::class, 'store'])->name('restaurant.reservations.store');
     Route::post('/restaurant-order/pay', [PaymentGatewayController::class, 'payRestaurantOrder'])->name('restaurant.order.pay');
     Route::post('/restaurant-order/settle', [PaymentGatewayController::class, 'settleRestaurantOrder'])->name('restaurant.order.settle');
     Route::post('/restaurant-order/{id}/cancel', [PaymentGatewayController::class, 'cancelRestaurantOrder'])->name('restaurant.order.cancel');
@@ -78,7 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDashboardController::class, 'receptionistDashboardView'])->name('dashboard');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
-        Route::get('/walk-in', function () { return view('receptionist.walkin'); })->name('walkin');
+        Route::get('/walk-in', fn () => view('receptionist.walkin'))->name('walkin');
         Route::post('/walk-in/store', [FrontOfficeCheckController::class, 'storeWalkIn'])->name('walkin.store');
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
@@ -108,6 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
         Route::get('/users-control', [AdminControlController::class, 'adminUserAndRoleView'])->name('userandrole');
+        Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contact-messages');
 
         Route::redirect('/reports/export/excel', '/manager/report-export/reports/excel')->name('reports.export.excel');
         Route::redirect('/reports/export/pdf', '/manager/report-export/reports/pdf')->name('reports.export.pdf');
@@ -127,8 +134,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [OperationalViewController::class, 'adminRestaurantView'])->name('restaurant');
         Route::redirect('/restaurant/menu', '/admin/restaurant-gastronomy?view=menu')->name('restaurant.menu');
+        Route::post('/restaurant/venues', [RestaurantVenueController::class, 'store'])->name('restaurant.venues.store');
+        Route::patch('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'update'])->name('restaurant.venues.update');
+        Route::delete('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'destroy'])->name('restaurant.venues.destroy');
+        Route::patch('/restaurant/reservations/{reservation}/status', [RestaurantReservationController::class, 'updateStatus'])->name('restaurant.reservations.status');
+        Route::delete('/restaurant/reservations/{reservation}', [RestaurantReservationController::class, 'destroy'])->name('restaurant.reservations.destroy');
         Route::get('/facilities-wellness', [CoreFacilityViewController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/users-control', [AdminControlController::class, 'adminUserAndRoleView'])->name('userandrole');
+        Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contact-messages');
+        Route::patch('/contact-messages/{contactMessage}/status', [ContactMessageController::class, 'updateStatus'])->name('contact-messages.status');
+        Route::delete('/contact-messages/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::post('/finance/transaction/{id}/update', [AdminOperationController::class, 'adminUpdateTransactionStatus'])->name('finance.transaction.update');
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
@@ -170,7 +185,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('/admin/facilities/booking/{id}/detail', [CoreFacilityViewController::class, 'adminFacilityBookingDetail']);
-    Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail']);
     Route::get('/admin/reservations/{id}/json-detail', [AdminOperationController::class, 'adminDetailReservation'])->name('admin.reservations.json');
     Route::get('/admin/restaurant-order/{id}/json-detail', [ExecutiveReportController::class, 'adminRestaurantOrderDetailJson'])->name('admin.restaurant.order.json');
     Route::get('/admin/rooms/{id}/json-detail', [AdminOperationController::class, 'adminRoomJsonDetail'])->name('admin.room.json');
