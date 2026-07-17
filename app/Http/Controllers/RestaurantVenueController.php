@@ -11,7 +11,7 @@ class RestaurantVenueController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
-        $this->authorizeAdmin($request);
+        $this->authorizeVenueManagement($request);
 
         RestaurantVenue::query()->create($this->validatedPayload($request));
 
@@ -20,7 +20,7 @@ class RestaurantVenueController extends Controller
 
     public function update(Request $request, RestaurantVenue $venue): RedirectResponse
     {
-        $this->authorizeAdmin($request);
+        $this->authorizeVenueManagement($request);
 
         $venue->update($this->validatedPayload($request, $venue));
 
@@ -29,7 +29,7 @@ class RestaurantVenueController extends Controller
 
     public function destroy(Request $request, RestaurantVenue $venue): RedirectResponse
     {
-        $this->authorizeAdmin($request);
+        $this->authorizeVenueManagement($request);
 
         if ($venue->reservations()->exists()) {
             return back()->with('error', 'Venue tidak dapat dihapus karena sudah mempunyai riwayat reservasi. Nonaktifkan venue sebagai gantinya.');
@@ -60,8 +60,8 @@ class RestaurantVenueController extends Controller
         return $validated;
     }
 
-    private function authorizeAdmin(Request $request): void
+    private function authorizeVenueManagement(Request $request): void
     {
-        abort_unless($request->user()?->role === 'admin', 403);
+        abort_unless(in_array($request->user()?->role, ['admin', 'manager'], true), 403);
     }
 }
