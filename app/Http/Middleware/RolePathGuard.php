@@ -16,14 +16,17 @@ class RolePathGuard
     ];
 
     /**
-     * Read-only staff endpoints that are shared by the Admin and Manager views.
+     * Read-only JSON/detail endpoints reused by Admin and Manager views.
      *
-     * The Rooms & Inventory template is reused by both roles. Its eye action
-     * requests the existing admin.room.json endpoint, so Manager must be able
-     * to read this one JSON route without receiving access to Admin mutations.
+     * Only GET requests are shared. Every Admin mutation remains protected by
+     * the normal role-prefix guard and the manager-modification middleware.
      */
     private const SHARED_ADMIN_MANAGER_READ_ROUTES = [
         'admin.room.json',
+        'admin.reservations.json',
+        'admin.restaurant.order.json',
+        'admin.users.json',
+        'admin.facilities.booking.detail',
     ];
 
     public function handle(Request $request, Closure $next): Response
@@ -31,7 +34,7 @@ class RolePathGuard
         $user = $request->user();
         $prefix = strtolower((string) $request->segment(1));
 
-        if (!$user || !array_key_exists($prefix, self::ROLE_PREFIXES)) {
+        if (! $user || ! array_key_exists($prefix, self::ROLE_PREFIXES)) {
             return $next($request);
         }
 
@@ -63,7 +66,7 @@ class RolePathGuard
 
     private function isSharedAdminManagerReadRequest(Request $request, string $role): bool
     {
-        if (!in_array($role, ['admin', 'manager'], true) || !$request->isMethod('GET')) {
+        if (! in_array($role, ['admin', 'manager'], true) || ! $request->isMethod('GET')) {
             return false;
         }
 
