@@ -84,9 +84,9 @@ class RegisteredUserController extends Controller
                 [
                     'name' => $request->name,
                     'password' => $newUser->password,
-                    'phone' => '-',
-                    'identity_number' => '-',
-                    'address' => '-',
+                    'phone' => null,
+                    'identity_number' => null,
+                    'address' => null,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
