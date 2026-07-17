@@ -1,127 +1,41 @@
 <x-guest-layout>
     <div
         x-data="{ mobileNavOpen: false }"
-        class="guest-shell fixed inset-0 z-10 flex overflow-hidden bg-slate-100 text-slate-900 antialiased"
+        class="guest-portal guest-shell fixed inset-0 z-10 flex overflow-hidden bg-slate-100 text-slate-900 antialiased"
     >
         <style>
             [x-cloak] { display: none !important; }
-
-            .guest-shell {
-                --guest-primary: #2563eb;
-                --guest-primary-hover: #1d4ed8;
-                --guest-sidebar: #ffffff;
-                --guest-border: #e2e8f0;
-                --guest-muted: #64748b;
-            }
-
-            .guest-scrollbar {
-                scrollbar-width: thin;
-                scrollbar-color: #cbd5e1 transparent;
-            }
-
-            .guest-scrollbar::-webkit-scrollbar {
-                width: 7px;
-                height: 7px;
-            }
-
+            .guest-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+            .guest-scrollbar::-webkit-scrollbar { width: 7px; height: 7px; }
             .guest-scrollbar::-webkit-scrollbar-track { background: transparent; }
-            .guest-scrollbar::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 9999px;
-            }
+            .guest-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
             .guest-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-            .guest-content .font-serif {
-                font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
-                font-weight: 650;
-                letter-spacing: -0.02em;
-            }
-
-            .guest-content .rounded-none { border-radius: 0.875rem !important; }
-
-            .guest-content .shadow-sm,
-            .guest-content .shadow-md,
-            .guest-content .shadow-lg {
-                box-shadow: 0 8px 24px -18px rgba(15, 23, 42, 0.35) !important;
-            }
-
-            .guest-content .bg-neutral-950,
-            .guest-content .bg-neutral-900 {
-                background-color: #172033 !important;
-            }
-
-            .guest-content .text-amber-400,
-            .guest-content .text-amber-500,
-            .guest-content .text-amber-600,
-            .guest-content .text-amber-700,
-            .guest-content .text-amber-800,
-            .guest-content .text-amber-900 {
-                color: #2563eb !important;
-            }
-
-            .guest-content .bg-amber-50,
-            .guest-content .bg-amber-100,
-            .guest-content .bg-amber-950\/40,
-            .guest-content .bg-amber-950\/60 {
-                background-color: #eff6ff !important;
-            }
-
-            .guest-content .border-amber-200,
-            .guest-content .border-amber-600,
-            .guest-content .border-amber-700\/20,
-            .guest-content .border-amber-900\/50,
-            .guest-content .border-amber-900\/60 {
-                border-color: #bfdbfe !important;
-            }
-
-            .guest-content button.bg-amber-700,
-            .guest-content a.bg-amber-700 {
-                background-color: var(--guest-primary) !important;
-                color: white !important;
-            }
-
-            .guest-content button.bg-amber-700:hover,
-            .guest-content a.bg-amber-700:hover {
-                background-color: var(--guest-primary-hover) !important;
-            }
-
-            .guest-content [class*="tracking-widest"] {
-                letter-spacing: 0.07em !important;
-            }
-
-            .guest-content > div,
-            .guest-content section {
-                min-width: 0;
-            }
         </style>
 
         <div
             x-show="mobileNavOpen"
             x-transition.opacity
             x-cloak
-            class="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-sm lg:hidden"
+            class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden"
             @click="mobileNavOpen = false"
             aria-hidden="true"
         ></div>
 
         <aside
-            class="fixed inset-y-0 left-0 z-50 flex h-dvh w-[17rem] flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 lg:static lg:z-30 lg:translate-x-0 lg:shadow-none"
+            class="fixed inset-y-0 left-0 z-50 flex h-dvh w-[17rem] flex-col overflow-hidden border-r border-slate-200 bg-white shadow-2xl transition-transform duration-300 lg:static lg:z-30 lg:translate-x-0 lg:shadow-none"
             :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             <div class="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-5">
-                <a href="{{ route('guest.dashboard') }}" class="flex min-w-0 items-center gap-3">
-                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-600 text-white shadow-sm">
-                        <i class="fa-solid fa-hotel text-sm"></i>
+                <a href="{{ route('guest.dashboard') }}" class="flex min-w-0 items-center gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <span class="flex h-11 min-w-32 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 shadow-sm">
+                        <x-brand-logo class="h-8 w-auto" />
                     </span>
-                    <span class="min-w-0">
-                        <span class="block truncate text-base font-semibold tracking-tight text-slate-900">Oasis Hotel</span>
-                        <span class="block text-[11px] font-medium text-slate-500">Guest portal</span>
-                    </span>
+                    <span class="sr-only">Oasis Hotel guest portal</span>
                 </a>
 
                 <button
                     type="button"
-                    class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+                    class="grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden"
                     @click="mobileNavOpen = false"
                     aria-label="Close navigation"
                 >
@@ -144,7 +58,7 @@
                     @foreach($guestNav as $item)
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs($item['route']) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                            <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs($item['route']) ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500' }}">
+                            <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs($item['route']) ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                                 <i class="fa-solid {{ $item['icon'] }} text-xs"></i>
                             </span>
                             {{ $item['label'] }}
@@ -155,7 +69,7 @@
 
                     <a href="{{ route('guest.restaurant.orders') }}"
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('guest.restaurant.orders') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                        <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.restaurant.orders') ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500' }}">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.restaurant.orders') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                             <i class="fa-solid fa-utensils text-xs"></i>
                         </span>
                         Restaurant
@@ -163,17 +77,27 @@
 
                     <a href="{{ route('guest.facilities.booking') }}"
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('guest.facilities.booking') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                        <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.facilities.booking') ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500' }}">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.facilities.booking') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                             <i class="fa-solid fa-spa text-xs"></i>
                         </span>
                         Facilities
                     </a>
 
+                    @if(Route::has('guest.room.service'))
+                        <a href="{{ route('guest.room.service') }}"
+                           class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('guest.room.service') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                            <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('guest.room.service') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
+                                <i class="fa-solid fa-bell-concierge text-xs"></i>
+                            </span>
+                            Room Service
+                        </a>
+                    @endif
+
                     <p class="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Account</p>
 
                     <a href="{{ route('profile.edit') }}"
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ Request::routeIs('profile.edit') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                        <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('profile.edit') ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500' }}">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg {{ Request::routeIs('profile.edit') ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500' }}">
                             <i class="fa-solid fa-user-gear text-xs"></i>
                         </span>
                         Profile Settings
@@ -185,7 +109,7 @@
                 <div class="mb-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <div>
                         <p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Nusa Dua, Bali</p>
-                        <p class="mt-0.5 text-xs text-slate-600">Resort area</p>
+                        <p class="mt-0.5 text-xs text-slate-600">Hotel services online</p>
                     </div>
                     <div class="text-right">
                         <p class="text-lg font-semibold text-slate-900">{{ $temperature ?? '28°C' }}</p>
@@ -210,7 +134,7 @@
                 <div class="flex min-w-0 items-center gap-3">
                     <button
                         type="button"
-                        class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 lg:hidden"
+                        class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 lg:hidden"
                         @click="mobileNavOpen = true"
                         aria-label="Open navigation"
                     >
