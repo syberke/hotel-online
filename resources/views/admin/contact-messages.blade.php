@@ -8,12 +8,12 @@
             </div>
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 @foreach([
-                    ['All', $counts['all'], 'slate'],
-                    ['New', $counts['new'], 'blue'],
-                    ['In progress', $counts['in_progress'], 'amber'],
-                    ['Resolved', $counts['resolved'], 'emerald'],
-                ] as [$label, $count, $tone])
-                    <div class="rounded-xl bg-{{ $tone }}-50 px-4 py-3 text-center"><p class="text-xl font-semibold text-{{ $tone }}-700">{{ $count }}</p><p class="mt-1 text-[11px] font-medium text-{{ $tone }}-600">{{ $label }}</p></div>
+                    ['All', $counts['all'], 'bg-slate-50 text-slate-700'],
+                    ['New', $counts['new'], 'bg-blue-50 text-blue-700'],
+                    ['In progress', $counts['in_progress'], 'bg-amber-50 text-amber-700'],
+                    ['Resolved', $counts['resolved'], 'bg-emerald-50 text-emerald-700'],
+                ] as [$label, $count, $classes])
+                    <div class="rounded-xl px-4 py-3 text-center {{ $classes }}"><p class="text-xl font-semibold">{{ $count }}</p><p class="mt-1 text-[11px] font-medium">{{ $label }}</p></div>
                 @endforeach
             </div>
         </section>
