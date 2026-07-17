@@ -1,0 +1,90 @@
+/* Final guardrails for staff portals at Chrome 100%, including 1920x1080. */
+.staff-portal-shell,
+.staff-main-content,
+.staff-main-content > div,
+.staff-portal :where(section, article, aside, form, nav, header, footer, .grid, .flex),
+.staff-portal :where(.grid > *, .flex > *) {
+    min-width: 0;
+}
+
+.staff-portal :where(img, svg, canvas, video, iframe) {
+    max-width: 100%;
+}
+
+.staff-portal :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.staff-portal :where(.overflow-x-auto, .custom-scrollbar, .content-scrollbar) {
+    max-width: 100%;
+}
+
+.staff-portal table {
+    max-width: 100%;
+}
+
+.staff-portal :where(h1, h2, h3, h4, p, span, a, button, td, th) {
+    overflow-wrap: anywhere;
+}
+
+.staff-portal .relative > :is(.fa-magnifying-glass, .fa-search).absolute ~ input,
+.staff-portal .relative > i.absolute[class*="left-3"] ~ input,
+.staff-portal .relative > i.absolute[class*="left-4"] ~ input {
+    padding-left: 2.75rem !important;
+}
+
+.staff-portal :where(.fixed.inset-0, [role="dialog"]) > :where(div, section, article) {
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100dvh - 2rem);
+}
+
+@media (min-width: 1280px) and (max-width: 1919px) {
+    .staff-main-content {
+        padding: 1.25rem !important;
+    }
+
+    .staff-main-content > div {
+        max-width: 100% !important;
+    }
+}
+
+@media (min-width: 1920px) and (max-height: 1100px) {
+    .staff-main-content {
+        padding: 1.25rem 1.5rem !important;
+    }
+
+    .staff-main-content > div {
+        max-width: 1660px !important;
+    }
+
+    .staff-portal .staff-topbar {
+        height: 4.25rem !important;
+        min-height: 4.25rem !important;
+    }
+
+    .staff-portal :where(section, article)[class*="p-8"] {
+        padding: 1.5rem !important;
+    }
+}
+
+@media (max-width: 1279px) {
+    .staff-portal :where(.grid-cols-5, .grid-cols-6) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 639px) {
+    .staff-main-content {
+        padding: 0.875rem !important;
+    }
+
+    .staff-portal :where(.grid-cols-2, .grid-cols-3, .grid-cols-4, .grid-cols-5, .grid-cols-6) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .staff-portal :where(button, a)[class*="px-6"] {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
