@@ -17,6 +17,7 @@ use App\Http\Controllers\ReceptionistReservationController;
 use App\Http\Controllers\ReceptionistDashboardController;
 use App\Http\Controllers\ReceptionistGuestHistoryController;
 use App\Http\Controllers\WalkInController;
+use App\Http\Controllers\FolioController;
 use App\Http\Controllers\FrontOfficeCheckController;
 use App\Http\Controllers\FrontOfficeFlowController;
 use App\Http\Controllers\RoomLifecycleController;
@@ -95,7 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/room-assignment/assign', [FrontOfficeCheckController::class, 'assignRoomNumber'])->name('roomassignment.assign');
         Route::match(['get', 'post'], '/check-out', [RoomLifecycleController::class, 'processCheckOut'])->name('checkout');
         Route::post('/check-out/process', [RoomLifecycleController::class, 'processCheckOut'])->name('checkout.process');
-        Route::get('/folio', [FrontOfficeCheckController::class, 'receptionistFolioView'])->name('folio');
+        Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::match(['get', 'post'], '/payments', [FrontOfficeFlowController::class, 'processPayment'])->name('payments');
         Route::post('/payments/process', [FrontOfficeFlowController::class, 'processPayment'])->name('payments.process');
         Route::get('/reservations', [ReceptionistReservationController::class, 'receptionistReservationsView'])->name('reservations');
