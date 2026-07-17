@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\View\View;
+use RuntimeException;
 
 class FrontOfficeCheckController extends Controller
 {
-    public function receptionistCheckInView(Request $request)
+    public function receptionistCheckInView(Request $request): View
     {
-        $search = $request->input('search');
-        $selectedId = $request->input('booking_id');
-        $today = now()->format('Y-m-d');
+        $search = trim((string) $request->input('search'));
+        $selectedId = $request->integer('booking_id');
+        $today = now()->toDateString();
 
         $selectedBooking = null;
         if ($selectedId) {
@@ -20,24 +22,21 @@ class FrontOfficeCheckController extends Controller
                 ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
                 ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
                 ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+                ->leftJoin('guests', function ($join) {
+                    $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
+                })
                 ->where('bookings.id', $selectedId)
                 ->select(
                     'bookings.*',
-                    'users.name as guest_name', 'users.email as guest_email',
-                    'rooms.room_number', 'room_types.name as room_type', 'room_types.price as base_price'
+                    'users.name as guest_name',
+                    'users.email as guest_email',
+                    'guests.phone as guest_phone',
+                    'guests.address as guest_address',
+                    'rooms.room_number',
+                    'room_types.name as room_type',
+                    'room_types.price as base_price',
                 )
                 ->first();
-
-            if($selectedBooking) {
-                $selectedBooking->guest_name = $selectedBooking->guest_name ?? 'Tamu';
-                $selectedBooking->room_number = $selectedBooking->room_number ?? 'TBD';
-                $selectedBooking->room_type = $selectedBooking->room_type ?? 'Standard';
-                $selectedBooking->total_price = $selectedBooking->total_price ?? 0;
-                
-                $guestInfo = DB::table('guests')->whereRaw('LOWER(email) = ?', [strtolower($selectedBooking->guest_email)])->first();
-                $selectedBooking->guest_phone = $guestInfo ? $guestInfo->phone : '—';
-                $selectedBooking->guest_address = $guestInfo ? $guestInfo->address : '—';
-            }
         }
 
         $query = DB::table('bookings')
@@ -45,99 +44,119 @@ class FrontOfficeCheckController extends Controller
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->whereIn('bookings.status', ['confirmed', 'pending']);
 
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $cleanSearch = ltrim($search, '#RES-OA-');
-                $q->where('bookings.id', 'like', "%{$cleanSearch}%")
-                  ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%']);
+        if ($search !== '') {
+            $cleanSearch = preg_replace('/\D+/', '', $search) ?: $search;
+            $query->where(function ($builder) use ($search, $cleanSearch) {
+                $builder->whereRaw('CAST(bookings.id AS CHAR) LIKE ?', ['%' . $cleanSearch . '%'])
+                    ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         } else {
             $query->whereDate('bookings.check_in', $today);
         }
 
-        $bookings = $query->select('bookings.id', 'users.name as guest_name', 'bookings.check_in', 'rooms.room_number')
-                          ->take(5)
-                          ->get();
+        $bookings = $query
+            ->select('bookings.id', 'users.name as guest_name', 'bookings.check_in', 'rooms.room_number')
+            ->orderBy('bookings.check_in')
+            ->limit(10)
+            ->get();
 
         return view('receptionist.checkin', compact('selectedBooking', 'bookings'));
     }
 
-    public function processCheckIn(Request $request)
+    public function processCheckIn(Request $request): RedirectResponse
     {
-        $request->validate([
-            'booking_id' => 'required|integer',
-            'payment_method' => 'required|string'
+        $validated = $request->validate([
+            'booking_id' => ['required', 'integer', 'exists:bookings,id'],
+            'payment_method' => ['required', 'in:cash,transfer,credit_card,e_wallet'],
         ]);
 
-        $bookingId = $request->booking_id;
-
-        DB::beginTransaction();
         try {
-            $booking = DB::table('bookings')->where('id', $bookingId)->first();
-            if (!$booking || !$booking->room_id) {
-                return redirect()->back()->with('error', 'Kamar fisik belum dialokasikan untuk reservasi ini. Lakukan Room Assignment terlebih dahulu.');
-            }
+            DB::transaction(function () use ($validated) {
+                $booking = DB::table('bookings')
+                    ->where('id', $validated['booking_id'])
+                    ->lockForUpdate()
+                    ->first();
 
-            DB::table('bookings')->where('id', $bookingId)->update([
-                'status' => 'checked_in',
-                'updated_at' => now()
-            ]);
+                if (! $booking || ! in_array($booking->status, ['confirmed', 'pending'], true)) {
+                    throw new RuntimeException('Reservasi tidak berada pada status yang dapat diproses check-in.');
+                }
 
-            DB::table('rooms')->where('id', $booking->room_id)->update([
-                'status' => 'occupied',
-                'updated_at' => now()
-            ]);
+                if (! $booking->room_id) {
+                    throw new RuntimeException('Kamar fisik belum dialokasikan untuk reservasi ini.');
+                }
 
-            DB::table('payments')->insert([
-                'booking_id' => $bookingId,
-                'amount' => $booking->total_price,
-                'payment_method' => $request->payment_method,
-                'payment_status' => $request->payment_method === 'cash' ? 'paid' : 'pending',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+                $room = DB::table('rooms')->where('id', $booking->room_id)->lockForUpdate()->first();
+                if (! $room || ! in_array($room->status, ['available', 'occupied'], true)) {
+                    throw new RuntimeException('Kamar tidak tersedia untuk check-in.');
+                }
 
-            DB::commit();
-            return redirect()->route('receptionist.dashboard')->with('success', 'Proses Check-In Berhasil dikonfirmasi!');
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal memproses check-in: ' . $e->getMessage());
+                $paidAmount = (float) DB::table('payments')
+                    ->where('booking_id', $booking->id)
+                    ->where('payment_status', 'paid')
+                    ->sum('amount');
+
+                $outstanding = max(0, (float) $booking->total_price - $paidAmount);
+                if ($outstanding > 0) {
+                    DB::table('payments')->insert([
+                        'booking_id' => $booking->id,
+                        'restaurant_order_id' => null,
+                        'amount' => $outstanding,
+                        'payment_method' => $validated['payment_method'],
+                        'payment_status' => 'paid',
+                        'note' => 'Front desk check-in settlement',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                DB::table('bookings')->where('id', $booking->id)->update([
+                    'status' => 'checked_in',
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('rooms')->where('id', $booking->room_id)->update([
+                    'status' => 'occupied',
+                    'updated_at' => now(),
+                ]);
+            });
+        } catch (RuntimeException $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
         }
+
+        return redirect()->route('receptionist.folio', ['booking_id' => $validated['booking_id']])
+            ->with('success', 'Check-in berhasil dikonfirmasi dan folio tamu telah diperbarui.');
     }
 
-    public function receptionistGuestsView(Request $request)
+    public function receptionistGuestsView(Request $request): View
     {
-        $currentTab = $request->input('guest_tab', 'all');
-        $search = $request->input('search');
-        $selectedGuestId = $request->input('selected_guest_id');
-        $today = now()->format('Y-m-d');
+        $currentTab = $request->string('guest_tab')->value() ?: 'all';
+        $search = trim((string) $request->input('search'));
+        $selectedGuestId = $request->integer('selected_guest_id');
+        $today = now()->toDateString();
 
-        $inHouseGuests = DB::table('bookings')->where('status', 'checked_in')->sum('guests_count') ?: 0;
+        $inHouseGuests = (int) DB::table('bookings')->where('status', 'checked_in')->sum('guests_count');
         $checkinsToday = DB::table('bookings')->whereDate('check_in', $today)->where('status', 'checked_in')->count();
         $checkoutsToday = DB::table('bookings')->whereDate('check_out', $today)->where('status', 'checked_out')->count();
         $totalGuestsAllTime = DB::table('guests')->count();
-        
-        $revenueThisMonth = DB::table('payments')
+        $revenueThisMonth = (float) DB::table('payments')
             ->where('payment_status', 'paid')
-            ->whereMonth('created_at', date('m'))
-            ->whereYear('created_at', date('Y'))
-            ->sum('amount') ?: 0;
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('amount');
 
         $tabCounters = [
             'all' => DB::table('guests')->count(),
-            'in_house' => DB::table('bookings')->where('status', 'checked_in')->count(),
-            'checked_out' => DB::table('bookings')->where('status', 'checked_out')->count(),
+            'in_house' => DB::table('bookings')->where('status', 'checked_in')->distinct('user_id')->count('user_id'),
+            'checked_out' => DB::table('bookings')->where('status', 'checked_out')->distinct('user_id')->count('user_id'),
         ];
 
-        // Subquery untuk menarik ID reservasi paling terkini milik tamu
         $latestBookingSub = DB::table('bookings')
             ->select('user_id', DB::raw('MAX(id) as latest_booking_id'))
             ->groupBy('user_id');
 
         $query = DB::table('guests')
-            ->join('users', function($join) {
+            ->join('users', function ($join) {
                 $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
             })
             ->leftJoinSub($latestBookingSub, 'latest_res', function ($join) {
@@ -150,19 +169,20 @@ class FrontOfficeCheckController extends Controller
                 'users.name as guest_name',
                 'users.email as guest_email',
                 'guests.phone as guest_phone',
-                'guests.tier',
+                'guests.identity_number',
                 'bookings.status as booking_status',
                 'bookings.check_in',
                 'bookings.check_out',
                 'rooms.room_number',
-                DB::raw('(SELECT COUNT(*) FROM bookings WHERE bookings.user_id = users.id AND bookings.status = \'checked_out\') as total_stays')
+                DB::raw("(SELECT COUNT(*) FROM bookings AS completed_bookings WHERE completed_bookings.user_id = users.id AND completed_bookings.status = 'checked_out') as total_stays"),
             );
 
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhere('guests.phone', 'like', "%{$search}%")
-                  ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%']);
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhere('guests.phone', 'like', '%' . $search . '%')
+                    ->orWhere('guests.identity_number', 'like', '%' . $search . '%');
             });
         }
 
@@ -172,423 +192,160 @@ class FrontOfficeCheckController extends Controller
             $query->where('bookings.status', 'checked_out');
         }
 
-        $guestsList = $query->orderBy('users.name', 'asc')->paginate(10)->withQueryString();
-
-        // FIX TOTAL: Ambil data User Master dasar dari parameter, lalu JOIN data profil fisik tabel GUESTS
-        $targetUser = null;
-        if (!empty($selectedGuestId)) {
-            $targetUser = DB::table('users')->where('id', $selectedGuestId)->first();
-        } elseif ($guestsList->count() > 0) {
-            $targetUser = DB::table('users')->where('id', $guestsList->first()->user_id)->first();
-        }
-
+        $guestsList = $query->orderBy('users.name')->paginate(10)->withQueryString();
+        $targetUserId = $selectedGuestId ?: optional($guestsList->first())->user_id;
         $selectedGuest = null;
-        if ($targetUser) {
-            // Tarik data profil langsung dari tabel guests agar phone dan address terjamin keamanannya
-            $profileDossier = DB::table('guests')->whereRaw('LOWER(email) = ?', [strtolower($targetUser->email)])->first();
-            
-            // Tarik info booking terakhir (jika ada) untuk mengisiPlacement kamar dan tanggal stay
-            $lastBookingActive = DB::table('bookings')
-                ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
-                ->where('bookings.user_id', $targetUser->id)
-                ->select('bookings.*', 'rooms.room_number')
-                ->orderBy('bookings.id', 'desc')
-                ->first();
 
-            $selectedGuest = (object)[
-                'user_id'         => $targetUser->id,
-                'name'            => $targetUser->name,
-                'email'           => $targetUser->email,
-                'phone'           => $profileDossier ? $profileDossier->phone : '—',
-                'address'         => $profileDossier ? $profileDossier->address : null,
-                'check_in'        => $lastBookingActive ? $lastBookingActive->check_in : null,
-                'check_out'       => $lastBookingActive ? $lastBookingActive->check_out : null,
-                'guests_count'    => $lastBookingActive ? $lastBookingActive->guests_count : 0,
-                'current_status'  => $lastBookingActive ? $lastBookingActive->status : 'registered',
-                'room_number'     => $lastBookingActive ? $lastBookingActive->room_number : null
-            ];
+        if ($targetUserId) {
+            $targetUser = DB::table('users')->where('id', $targetUserId)->first();
+            if ($targetUser) {
+                $profile = DB::table('guests')->whereRaw('LOWER(email) = ?', [strtolower($targetUser->email)])->first();
+                $lastBooking = DB::table('bookings')
+                    ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
+                    ->where('bookings.user_id', $targetUser->id)
+                    ->select('bookings.*', 'rooms.room_number')
+                    ->latest('bookings.id')
+                    ->first();
+
+                $selectedGuest = (object) [
+                    'user_id' => $targetUser->id,
+                    'name' => $targetUser->name,
+                    'email' => $targetUser->email,
+                    'phone' => $profile?->phone,
+                    'identity_number' => $profile?->identity_number,
+                    'address' => $profile?->address,
+                    'check_in' => $lastBooking?->check_in,
+                    'check_out' => $lastBooking?->check_out,
+                    'guests_count' => $lastBooking?->guests_count ?? 0,
+                    'current_status' => $lastBooking?->status ?? 'registered',
+                    'room_number' => $lastBooking?->room_number,
+                ];
+            }
         }
 
         return view('receptionist.guests', compact(
-            'inHouseGuests', 'checkinsToday', 'checkoutsToday', 'totalGuestsAllTime', 'revenueThisMonth',
-            'tabCounters', 'currentTab', 'guestsList', 'selectedGuest'
+            'inHouseGuests',
+            'checkinsToday',
+            'checkoutsToday',
+            'totalGuestsAllTime',
+            'revenueThisMonth',
+            'tabCounters',
+            'currentTab',
+            'guestsList',
+            'selectedGuest',
         ));
     }
 
-    public function processCheckOut(Request $request)
+    public function assignRoomNumber(Request $request): View|RedirectResponse
     {
-        $today = now()->format('Y-m-d');
-        $search = $request->input('search');
-        $bookingId = $request->input('booking_id');
-        
-        $selectedBooking = null;
-        $activeBookings = collect();
-        $charges = [];
-        $totalCharges = 0;
-        $totalPayments = 0;
-        $balanceDue = 0;
+        $today = now()->toDateString();
+        $search = trim((string) $request->input('search'));
 
-        $activeBookingsQuery = DB::table('bookings')
-            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
-            ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-            ->whereIn('bookings.status', ['checked_in', 'confirmed'])
-            ->select('bookings.id', 'bookings.check_in', 'bookings.check_out', 'bookings.total_price', 'bookings.status', 'users.name as guest_name', 'users.email as guest_email', 'rooms.room_number', 'room_types.name as room_type', 'room_types.price as room_price');
+        if ($request->isMethod('post') && $request->has('submit_assignment_booking_id')) {
+            $validated = $request->validate([
+                'submit_assignment_booking_id' => ['required', 'integer', 'exists:bookings,id'],
+                'assign_selected_room_id' => ['required', 'integer', 'exists:rooms,id'],
+            ]);
 
-        if ($search) {
-            $activeBookingsQuery->where(function($q) use ($search) {
-                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhere('rooms.room_number', 'like', "%{$search}%")
-                  ->orWhere('bookings.id', 'like', "%{$search}%");
-            });
-        }
+            try {
+                DB::transaction(function () use ($validated) {
+                    $booking = DB::table('bookings')
+                        ->where('id', $validated['submit_assignment_booking_id'])
+                        ->lockForUpdate()
+                        ->first();
+                    $selectedRoom = DB::table('rooms')
+                        ->where('id', $validated['assign_selected_room_id'])
+                        ->lockForUpdate()
+                        ->first();
 
-        $activeBookings = $activeBookingsQuery->orderBy('bookings.created_at', 'desc')->get();
+                    if (! $booking || ! in_array($booking->status, ['confirmed', 'pending'], true)) {
+                        throw new RuntimeException('Reservasi tidak dapat diubah pada status saat ini.');
+                    }
+                    if (! $selectedRoom || $selectedRoom->status !== 'available') {
+                        throw new RuntimeException('Kamar yang dipilih tidak lagi tersedia.');
+                    }
 
-        if ($bookingId) {
-            $selectedBooking = $activeBookings->firstWhere('id', $bookingId);
-        } elseif ($search && $activeBookings->isNotEmpty()) {
-            $selectedBooking = $activeBookings->first();
-        } elseif ($activeBookings->isNotEmpty()) {
-            $selectedBooking = $activeBookings->firstWhere('status', 'checked_in') ?? $activeBookings->first();
-        }
+                    $currentRoomTypeId = DB::table('rooms')->where('id', $booking->room_id)->value('room_type_id');
+                    if ($currentRoomTypeId && (int) $selectedRoom->room_type_id !== (int) $currentRoomTypeId) {
+                        throw new RuntimeException('Kamar pengganti harus memiliki tipe yang sama dengan reservasi.');
+                    }
 
-        if ($selectedBooking) {
-            $selectedBooking->guest_name = $selectedBooking->guest_name ?? 'Tamu';
-            $selectedBooking->room_number = $selectedBooking->room_number ?? 'TBD';
-            $selectedBooking->room_type = $selectedBooking->room_type ?? 'Standard';
-            $selectedBooking->room_price = $selectedBooking->room_price ?? 0;
-        }
-
-        if ($selectedBooking) {
-            $checkInDate = Carbon::parse($selectedBooking->check_in);
-            $checkOutDate = Carbon::parse($selectedBooking->check_out);
-            $nights = $checkInDate->diffInDays($checkOutDate) ?: 1;
-
-            for ($i = 0; $i < $nights; $i++) {
-                $currentDay = $checkInDate->copy()->addDays($i)->format('d M Y');
-                $charges[] = [
-                    'date' => $currentDay,
-                    'description' => "Room Charge ({$selectedBooking->room_type})",
-                    'reference' => "Room {$selectedBooking->room_number}",
-                    'debit' => $selectedBooking->room_price,
-                    'credit' => 0
-                ];
-                $totalCharges += $selectedBooking->room_price;
-            }
-
-            $extraServices = DB::table('payments')
-                ->where('booking_id', $selectedBooking->id)
-                ->where('payment_status', 'paid')
-                ->whereNull('restaurant_order_id')
-                ->get();
-
-            foreach ($extraServices as $service) {
-                $totalPayments += $service->amount;
-                $charges[] = [
-                    'date' => Carbon::parse($service->created_at)->format('d M Y'),
-                    'description' => "Advance Deposit / System Payment",
-                    'reference' => "PAY-00" . $service->id,
-                    'debit' => 0,
-                    'credit' => $service->amount
-                ];
-            }
-
-            $balanceDue = max(0, $totalCharges - $totalPayments);
-        }
-
-        if ($request->isMethod('post') && $request->has('confirm_checkout_id')) {
-            $targetId = $request->input('confirm_checkout_id');
-            $bookingRecord = DB::table('bookings')->where('id', $targetId)->first();
-            
-            if ($bookingRecord && $bookingRecord->status === 'checked_in') {
-                DB::transaction(function () use ($bookingRecord) {
-                    DB::table('bookings')->where('id', $bookingRecord->id)->update([
-                        'status' => 'checked_out',
-                        'updated_at' => now()
+                    DB::table('bookings')->where('id', $booking->id)->update([
+                        'room_id' => $selectedRoom->id,
+                        'updated_at' => now(),
                     ]);
-
-                    DB::table('rooms')->where('id', $bookingRecord->room_id)->update([
-                        'status' => 'dirty',
-                        'updated_at' => now()
-                    ]);
-            });
-
-                return redirect()->route('receptionist.dashboard')->with('success', "Proses check-out Kamar berhasil diselesaikan.");
+                });
+            } catch (RuntimeException $exception) {
+                return back()->withInput()->with('error', $exception->getMessage());
             }
 
-            return redirect()->route('receptionist.checkout')->with('error', 'Tamu ini tidak lagi aktif untuk check-out.');
+            return redirect()->route('receptionist.checkin', ['booking_id' => $validated['submit_assignment_booking_id']])
+                ->with('success', 'Kamar berhasil dialokasikan. Lanjutkan proses check-in untuk menandai kamar occupied.');
         }
-
-        return view('receptionist.checkout', compact(
-            'selectedBooking', 'activeBookings', 'charges', 'totalCharges', 'totalPayments', 'balanceDue', 'search'
-        ));
-    }
-
-    public function assignRoomNumber(Request $request)
-    {
-        $today = now()->format('Y-m-d');
 
         $arrivalsCount = DB::table('bookings')->whereDate('check_in', $today)->count();
         $unassignedCount = DB::table('bookings')->whereDate('check_in', $today)->whereIn('status', ['confirmed', 'pending'])->count();
         $assignedCount = DB::table('bookings')->where('status', 'checked_in')->count();
         $freeRoomsCount = DB::table('rooms')->where('status', 'available')->count();
 
-        $search = $request->input('search');
         $unassignedQuery = DB::table('bookings')
             ->join('users', 'bookings.user_id', '=', 'users.id')
-            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
-            ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
+            ->leftJoin('guests', function ($join) {
+                $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
+            })
             ->whereIn('bookings.status', ['confirmed', 'pending'])
-            ->select('bookings.*', 'users.name as guest_name', 'users.email as guest_email', 'room_types.name as room_type', 'rooms.room_number as initial_room_number', 'room_types.id as room_type_id');
+            ->select(
+                'bookings.*',
+                'users.name as guest_name',
+                'users.email as guest_email',
+                'guests.phone as guest_phone',
+                'room_types.name as room_type',
+                'rooms.room_number as initial_room_number',
+                'room_types.id as room_type_id',
+            );
 
-        if (!empty($search)) {
-            $unassignedQuery->where(function($q) use ($search) {
-                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                  ->orWhere('bookings.id', 'like', "%{$search}%");
+        if ($search !== '') {
+            $unassignedQuery->where(function ($builder) use ($search) {
+                $builder->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('CAST(bookings.id AS CHAR) LIKE ?', ['%' . preg_replace('/\D+/', '', $search) . '%']);
             });
         }
 
-        $unassignedReservations = $unassignedQuery->orderBy('bookings.created_at', 'asc')->get();
+        $unassignedReservations = $unassignedQuery->orderBy('bookings.created_at')->get();
+        $selectedBookingId = $request->integer('selected_booking_id');
+        $activeTarget = $selectedBookingId
+            ? $unassignedReservations->firstWhere('id', $selectedBookingId)
+            : $unassignedReservations->first();
 
-        foreach ($unassignedReservations as $res) {
-            $guestDetail = DB::table('guests')->where('email', $res->guest_email)->first();
-            $res->guest_phone = $guestDetail ? $guestDetail->phone : '—';
-        }
-
-        $selectedBookingId = $request->input('selected_booking_id');
-        $activeTarget = null;
-        $availablePhysicalRooms = [];
-
-        if ($selectedBookingId) {
-            $activeTarget = DB::table('bookings')
-                ->join('users', 'bookings.user_id', '=', 'users.id')
-                ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
-                ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-                ->where('bookings.id', $selectedBookingId)
-                ->select('bookings.*', 'users.name as guest_name', 'users.email as guest_email', 'room_types.name as room_type', 'room_types.id as room_type_id')
-                ->first();
-        } elseif ($unassignedReservations->count() > 0) {
-            $activeTarget = $unassignedReservations->first();
-        }
-
-        if ($activeTarget) {
-            $guestDetail = DB::table('guests')->where('email', $activeTarget->guest_email)->first();
-            $activeTarget->guest_phone = $guestDetail ? $guestDetail->phone : '—';
-
+        $availablePhysicalRooms = collect();
+        if ($activeTarget?->room_type_id) {
             $availablePhysicalRooms = DB::table('rooms')
                 ->where('room_type_id', $activeTarget->room_type_id)
                 ->where('status', 'available')
-                ->orderBy('room_number', 'asc')
+                ->orderBy('room_number')
                 ->get();
         }
 
-        $allRoomsRaw = DB::table('rooms')->orderBy('room_number', 'asc')->get();
         $floorsGrid = [];
-        foreach ($allRoomsRaw as $room) {
-            $floorLength = strlen($room->room_number) - 2;
-            $floorNum = $floorLength > 0 ? substr($room->room_number, 0, $floorLength) : '1';
-            $floorsGrid[$floorNum][] = $room;
+        foreach (DB::table('rooms')->orderBy('room_number')->get() as $room) {
+            $floorLength = max(0, strlen((string) $room->room_number) - 2);
+            $floorNumber = $floorLength > 0 ? substr((string) $room->room_number, 0, $floorLength) : '1';
+            $floorsGrid[$floorNumber][] = $room;
         }
         ksort($floorsGrid);
 
-        if ($request->isMethod('post') && $request->has('submit_assignment_booking_id')) {
-            $request->validate([
-                'submit_assignment_booking_id' => 'required|integer',
-                'assign_selected_room_id' => 'required|integer'
-            ]);
-
-            $bId = $request->input('submit_assignment_booking_id');
-            $rId = $request->input('assign_selected_room_id');
-
-            DB::transaction(function () use ($bId, $rId) {
-                DB::table('bookings')->where('id', $bId)->update([
-                    'room_id' => $rId,
-                    'status' => 'checked_in', 
-                    'updated_at' => now()
-                ]);
-
-                DB::table('rooms')->where('id', $rId)->update([
-                    'status' => 'occupied',
-                    'updated_at' => now()
-                ]);
-        });
-
-            return redirect()->route('receptionist.roomassignment')->with('success', 'Kamar fisik berhasil dialokasikan dan status tamu resmi Checked-In!');
-        }
-
         return view('receptionist.roomassignment', compact(
-            'arrivalsCount', 'unassignedCount', 'assignedCount', 'freeRoomsCount',
-            'unassignedReservations', 'activeTarget', 'availablePhysicalRooms', 'floorsGrid'
-        ));
-    }
-
-    public function receptionistFolioView(Request $request)
-    {
-        $bookingId = $request->input('booking_id');
-        
-        if (!$bookingId) {
-            $latestActive = DB::table('bookings')->where('status', 'checked_in')->orderBy('created_at', 'desc')->first();
-            $bookingId = $latestActive ? $latestActive->id : null;
-        }
-
-        $selectedBooking = null;
-        $charges = [];
-        $totalCharges = 0;
-        $totalPayments = 0;
-        $balanceDue = 0;
-        
-        $deptAmounts = ['Room' => 0, 'F&B' => 0, 'Spa' => 0, 'Laundry' => 0];
-        $deptShares = ['Room' => 0, 'F&B' => 0, 'Spa' => 0, 'Laundry' => 0];
-        $trendPoints = [0, 0, 0, 0];
-        $trendDates = [];
-
-        if ($bookingId) {
-            $selectedBooking = DB::table('bookings')
-                ->join('users', 'bookings.user_id', '=', 'users.id')
-                ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
-                ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-                ->where('bookings.id', $bookingId)
-                ->select('bookings.*', 'users.name as guest_name', 'users.email as guest_email', 'rooms.room_number', 'room_types.name as room_type', 'room_types.price as room_price')
-                ->first();
-        }
-
-        if ($selectedBooking) {
-            $checkInDate = Carbon::parse($selectedBooking->check_in);
-            $checkOutDate = Carbon::parse($selectedBooking->check_out);
-            $nights = $checkInDate->diffInDays($checkOutDate) ?: 1;
-
-            $runningBalance = 0;
-            for ($i = 0; $i < $nights; $i++) {
-                $dayDate = $checkInDate->copy()->addDays($i);
-                $formattedDay = $dayDate->format('d M Y');
-                
-                if ($i < 4) { $trendDates[] = $dayDate->format('d M'); }
-
-                $runningBalance += $selectedBooking->room_price;
-                $charges[] = [
-                    'post_date' => $formattedDay, 'date' => $formattedDay,
-                    'description' => "Room Charge ({$selectedBooking->room_type})", 'reference' => "Room {$selectedBooking->room_number}",
-                    'department' => "Room", 'debit' => $selectedBooking->room_price, 'credit' => 0, 'balance' => $runningBalance
-                ];
-                
-                $totalCharges += $selectedBooking->room_price;
-                $deptAmounts['Room'] += $selectedBooking->room_price;
-                if ($i < 4) { $trendPoints[$i] += $selectedBooking->room_price; }
-            }
-
-            $extraPayments = DB::table('payments')->where('booking_id', $selectedBooking->id)->where('payment_status', 'paid')->get();
-
-            if ($extraPayments->isEmpty() && count($charges) > 0) {
-                $totalCharges += 350000; $runningBalance += 350000; $deptAmounts['F&B'] += 200000; $deptAmounts['Laundry'] += 150000;
-                $charges[] = ['post_date' => $checkInDate->format('d M Y'), 'date' => $checkInDate->format('d M Y'), 'description' => 'Breakfast & Laundry Pack', 'reference' => 'EXT-0182', 'department' => 'F&B', 'debit' => 350000, 'credit' => 0, 'balance' => $runningBalance];
-                $totalPayments = $totalCharges;
-                $charges[] = ['post_date' => $checkOutDate->format('d M Y'), 'date' => $checkOutDate->format('d M Y'), 'description' => 'Payment - Cash Settle', 'reference' => 'PAY-0087', 'department' => 'Cashier', 'debit' => 0, 'credit' => $totalCharges, 'balance' => 0];
-            } else {
-                foreach ($extraPayments as $pay) {
-                    $totalPayments += $pay->amount;
-                    $charges[] = [
-                        'post_date' => Carbon::parse($pay->created_at)->format('d M Y'), 'date' => Carbon::parse($pay->created_at)->format('d M Y'),
-                        'description' => "System Payment Settlement", 'reference' => "PAY-00" . $pay->id,
-                        'department' => "Cashier", 'debit' => 0, 'credit' => $pay->amount, 'balance' => max(0, $totalCharges - $totalPayments)
-                    ];
-                }
-            }
-
-            $totalSumDept = array_sum($deptAmounts) ?: 1;
-            foreach ($deptAmounts as $key => $amount) {
-                $deptShares[$key] = round(($amount / $totalSumDept) * 100, 1);
-            }
-            $balanceDue = max(0, $totalCharges - $totalPayments);
-        }
-
-        $maxTrendValue = count($trendPoints) > 0 ? max($trendPoints) ?: 1 : 1;
-        $svgCoordinates = [];
-        foreach ($trendPoints as $idx => $val) {
-            $xCoord = $idx * 90 + 10;
-            $yCoord = 80 - (($val / $maxTrendValue) * 65);
-            $svgCoordinates[] = "{$xCoord},{$yCoord}";
-        }
-        $svgPathD = count($svgCoordinates) > 0 ? "M " . implode(" L ", $svgCoordinates) : "M 10,65 L 280,65";
-
-        $netBase = $totalCharges / 1.21;
-        $serviceCharge = $netBase * 0.10;
-        $vatTax = $netBase * 0.11;
-
-        return view('receptionist.folio', compact(
-            'selectedBooking', 'charges', 'totalCharges', 'totalPayments', 'balanceDue',
-            'deptShares', 'serviceCharge', 'vatTax', 'svgPathD', 'trendDates', 'svgCoordinates'
-        ));
-    }
-
-    public function processPayment(Request $request)
-    {
-        $bookingId = $request->input('booking_id');
-
-        if (!$bookingId) {
-            $latestActive = DB::table('bookings')->where('status', 'checked_in')->orderBy('created_at', 'desc')->first();
-            $bookingId = $latestActive ? $latestActive->id : null;
-        }
-
-        $selectedBooking = null;
-        $totalCharges = 0;
-        $totalPayments = 0;
-        $balanceDue = 0;
-        $paymentHistory = [];
-
-        if ($bookingId) {
-            $selectedBooking = DB::table('bookings')
-                ->join('users', 'bookings.user_id', '=', 'users.id')
-                ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
-                ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-                ->where('bookings.id', $bookingId)
-                ->select('bookings.*', 'users.name as guest_name', 'users.email as guest_email', 'rooms.room_number', 'room_types.name as room_type', 'room_types.price as room_price')
-                ->first();
-        }
-
-        if ($selectedBooking) {
-            $checkInDate = Carbon::parse($selectedBooking->check_in);
-            $checkOutDate = Carbon::parse($selectedBooking->check_out);
-            $nights = $checkInDate->diffInDays($checkOutDate) ?: 1;
-
-            $totalCharges = $selectedBooking->room_price * $nights;
-            if ($totalCharges < 4050000) { $totalCharges = 4050000; }
-
-            $paymentHistory = DB::table('payments')->where('booking_id', $selectedBooking->id)->orderBy('created_at', 'desc')->get();
-            $totalPayments = $paymentHistory->where('payment_status', 'paid')->sum('amount') ?: 0;
-            $balanceDue = max(0, $totalCharges - $totalPayments);
-        }
-
-        if ($request->isMethod('post') && $request->has('action_process_payment')) {
-            $request->validate([
-                'booking_id_hidden' => 'required',
-                'payment_amount'    => 'required|numeric|min:1',
-                'payment_method'    => 'required|string',
-            ]);
-
-            $targetBookingId = $request->input('booking_id_hidden');
-            $chargeAmount = $request->input('payment_amount');
-            $methodSelected = $request->input('payment_method');
-
-            DB::transaction(function () use ($targetBookingId, $chargeAmount, $methodSelected) {
-                DB::table('payments')->insert([
-                    'booking_id'     => $targetBookingId,
-                    'amount'         => $chargeAmount,
-                    'payment_method' => $methodSelected,
-                    'payment_status' => 'paid',
-                    'created_at'     => now(),
-                    'updated_at'     => now()
-                ]);
-        });
-
-            return redirect()->route('receptionist.payments', ['booking_id' => $targetBookingId])
-                             ->with('success', 'Transaksi pembayaran folio berhasil dibukukan.');
-        }
-
-        $receptionistStaff = auth()->user()->name . ' (Receptionist)';
-
-        return view('receptionist.payments', compact(
-            'selectedBooking', 'totalCharges', 'totalPayments', 'balanceDue', 'paymentHistory', 'receptionistStaff'
+            'arrivalsCount',
+            'unassignedCount',
+            'assignedCount',
+            'freeRoomsCount',
+            'unassignedReservations',
+            'activeTarget',
+            'availablePhysicalRooms',
+            'floorsGrid',
         ));
     }
 }
