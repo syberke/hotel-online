@@ -1,171 +1,87 @@
-<style>
-    /* Desain scrollbar minimalis khusus area menu Oasis */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #faf9f6; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #e5e5e5; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #a3a3a3; 
-    }
-</style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
 <x-guest-layout>
-    <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
+    <div
+        class="min-h-screen bg-slate-50 text-slate-900"
+        x-data="{
+            quantity: 1,
+            cart: JSON.parse(localStorage.getItem('oasis_restaurant_cart') || '[]'),
+            added: false,
+            addToCart() {
+                const item = {
+                    id: {{ $menu->id }},
+                    title: @js($menu->name),
+                    price: {{ $menu->price }},
+                    image_url: @js($menu->foto_url),
+                    quantity: Number(this.quantity),
+                    venue: 'Oasis Fine Dining'
+                };
+                const existing = this.cart.find(entry => entry.id === item.id);
+                if (existing) existing.quantity += item.quantity;
+                else this.cart.push(item);
+                localStorage.setItem('oasis_restaurant_cart', JSON.stringify(this.cart));
+                this.added = true;
+                setTimeout(() => this.added = false, 2400);
+            }
+        }"
+    >
         @include('layouts.navigation')
 
-        <div class="max-w-6xl mx-auto px-6 pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <nav class="flex items-center space-x-2 text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
-                <a href="{{ route('home') }}" class="hover:text-neutral-900 transition-colors">Home</a>
-                <span>/</span>
-                <a href="{{ route('restaurant') }}" class="hover:text-neutral-900 transition-colors">Restaurant</a>
-                <span>/</span>
-                <span class="text-amber-700">{{ $menu->name }}</span>
-            </nav>
-
-            <a href="{{ route('restaurant') }}" class="inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors border border-neutral-300 hover:border-neutral-900 px-4 py-2 bg-white self-start sm:self-auto">
-                <i class="fa-solid fa-arrow-left me-2"></i> Back To Menu Card
-            </a>
-        </div>
-
-        <main class="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            
-            <div class="space-y-4">
-                <div class="w-full border border-neutral-200 overflow-hidden bg-neutral-100 shadow-sm relative h-[400px]">
-                    <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover">
-                    <span class="absolute bottom-4 left-4 bg-amber-800 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1">
-
-                    </span>
-                </div>
-                
-              
+        <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <nav class="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500"><a href="{{ route('home') }}" class="hover:text-slate-900">Home</a><i class="fa-solid fa-chevron-right text-[9px]"></i><a href="{{ route('restaurant') }}" class="hover:text-slate-900">Restaurant</a><i class="fa-solid fa-chevron-right text-[9px]"></i><span class="text-blue-600">{{ $menu->name }}</span></nav>
+                <a href="{{ route('restaurant') }}" class="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"><i class="fa-solid fa-arrow-left text-xs"></i>Back to menu</a>
             </div>
 
-            <div class="space-y-6">
-                <div>
-                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-700 block mb-1">Premium Gastronomy Architecture</span>
-                    <h1 class="text-3xl font-serif text-neutral-900 uppercase tracking-wide">{{ $menu->name }}</h1>
-                    <div class="text-xl font-bold text-amber-800 font-mono mt-2">
-                        Rp {{ number_format($menu->price, 0, ',', '.') }}
-                    </div>
+            <section class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)] lg:items-start">
+                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="relative h-[430px] overflow-hidden bg-slate-100 sm:h-[560px]"><img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}" class="h-full w-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent"></div><span class="absolute bottom-5 left-5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">Hotel restaurant menu</span></div>
                 </div>
 
-                <div class="border-t border-neutral-200 pt-6">
-                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-neutral-800 mb-2">Gastronomy Description</h4>
-                    <p class="text-neutral-500 text-xs leading-relaxed font-medium">{{ $menu->description }}</p>
-                </div>
+                <div class="space-y-6">
+                    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <p class="text-sm font-medium text-blue-600">Menu item</p>
+                        <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">{{ $menu->name }}</h1>
+                        <p class="mt-3 text-2xl font-semibold text-blue-700">Rp {{ number_format($menu->price, 0, ',', '.') }}</p>
+                        <p class="mt-6 border-t border-slate-100 pt-5 text-sm leading-7 text-slate-500">{{ $menu->description }}</p>
 
-                <div class="bg-white border border-neutral-200 p-6 shadow-md rounded-none">
-                    <h4 class="text-[10px] font-bold uppercase tracking-widest text-neutral-900 border-b border-neutral-100 pb-3 mb-4">Suite Service Order Engine</h4>
-                    
-                    <form id="detail-gastronomy-form" action="{{ route('restaurant.order') }}" method="POST" class="space-y-4">
-                        @csrf
-                        <input type="hidden" id="final-invoice-price" name="total_price" value="{{ $menu->price }}">
-                        <input type="hidden" name="menu_id" value="{{ $menu->id }}">
-
-                        <div class="flex items-center justify-between bg-neutral-50 border border-neutral-100 px-4 py-3">
-                            <span class="text-xs font-bold text-neutral-700 uppercase tracking-wider">Portion Quantity</span>
-                            <div class="flex items-center border border-neutral-300 bg-white">
-                                <button type="button" onclick="changeQuantity(-1)" class="px-3 py-1 text-xs font-bold hover:bg-neutral-100 transition-colors">-</button>
-                                <input type="text" id="display-qty" name="quantity" value="1" readonly class="w-10 text-center border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent">
-                                <button type="button" onclick="changeQuantity(1)" class="px-3 py-1 text-xs font-bold hover:bg-neutral-100 transition-colors">+</button>
-                            </div>
+                        <div class="mt-6 grid grid-cols-2 gap-3">
+                            <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">Preparation</p><p class="mt-1 text-sm font-semibold text-slate-900">Made to order</p></div>
+                            <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">Delivery estimate</p><p class="mt-1 text-sm font-semibold text-slate-900">20–30 minutes</p></div>
                         </div>
+                    </section>
 
-                        <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider py-2">
-                            <span>Total Accumulation Cost</span>
-                            <span id="display-total-cost" class="text-amber-800 font-mono text-base">Rp {{ number_format($menu->price, 0, ',', '.') }}</span>
-                        </div>
+                    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4"><div><p class="text-xs font-medium text-slate-500">Add to order</p><h2 class="mt-1 text-lg font-semibold text-slate-900">Choose quantity</h2></div><p class="text-right text-sm font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format({{ $menu->price }} * quantity)"></p></div>
 
-                        <div id="ajax-response-alert" class="hidden p-3 text-[10px] font-bold uppercase tracking-wider"></div>
+                        <div class="mt-5 flex items-center justify-between rounded-xl bg-slate-50 p-4"><span class="text-sm font-medium text-slate-700">Portions</span><div class="flex items-center rounded-xl border border-slate-200 bg-white"><button type="button" @click="quantity = Math.max(1, quantity - 1)" class="grid h-10 w-10 place-items-center text-slate-500 hover:bg-slate-50">−</button><input type="text" x-model="quantity" readonly class="h-10 w-12 border-0 bg-transparent p-0 text-center text-sm font-semibold text-slate-900 focus:ring-0"><button type="button" @click="quantity = Math.min(10, quantity + 1)" class="grid h-10 w-10 place-items-center text-slate-500 hover:bg-slate-50">+</button></div></div>
 
-                        <button type="submit" id="submit-order-btn" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-3.5 rounded-none transition-all cursor-pointer">
-                            Confirm Order To Room Enclosure &rarr;
-                        </button>
-                    </form>
+                        <button type="button" @click="addToCart()" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-basket-shopping text-xs"></i>Add to restaurant cart</button>
+
+                        <div x-show="added" x-transition x-cloak class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><i class="fa-solid fa-circle-check mr-2"></i>Item added to your restaurant cart.</div>
+
+                        @auth
+                            @if(auth()->user()->role === 'guest' && Route::has('guest.restaurant.orders'))
+                                <a href="{{ route('guest.restaurant.orders') }}" class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Open restaurant portal <i class="fa-solid fa-arrow-right text-xs"></i></a>
+                            @endif
+                        @else
+                            <div class="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">Your cart is stored on this device. <a href="{{ route('login') }}" class="font-semibold text-blue-600 hover:text-blue-700">Sign in</a> to continue ordering through the guest portal.</div>
+                        @endauth
+                    </section>
+
+                    <section class="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm leading-6 text-blue-900"><div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-blue-600 shadow-sm"><i class="fa-solid fa-circle-info"></i></span><div><p class="font-semibold">Before placing an order</p><p class="mt-1 text-blue-800">Please mention allergies or dietary requirements in the guest portal before payment.</p></div></div></section>
                 </div>
+            </section>
 
-                <div class="border-t border-neutral-100 pt-4 text-[11px] text-neutral-400 leading-relaxed font-medium">
-                    <i class="fa-solid fa-circle-info text-amber-800 mr-1"></i> **In-Suite Notice**: Estimasi waktu pengantaran makanan menuju paviliun atau kamar Anda berkisar antara 20-30 menit tergantung pada kompleksitas teknik memasak hidangan.
-                </div>
-            </div>
+            <section class="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+                @foreach([
+                    ['fa-leaf', 'Prepared fresh', 'Kitchen preparation begins after the order is confirmed.'],
+                    ['fa-clock', 'Track order history', 'Paid and pending restaurant orders stay visible in the guest portal.'],
+                    ['fa-receipt', 'Keep your receipt', 'Restaurant receipts can be reopened and printed after payment.'],
+                ] as [$icon, $title, $description])
+                    <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid {{ $icon }}"></i></span><h2 class="mt-4 text-base font-semibold text-slate-900">{{ $title }}</h2><p class="mt-2 text-sm leading-6 text-slate-500">{{ $description }}</p></article>
+                @endforeach
+            </section>
         </main>
 
         @include('layouts.footer')
     </div>
 </x-guest-layout>
-
-<script>
-    // Menyimpan harga dasar menu langsung dari database Laravel
-    const baseMenuPrice = {{ $menu->price }};
-    const qtyInput = document.getElementById('display-qty');
-    const invoicePriceInput = document.getElementById('final-invoice-price');
-    const totalCostLabel = document.getElementById('display-total-cost');
-    
-    const orderForm = document.getElementById('detail-gastronomy-form');
-    const submitBtn = document.getElementById('submit-order-btn');
-    const alertBox = document.getElementById('ajax-response-alert');
-
-    // Fungsi Pengubah Qty (+/-)
-    function changeQuantity(delta) {
-        let currentVal = parseInt(qtyInput.value);
-        let updatedVal = currentVal + delta;
-        
-        // Membatasi pesanan minimal 1 porsi dan maksimal 10 porsi sekali pesan
-        if (updatedVal >= 1 && updatedVal <= 10) {
-            qtyInput.value = updatedVal;
-            recalculateInvoice();
-        }
-    }
-
-    // Fungsi Sinkronisasi Hitung Harga Total
-    function recalculateInvoice() {
-        let totalSum = baseMenuPrice * parseInt(qtyInput.value);
-        invoicePriceInput.value = totalSum;
-        totalCostLabel.innerText = 'Rp ' + totalSum.toLocaleString('id-ID');
-    }
-
-    // Pemrosesan Pengiriman Form Melalui AJAX Asinkronus
-    orderForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Transmitting Order Request...";
-
-        fetch(orderForm.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            },
-            body: new FormData(orderForm)
-        })
-        .then(async response => {
-            const data = await response.json();
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Confirm Order To Room Enclosure →";
-            
-            // Bersihkan sisa class pesan lama
-            alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
-
-            if (response.ok && data.success) {
-                alertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                alertBox.innerText = data.message;
-            } else {
-                alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                alertBox.innerText = data.message || "Pemesanan gagal diproses oleh dapur pusat.";
-            }
-        })
-        .catch(() => {
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Confirm Order To Room Enclosure →";
-            alertBox.classList.remove('hidden');
-            alertBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-            alertBox.innerText = "Terjadi gangguan transmisi sinyal lokal.";
-        });
-    });
-</script>
