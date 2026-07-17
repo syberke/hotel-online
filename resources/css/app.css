@@ -138,3 +138,12 @@
         padding: 1.5rem !important;
     }
 }
+
+/* Guest portal owns the viewport. Legacy page roots must not create a second viewport. */
+.guest-portal-content > div > .min-h-screen {
+    min-height: 0 !important;
+}
+
+.guest-portal-content > div > .h-screen {
+    height: auto !important;
+}
