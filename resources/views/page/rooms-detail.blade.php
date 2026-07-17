@@ -1,376 +1,222 @@
-<style>
-    /* Desain scrollbar minimalis khusus area menu Oasis */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #faf9f6; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #e5e5e5; 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #a3a3a3; 
-    }
-</style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
 <x-guest-layout>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    @php
+        $allImages = $room->foto_url ? array_filter(array_map('trim', explode(',', $room->foto_url))) : [];
+        $images = array_values(array_slice($allImages, 0, 5));
+        $mainImage = $images[0] ?? 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2070&auto=format&fit=crop';
+        $amenities = filled($room->amenities ?? null)
+            ? array_filter(array_map('trim', explode(',', $room->amenities)))
+            : ['High-speed Wi-Fi', 'Air conditioning', 'Smart TV', 'Daily housekeeping', 'In-room safe', 'Coffee and tea'];
+    @endphp
 
-    <div class="min-h-screen bg-[#faf9f6] text-neutral-900 font-sans antialiased">
+    <div class="min-h-screen bg-slate-50 text-slate-900">
         @include('layouts.navigation')
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <nav class="flex items-center space-x-2 text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
-                <a href="{{ route('home') }}" class="hover:text-neutral-900 transition-colors">Home</a>
-                <span>/</span>
-                <a href="{{ route('rooms') }}" class="hover:text-neutral-900 transition-colors">Rooms & Suites</a>
-                <span>/</span>
-                <span class="text-amber-700">{{ $room->name }}</span>
-            </nav>
+        <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+            <div class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <nav class="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+                    <a href="{{ route('home') }}" class="hover:text-slate-900">Home</a><i class="fa-solid fa-chevron-right text-[9px]"></i>
+                    <a href="{{ route('rooms') }}" class="hover:text-slate-900">Rooms</a><i class="fa-solid fa-chevron-right text-[9px]"></i>
+                    <span class="text-blue-600">{{ $room->name }}</span>
+                </nav>
+                <a href="{{ route('rooms') }}" class="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"><i class="fa-solid fa-arrow-left text-xs"></i>Back to rooms</a>
+            </div>
 
-            <a href="{{ route('rooms') }}" class="inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors border border-neutral-300 hover:border-neutral-900 px-4 py-2 bg-white self-start sm:self-auto">
-                <i class="fa-solid fa-arrow-left me-2"></i> Back To Accommodations
-            </a>
-        </div>
-
-        @php
-            // MEMECAH STRING URL FOTO BERDASARKAN TANDA KOMA
-            // Mengambil hanya 2 foto pertama untuk menjaga layout
-            $allImages = $room->foto_url ? explode(',', $room->foto_url) : [];
-            $images = array_slice(array_map('trim', $allImages), 0, 2);
-            
-            // Set foto utama (default ke gambar Unsplash jika data kosong)
-            $mainImage = count($images) > 0 ? $images[0] : 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2070';
-        @endphp
-
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                
-                <div class="lg:col-span-2 space-y-12">
-                    <div class="relative h-[55vh] md:h-[60vh] overflow-hidden bg-neutral-950 border border-neutral-200 group">
-                        <img id="room-main-display" src="{{ $mainImage }}" 
-                             alt="{{ $room->name }}" 
-                             class="w-full h-full object-cover opacity-95 transition-all duration-500 ease-in-out">
-                        <span class="absolute top-4 left-4 bg-amber-700 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1">
-                            Oasis Exclusive
-                        </span>
-                    </div>
-
-                    @if(count($images) > 0)
-                    <div class="grid grid-cols-2 gap-4">
-                        @foreach($images as $index => $imgUrl)
-                            <div onclick="switchMainImage('{{ $imgUrl }}', this)" 
-                                 class="thumbnail-container h-28 border {{ $index === 0 ? 'border-amber-700 ring-2 ring-amber-700' : 'border-neutral-300' }} overflow-hidden cursor-pointer bg-neutral-100 transition-all duration-300">
-                                <img src="{{ $imgUrl }}" class="w-full h-full object-cover hover:opacity-90 transition-opacity">
-                            </div>
-                        @endforeach
-                    </div>
-                    @else
-                    <div class="p-6 text-center bg-white border border-neutral-200">
-                        <i class="fa-regular fa-image text-4xl text-neutral-300 mb-2 block"></i>
-                        <p class="text-xs italic text-neutral-400">Tidak ada galeri foto tersedia untuk tipe kamar ini.</p>
-                    </div>
-                    @endif
-
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-serif text-neutral-900 border-b border-neutral-200 pb-3">About This Room</h2>
-                        <p class="text-neutral-500 text-sm leading-relaxed antialiased">
-                            {{ $room->description ?? 'Our suites offer a perfect blend of comfort and elegance. Wake up to breathtaking panoramic views and enjoy premium interior finishes crafted purposefully for an exceptional and unforgettable luxury stay.' }}
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-white border border-neutral-200 p-6">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-expand"></i></div>
-                            <div>
-                                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Room Size</p>
-                                <p class="text-xs font-bold text-neutral-800">{{ $room->room_size ?? '45 m²' }}</p>
+            <section class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
+                <div class="min-w-0 space-y-8">
+                    <div>
+                        <div class="relative h-[420px] overflow-hidden rounded-2xl bg-slate-900 shadow-sm sm:h-[520px]">
+                            <img id="room-main-display" src="{{ $mainImage }}" alt="{{ $room->name }}" class="h-full w-full object-cover transition-opacity duration-300">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent"></div>
+                            <div class="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 text-white">
+                                <div><span class="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium backdrop-blur">Oasis Hotel room</span><h1 class="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{{ $room->name }}</h1></div>
+                                <span class="hidden rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm sm:inline-flex {{ ($room->available_count ?? 0) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">{{ ($room->available_count ?? 0) > 0 ? ($room->available_count . ' available') : 'Fully booked' }}</span>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-bed"></i></div>
-                            <div>
-                                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Bed Configuration</p>
-                                <p class="text-xs font-bold text-neutral-800">{{ $room->bed_configuration ?? '1 Elite King Bed' }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-compass"></i></div>
-                            <div>
-                                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">View Perspective</p>
-                                <p class="text-xs font-bold text-neutral-800">{{ $room->view_perspective ?? 'Ocean Horizon' }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-neutral-50 flex items-center justify-center text-amber-800"><i class="fa-solid fa-users"></i></div>
-                            <div>
-                                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Max Occupancy</p>
-                                <p class="text-xs font-bold text-neutral-800">
-                                    {{ $room->max_capacity ?? 2 }} Persons
-                                </p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="space-y-6">
-                        <h3 class="text-base font-serif text-neutral-900 border-b border-neutral-200 pb-3">Premium Amenities</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 text-xs font-medium text-neutral-600">
-                            @if($room->amenities)
-                                @foreach(explode(',', $room->amenities) as $amenity)
-                                    <div class="flex items-center">
-                                        <i class="fa-solid fa-circle-check text-amber-800 w-5 mr-1"></i> 
-                                        {{ trim($amenity) }}
-                                    </div>
+                        @if(count($images) > 1)
+                            <div class="mt-4 flex gap-3 overflow-x-auto pb-1">
+                                @foreach($images as $index => $imageUrl)
+                                    <button type="button" onclick="switchMainImage(@js($imageUrl), this)" class="thumbnail-container h-24 w-36 shrink-0 overflow-hidden rounded-xl border-2 {{ $index === 0 ? 'border-blue-500' : 'border-transparent' }} bg-slate-100 transition hover:border-blue-300" aria-label="Show room image {{ $index + 1 }}">
+                                        <img src="{{ $imageUrl }}" alt="{{ $room->name }} image {{ $index + 1 }}" class="h-full w-full object-cover">
+                                    </button>
                                 @endforeach
-                            @else
-                                <div class="flex items-center"><i class="fa-solid fa-wifi text-amber-800 w-5 mr-1"></i> High-Speed Free Wi-Fi</div>
-                                <div class="flex items-center"><i class="fa-solid fa-snowflake text-amber-800 w-5 mr-1"></i> Full Air Conditioning</div>
-                                <div class="flex items-center"><i class="fa-solid fa-tv text-amber-800 w-5 mr-1"></i> Smart TV 50" Console</div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-1 sticky top-28">
-                    <div class="bg-white border border-neutral-200 p-8 shadow-xl space-y-6">
-                        <div>
-                            <div class="text-2xl font-bold text-amber-800">
-                                Rp {{ number_format($room->price, 0, ',', '.') }} 
-                                <span class="text-neutral-400 text-xs font-normal tracking-wide">/ night</span>
-                            </div>
-                        </div>
-
-                        @if(($room->available_count ?? 0) > 0)
-                            <div class="border border-emerald-200 bg-emerald-50/50 p-3.5 text-xs flex items-center justify-between">
-                                <div class="flex items-center space-x-2">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                    </span>
-                                    <span class="font-bold text-neutral-800 uppercase tracking-wide text-[10px]">Current Live Inventory</span>
-                                </div>
-                                <span class="font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 text-[11px]">
-                                    {{ $room->available_count }} Ready
-                                </span>
-                            </div>
-                        @else
-                            <div class="border border-red-200 bg-red-50/50 p-3.5 text-xs flex items-center justify-between">
-                                <div class="flex items-center space-x-2">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                    </span>
-                                    <span class="font-bold text-neutral-800 uppercase tracking-wide text-[10px]">Current Live Inventory</span>
-                                </div>
-                                <span class="font-mono font-bold text-red-800 bg-red-100 px-2 py-0.5 text-[11px] uppercase tracking-wider">
-                                    Sold Out
-                                </span>
                             </div>
                         @endif
-
-                        <form id="instant-booking-form" action="{{ route('rooms.check') }}" method="POST" class="space-y-4">
-                            @csrf
-                            <input type="hidden" name="suite_type" value="{{ $room->name }}">
-                            <input type="hidden" id="selected-room-id-input" name="room_id">
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check-In Date</label>
-                                    <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
-                                        <input type="date" id="check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ request('check_in', date('Y-m-d')) }}" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent cursor-pointer">
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Check-Out Date</label>
-                                    <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
-                                        <input type="date" id="check_out" name="check_out" required value="{{ request('check_out', date('Y-m-d', strtotime('+1 day'))) }}" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 bg-transparent cursor-pointer">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Total Stay Guests</label>
-                                    <div class="relative border border-neutral-200 px-3 py-2.5 bg-white">
-                                        <select id="guests-select" name="guests" class="w-full border-none p-0 text-xs font-bold focus:ring-0 text-neutral-800 appearance-none bg-transparent cursor-pointer">
-                                            @for($i = 1; $i <= ($room->max_capacity ?? 2); $i++)
-                                                <option value="{{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}" {{ $i == 2 ? 'selected' : '' }}>
-                                                    {{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}
-                                                </option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="validation-message-box" class="hidden text-[11px] font-bold uppercase tracking-wider p-3 rounded-none"></div>
-
-                            @auth
-                                @if(auth()->user()->role === 'guest' && !$isProfileComplete)
-                                    <div class="border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
-                                        Lengkapi identitas, telepon, dan alamat di
-                                        <a href="{{ route('profile.edit') }}" class="font-bold underline">profil Anda</a>
-                                        sebelum melakukan reservasi.
-                                    </div>
-                                @endif
-                            @endauth
-
-                            <div id="booking-action-container">
-                                <button type="button" id="submit-booking-btn" data-state="check" class="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
-                                    <span>Check Availability</span>
-                                </button>
-                            </div>
-                        </form>
                     </div>
+
+                    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <p class="text-sm font-medium text-blue-600">Room overview</p>
+                        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">About this room</h2>
+                        <p class="mt-4 text-sm leading-7 text-slate-500">{{ $room->description ?? 'A comfortable hotel room with practical amenities and space for a relaxing stay.' }}</p>
+
+                        <div class="mt-7 grid grid-cols-2 gap-4 border-t border-slate-100 pt-6 sm:grid-cols-4">
+                            @foreach([
+                                ['fa-expand', 'Room size', $room->room_size ?? '45 m²'],
+                                ['fa-bed', 'Bed', $room->bed_configuration ?? '1 King Bed'],
+                                ['fa-mountain-sun', 'View', $room->view_perspective ?? 'Hotel view'],
+                                ['fa-users', 'Capacity', ($room->max_capacity ?? 2) . ' guests'],
+                            ] as [$icon, $label, $value])
+                                <div class="rounded-xl bg-slate-50 p-4"><span class="grid h-9 w-9 place-items-center rounded-xl bg-white text-blue-600 shadow-sm"><i class="fa-solid {{ $icon }} text-sm"></i></span><p class="mt-3 text-xs text-slate-500">{{ $label }}</p><p class="mt-1 text-sm font-semibold text-slate-900">{{ $value }}</p></div>
+                            @endforeach
+                        </div>
+                    </section>
+
+                    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <p class="text-sm font-medium text-blue-600">Included with the room</p>
+                        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Amenities</h2>
+                        <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach($amenities as $amenity)
+                                <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-emerald-600 shadow-sm"><i class="fa-solid fa-check text-xs"></i></span>{{ $amenity }}</div>
+                            @endforeach
+                        </div>
+                    </section>
+
+                    <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        @foreach([
+                            ['fa-clock', 'Check-in', 'From 3:00 PM'],
+                            ['fa-door-open', 'Check-out', 'By 12:00 PM'],
+                            ['fa-headset', 'Need help?', 'Contact hotel support'],
+                        ] as [$icon, $title, $description])
+                            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><i class="fa-solid {{ $icon }}"></i></span><h3 class="mt-4 text-sm font-semibold text-slate-900">{{ $title }}</h3><p class="mt-1 text-sm text-slate-500">{{ $description }}</p></article>
+                        @endforeach
+                    </section>
                 </div>
 
-            </div>
+                <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 lg:sticky lg:top-24">
+                    <div class="flex items-end justify-between gap-4 border-b border-slate-100 pb-5">
+                        <div><p class="text-xs text-slate-500">Nightly rate</p><p class="mt-1 text-2xl font-semibold text-blue-700">Rp {{ number_format($room->price, 0, ',', '.') }}</p></div>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ ($room->available_count ?? 0) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">{{ ($room->available_count ?? 0) > 0 ? $room->available_count . ' available' : 'Unavailable' }}</span>
+                    </div>
+
+                    <form id="instant-booking-form" action="{{ route('rooms.check') }}" method="POST" class="mt-5 space-y-4">
+                        @csrf
+                        <input type="hidden" name="suite_type" value="{{ $room->name }}">
+                        <input type="hidden" id="selected-room-id-input" name="room_id">
+
+                        <label class="block"><span class="mb-2 block text-sm font-medium text-slate-700">Check-in</span><input type="date" id="check_in" name="check_in" required min="{{ date('Y-m-d') }}" value="{{ request('check_in', date('Y-m-d')) }}" class="w-full px-4 py-3 text-sm"></label>
+                        <label class="block"><span class="mb-2 block text-sm font-medium text-slate-700">Check-out</span><input type="date" id="check_out" name="check_out" required min="{{ date('Y-m-d', strtotime('+1 day')) }}" value="{{ request('check_out', date('Y-m-d', strtotime('+1 day'))) }}" class="w-full px-4 py-3 text-sm"></label>
+                        <label class="block"><span class="mb-2 block text-sm font-medium text-slate-700">Guests</span><select id="guests-select" name="guests" class="w-full px-4 py-3 text-sm">@for($i = 1; $i <= ($room->max_capacity ?? 2); $i++)<option value="{{ $i }} {{ $i > 1 ? 'Adults' : 'Adult' }}" {{ $i === min(2, ($room->max_capacity ?? 2)) ? 'selected' : '' }}>{{ $i }} guest{{ $i > 1 ? 's' : '' }}</option>@endfor</select></label>
+
+                        @auth
+                            @if(auth()->user()->role === 'guest' && !$isProfileComplete)
+                                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">Complete your identity number, phone, and address in <a href="{{ route('profile.edit') }}" class="font-semibold underline">Profile Settings</a> before reserving.</div>
+                            @elseif(auth()->user()->role !== 'guest')
+                                <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">Online reservations are available through a guest account.</div>
+                            @endif
+                        @else
+                            <div class="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">You can check availability now. Sign in or create a guest account to complete the reservation.</div>
+                        @endauth
+
+                        <div id="validation-message-box" class="hidden rounded-xl p-4 text-sm"></div>
+
+                        <button type="button" id="submit-booking-btn" data-state="check" {{ ($room->available_count ?? 0) <= 0 ? 'disabled' : '' }} class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i><span>{{ ($room->available_count ?? 0) > 0 ? 'Check availability' : 'Currently unavailable' }}</span>
+                        </button>
+                    </form>
+
+                    <div class="mt-5 border-t border-slate-100 pt-5 text-sm text-slate-500"><p class="flex items-start gap-2"><i class="fa-solid fa-shield-halved mt-1 text-blue-500"></i><span>Availability is checked against live booking data before the room is reserved.</span></p></div>
+                </aside>
+            </section>
         </main>
 
         @include('layouts.footer')
     </div>
-</x-guest-layout>   
 
-<script>
-// FUNGSI JAVASCRIPT GANTI GAMBAR UTAMA SAAT THUMBNAIL DIKLIK (KHUSUS 2 FOTO)
-function switchMainImage(imageUrl, thumbnailElement) {
-    const mainDisplay = document.getElementById('room-main-display');
-    
-    // Efek transisi memudar halus saat berganti foto
-    mainDisplay.style.opacity = '0.3';
-    
-    setTimeout(() => {
-        mainDisplay.src = imageUrl;
-        mainDisplay.style.opacity = '1';
-    }, 200);
-
-    // Update highlight border kotak thumbnail yang sedang aktif
-    document.querySelectorAll('.thumbnail-container').forEach(el => {
-        el.className = "thumbnail-container h-28 border border-neutral-300 overflow-hidden cursor-pointer bg-neutral-100 transition-all duration-300";
-    });
-    
-    // Tambahkan border aktif ke elemen yang diklik
-    thumbnailElement.className = "thumbnail-container h-28 border border-amber-700 ring-2 ring-amber-700 overflow-hidden cursor-pointer bg-neutral-100 transition-all duration-300";
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('instant-booking-form');
-    const btn = document.getElementById('submit-booking-btn');
-    const msgBox = document.getElementById('validation-message-box');
-    const checkInInput = document.getElementById('check_in');
-    const checkOutInput = document.getElementById('check_out');
-    const guestsSelect = document.getElementById('guests-select');
-    const roomIdInput = document.getElementById('selected-room-id-input');
-
-    [checkInInput, checkOutInput, guestsSelect].forEach(input => {
-        if(input) {
-            input.addEventListener('change', () => {
-                btn.disabled = false;
-                btn.setAttribute('data-state', 'check');
-                btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
-                btn.querySelector('span').innerText = "Check Availability";
-                msgBox.classList.add('hidden');
-                if(roomIdInput) roomIdInput.value = ""; 
+    <script>
+        function switchMainImage(imageUrl, thumbnailElement) {
+            const mainDisplay = document.getElementById('room-main-display');
+            if (!mainDisplay) return;
+            mainDisplay.style.opacity = '0.35';
+            window.setTimeout(() => {
+                mainDisplay.src = imageUrl;
+                mainDisplay.style.opacity = '1';
+            }, 160);
+            document.querySelectorAll('.thumbnail-container').forEach((element) => {
+                element.classList.remove('border-blue-500');
+                element.classList.add('border-transparent');
             });
+            thumbnailElement.classList.remove('border-transparent');
+            thumbnailElement.classList.add('border-blue-500');
         }
-    });
 
-    btn.addEventListener('click', function () {
-        const state = btn.getAttribute('data-state');
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('instant-booking-form');
+            const button = document.getElementById('submit-booking-btn');
+            const messageBox = document.getElementById('validation-message-box');
+            const checkInInput = document.getElementById('check_in');
+            const checkOutInput = document.getElementById('check_out');
+            const guestsSelect = document.getElementById('guests-select');
+            const roomIdInput = document.getElementById('selected-room-id-input');
 
-        if (state === 'check') {
-            btn.disabled = true;
-            btn.querySelector('span').innerText = "Verifying...";
+            if (!form || !button || button.disabled) return;
 
-            const formData = new FormData(form);
-            formData.append('mode_check_only', '1');
+            const resetButton = () => {
+                button.disabled = false;
+                button.dataset.state = 'check';
+                button.className = 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60';
+                button.innerHTML = '<i class="fa-solid fa-magnifying-glass text-xs"></i><span>Check availability</span>';
+                messageBox.className = 'hidden rounded-xl p-4 text-sm';
+                if (roomIdInput) roomIdInput.value = '';
+            };
 
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false;
+            [checkInInput, checkOutInput, guestsSelect].forEach((input) => input?.addEventListener('change', resetButton));
 
-                if (data.redirect) {
-                    OasisDialog.info(data.message || 'Lengkapi profil terlebih dahulu.').then(() => {
-                        window.location.href = data.redirect;
-                    });
-                    return;
-                }
+            const requestJson = async (formData) => {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const payload = await response.json();
+                return { response, payload };
+            };
 
-                msgBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'border');
+            button.addEventListener('click', async () => {
+                const state = button.dataset.state;
+                button.disabled = true;
+                button.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i><span>${state === 'check' ? 'Checking availability...' : 'Creating reservation...'}</span>`;
 
-                if (data.available) {
-                    btn.setAttribute('data-state', 'book');
-                    btn.className = "w-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 animate-pulse cursor-pointer";
-                    btn.querySelector('span').innerText = "Book Your Stay Now";
-                    
-                    if(roomIdInput && data.room_id) {
-                        roomIdInput.value = data.room_id; 
+                try {
+                    const formData = new FormData(form);
+                    if (state === 'check') formData.append('mode_check_only', '1');
+                    const { response, payload } = await requestJson(formData);
+
+                    if (payload.redirect) {
+                        if (payload.message && window.OasisDialog) {
+                            await window.OasisDialog.info(payload.message);
+                        }
+                        window.location.href = payload.redirect;
+                        return;
                     }
 
-                    msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
-                    msgBox.innerText = data.message;
-                } else {
-                    btn.querySelector('span').innerText = "Check Availability";
-                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    msgBox.innerText = data.message;
-                    if(roomIdInput) roomIdInput.value = "";
+                    if (state === 'check') {
+                        button.disabled = false;
+                        messageBox.classList.remove('hidden');
+                        if (payload.available) {
+                            button.dataset.state = 'book';
+                            button.className = 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-700';
+                            button.innerHTML = '<i class="fa-solid fa-calendar-check"></i><span>Reserve this room</span>';
+                            messageBox.className = 'rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800';
+                            messageBox.textContent = payload.message || 'The room is available for these dates.';
+                            if (roomIdInput && payload.room_id) roomIdInput.value = payload.room_id;
+                        } else {
+                            resetButton();
+                            messageBox.className = 'rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800';
+                            messageBox.textContent = payload.message || 'No room is available for these dates.';
+                        }
+                        return;
+                    }
+
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'The reservation could not be completed.');
+                    }
+                    window.location.href = payload.redirect || '{{ route('guest.bookings.my') }}';
+                } catch (error) {
+                    resetButton();
+                    messageBox.className = 'rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800';
+                    messageBox.textContent = error.message || 'The request could not be processed.';
                 }
-            })
-            .catch(() => {
-                btn.disabled = false;
-                btn.querySelector('span').innerText = "Check Availability";
-                OasisDialog.error('Ketersediaan kamar belum dapat diperiksa. Silakan coba kembali.');
             });
-
-        } else if (state === 'book') {
-            btn.disabled = true;
-            btn.querySelector('span').innerText = "Reserving Sanctuary...";
-
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: new FormData(form)
-            })
-            .then(async res => {
-                const data = await res.json();
-                
-                if (data.redirect) {
-                    window.location.href = data.redirect;
-                    return;
-                }
-
-                if (!res.ok) {
-                    btn.disabled = false;
-                    btn.setAttribute('data-state', 'check');
-                    btn.className = "w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
-                    btn.querySelector('span').innerText = "Check Availability";
-                    if(roomIdInput) roomIdInput.value = "";
-                    
-                    msgBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
-                    msgBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    msgBox.innerText = data.message || "Reservasi ditolak sistem.";
-                } else {
-                    window.location.reload();
-                }
-            })
-            .catch(() => {
-                btn.disabled = false;
-                btn.querySelector('span').innerText = "Check Availability";
-                OasisDialog.error('Reservasi belum dapat diproses. Silakan coba kembali.');
-            });
-        }
-    });
-});
-</script>
+        });
+    </script>
+</x-guest-layout>
