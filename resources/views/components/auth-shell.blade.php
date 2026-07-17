@@ -9,9 +9,9 @@
 <x-guest-layout>
     <div class="auth-viewport relative min-h-dvh overflow-x-hidden bg-slate-950 lg:h-dvh lg:overflow-hidden">
         <img src="{{ $image }}" alt="Oasis Hotel" class="absolute inset-0 h-full w-full object-cover opacity-35">
-        <div class="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-950/76 to-blue-950/65"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-950/75 to-blue-950/65"></div>
 
-        <a href="{{ route('home') }}" class="absolute left-3 top-3 z-30 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-slate-950/35 px-3 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur transition hover:bg-white/15 sm:left-5 sm:top-5">
+        <a href="{{ route('home') }}" class="absolute left-3 top-3 z-30 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-slate-950/40 px-3 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur transition hover:bg-white/15 sm:left-5 sm:top-5">
             <i class="fa-solid fa-arrow-left text-[10px]"></i>
             Back to hotel
         </a>
@@ -50,7 +50,7 @@
                 </div>
             </section>
 
-            <section class="auth-panel flex min-h-dvh items-start justify-center overflow-y-auto px-4 pb-5 pt-16 sm:px-6 sm:pb-6 sm:pt-18 lg:h-dvh lg:min-h-0 lg:items-center lg:bg-slate-50/97 lg:px-7 lg:py-5 xl:px-9">
+            <section class="auth-panel flex min-h-dvh items-start justify-center overflow-y-auto px-4 pb-5 pt-16 sm:px-6 sm:pb-6 sm:pt-20 lg:h-dvh lg:min-h-0 lg:items-center lg:bg-slate-50/95 lg:px-7 lg:py-5 xl:px-9">
                 <div class="auth-card {{ $maxWidth }} w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-950/20 sm:p-6 lg:p-7 xl:p-8">
                     <div class="auth-heading mb-5 lg:mb-6">
                         <div class="mb-4 flex items-center justify-between gap-4">
