@@ -1,335 +1,145 @@
 <x-admin-dashboard-layout>
+    @php
+        $isManager = auth()->user()->role === 'manager';
+        $portalPrefix = $isManager ? 'manager' : 'admin';
+        $venueRoute = fn (string $action, $venue = null) => route($portalPrefix . '.restaurant.venues.' . $action, $venue);
+    @endphp
 
-    @if(session('success'))
-        <div class="bg-emerald-900/90 border border-emerald-700 text-emerald-200 p-4 text-xs font-semibold uppercase tracking-wider mb-6 flex items-center shadow-md">
-            <i class="fa-solid fa-circle-check mr-2 text-emerald-400 text-sm"></i> {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="bg-rose-950/95 border border-rose-800 text-rose-300 p-4 text-xs font-semibold uppercase tracking-wider mb-6 flex items-center shadow-md">
-            <i class="fa-solid fa-triangle-exclamation mr-2 text-rose-400 text-sm"></i> {{ session('error') }}
-        </div>
-    @endif
+    <div class="space-y-5">
+        @if(session('success'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800"><i class="fa-solid fa-circle-check mr-2"></i>{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-800"><i class="fa-solid fa-triangle-exclamation mr-2"></i>{{ session('error') }}</div>
+        @endif
 
-    <div class="flex flex-col xl:flex-row gap-8 items-start w-full">
-        
-        <div class="flex-1 w-full space-y-6">
-            
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Orders</span>
-                    <div class="flex items-baseline justify-between mt-2">
-                        <span class="text-3xl font-light font-serif text-neutral-900">{{ $stats['total'] }}</span>
-                        <span class="text-[9px] text-neutral-400 font-medium">Units</span>
-                    </div>
-                </div>
-                <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Active Orders</span>
-                    <div class="flex items-baseline justify-between mt-2">
-                        <span class="text-3xl font-light font-serif text-amber-600">{{ $stats['active'] }}</span>
-                        <span class="text-[9px] text-amber-600 font-bold font-mono">Live</span>
-                    </div>
-                </div>
-                <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Completed Orders</span>
-                    <div class="flex items-baseline justify-between mt-2">
-                        <span class="text-3xl font-light font-serif text-emerald-700">{{ $stats['completed'] }}</span>
-                        <span class="text-[9px] text-emerald-600 font-bold font-mono">Settle</span>
-                    </div>
-                </div>
-                <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Revenue</span>
-                    <div class="flex items-baseline justify-between mt-2">
-                        <span class="text-md font-bold text-neutral-900 font-mono">Rp {{ number_format($stats['revenue'], 0, ',', '.') }}</span>
-                    </div>
-                </div>
-                <div class="bg-white p-5 border border-neutral-200/60 flex flex-col justify-between shadow-sm">
-                    <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Avg Order Value</span>
-                    <div class="flex items-baseline justify-between mt-2">
-                        <span class="text-xs font-bold text-neutral-900 font-mono">Rp {{ number_format($stats['avg_value'], 0, ',', '.') }}</span>
-                    </div>
-                </div>
+        <section class="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+            <div class="min-w-0"><p class="text-sm font-semibold text-blue-600">Restaurant operations</p><h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Orders & dining venues</h2><p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Monitor guest orders and manage the restaurant locations shown on the public Restaurant page without leaving this workspace.</p></div>
+            <div class="flex rounded-xl bg-slate-100 p-1.5">
+                <a href="{{ route($portalPrefix.'.restaurant', ['view' => 'orders']) }}" class="rounded-lg px-4 py-2.5 text-sm font-semibold {{ $mainTab === 'orders' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}"><i class="fa-solid fa-receipt mr-2"></i>Orders</a>
+                <a href="{{ route($portalPrefix.'.restaurant', ['view' => 'venues']) }}" class="rounded-lg px-4 py-2.5 text-sm font-semibold {{ $mainTab === 'venues' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}"><i class="fa-solid fa-utensils mr-2"></i>Venues</a>
             </div>
+        </section>
 
-            <div class="bg-white border border-neutral-200 shadow-sm p-6 space-y-5">
-                
-                <div class="flex text-xs font-bold uppercase tracking-wider text-neutral-400 gap-6 border-b border-neutral-100 pb-3">
-                    <a href="{{ url()->current() }}" class="text-neutral-900 border-b-2 border-neutral-900 pb-1.5 px-0.5">Order Management</a>
-                    @if(auth()->user()->role === 'admin')
-                        <a href="{{ route('admin.restaurant.menu') }}" class="hover:text-neutral-900 transition-colors pb-1.5 px-0.5">Today's Menu</a>
-                    @endif
-                </div>
+        @if($mainTab === 'venues')
+            <section class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                @foreach([
+                    ['Total venues', $venueStats['total'], 'fa-location-dot', 'bg-blue-50 text-blue-700'],
+                    ['Active', $venueStats['active'], 'fa-circle-check', 'bg-emerald-50 text-emerald-700'],
+                    ['Reservable', $venueStats['reservable'], 'fa-calendar-check', 'bg-violet-50 text-violet-700'],
+                    ['Recent reservations', $venueStats['reservations'], 'fa-users', 'bg-amber-50 text-amber-700'],
+                ] as [$label,$value,$icon,$tone])
+                    <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start justify-between gap-3"><div><p class="text-xs text-slate-500">{{ $label }}</p><p class="mt-2 text-2xl font-semibold text-slate-900">{{ $value }}</p></div><span class="grid h-10 w-10 place-items-center rounded-xl {{ $tone }}"><i class="fa-solid {{ $icon }}"></i></span></div></article>
+                @endforeach
+            </section>
 
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
-                    <div class="flex flex-wrap text-[11px] font-bold uppercase tracking-wider text-neutral-400 gap-4">
-                        <a href="{{ request()->fullUrlWithQuery(['tab' => 'all']) }}" class="px-3 py-1.5 {{ $currentTab === 'all' ? 'text-neutral-900 bg-neutral-100 font-bold' : '' }}">All Orders</a>
-                        <a href="{{ request()->fullUrlWithQuery(['tab' => 'dine_in']) }}" class="px-3 py-1.5 {{ $currentTab === 'dine_in' ? 'text-neutral-900 bg-neutral-100 font-bold' : '' }}">Dine In Class</a>
-                        <a href="{{ request()->fullUrlWithQuery(['tab' => 'room_service']) }}" class="px-3 py-1.5 {{ $currentTab === 'room_service' ? 'text-neutral-900 bg-neutral-100 font-bold' : '' }}">Room Service Log</a>
-                    </div>
-
-                    <form action="{{ url()->current() }}" method="GET" class="flex items-center gap-3 w-full lg:w-auto">
-                        <input type="hidden" name="tab" value="{{ $currentTab }}">
-                        <div class="relative flex-1 lg:flex-none lg:min-w-[200px]">
-                            <i class="fa-solid fa-magnifying-glass text-neutral-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by Order ID, Guest..." class="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 focus:outline-none focus:border-neutral-900 font-medium placeholder-neutral-400 bg-neutral-50/50">
-                        </div>
-                        <button type="submit" class="bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors">Search</button>
+            <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 xl:flex-row xl:items-start xl:justify-between">
+                    <div><p class="text-xs font-medium text-slate-500">Create venue</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Add a dining location</h3><p class="mt-2 text-sm text-slate-500">The venue becomes available to the public catalog when Active is enabled.</p></div>
+                    <form action="{{ $venueRoute('store') }}" method="POST" class="grid w-full min-w-0 gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2 xl:max-w-5xl xl:grid-cols-6">
+                        @csrf
+                        <input type="text" name="name" required placeholder="Venue name" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm xl:col-span-2">
+                        <input type="text" name="location" placeholder="Location" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm xl:col-span-2">
+                        <input type="number" name="capacity" min="1" max="500" required placeholder="Capacity" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                        <input type="number" name="sort_order" min="0" max="999" value="0" placeholder="Order" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                        <input type="time" name="opens_at" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                        <input type="time" name="closes_at" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                        <input type="url" name="image_url" placeholder="Image URL" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm sm:col-span-2 xl:col-span-4">
+                        <textarea name="description" rows="3" placeholder="Venue description" class="min-w-0 rounded-xl border-slate-200 px-3 py-2.5 text-sm sm:col-span-2 xl:col-span-4"></textarea>
+                        <div class="space-y-2 rounded-xl bg-white p-3 text-sm text-slate-600"><label class="flex items-center gap-2"><input type="checkbox" name="reservation_enabled" value="1" checked class="h-4 w-4">Accept reservations</label><label class="flex items-center gap-2"><input type="checkbox" name="is_active" value="1" checked class="h-4 w-4">Active on public page</label></div>
+                        <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus"></i>Add venue</button>
                     </form>
                 </div>
 
-                <div class="overflow-x-auto custom-scrollbar pt-2">
-                    <table class="w-full text-left text-xs whitespace-nowrap">
-                        <thead>
-                            <tr class="border-b border-neutral-100 text-neutral-400 uppercase tracking-wider font-bold text-[9px] bg-neutral-50/30">
-                                <th class="py-3 px-4 font-semibold">Order ID</th>
-                                <th class="py-3 px-4 font-semibold">Type Class</th>
-                                <th class="py-3 px-4 font-semibold">Guest Target Assignment</th>
-                                <th class="py-3 px-4 font-semibold">Order Time</th>
-                                <th class="py-3 px-4 font-semibold">Status</th>
-                                <th class="py-3 px-4 font-semibold">Total Amount</th>
-                                <th class="py-3 px-4 text-center font-semibold">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
-                            @forelse($orders as $order)
-                                <tr class="hover:bg-neutral-50/40 transition-colors">
-                                    <td class="py-3.5 px-4 font-bold text-neutral-900 font-mono">#RS-{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}</td>
-                                    <td class="py-3.5 px-4 text-neutral-500 text-xs">
-                                        @if($order->room_number)
-                                            <i class="fa-solid fa-bowl-food text-blue-600 mr-1.5 text-[10px]"></i> Room Service
-                                        @else
-                                            <i class="fa-solid fa-chair text-amber-700 mr-1.5 text-[10px]"></i> Dine In / Cafe
-                                        @endif
-                                    </td>
-                                    <td class="py-3.5 px-4">
-                                        <span class="font-bold text-neutral-900 block">{{ $order->guest_name }}</span>
-                                        <span class="text-[9px] text-neutral-400 block font-normal font-mono mt-0.5">
-                                            {{ $order->room_number ? 'Room ' . $order->room_number : 'Table Walk-in' }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3.5 px-4 text-neutral-700 font-mono">
-                                        {{ date('d M Y', strtotime($order->created_at)) }}
-                                        <span class="block text-[9px] text-neutral-400 font-normal mt-0.5">{{ date('h:i A', strtotime($order->created_at)) }}</span>
-                                    </td>
-                                    <td class="py-3.5 px-4">
-                                        @if($order->status === 'ordered')
-                                            <span class="bg-amber-50 text-amber-800 border border-amber-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Pending</span>
-                                        @elseif($order->status === 'preparing')
-                                            <span class="bg-blue-50 text-blue-800 border border-blue-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Preparing</span>
-                                        @elseif($order->status === 'paid')
-                                            <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Ready</span>
-                                        @else
-                                            <span class="bg-red-50 text-red-800 border border-red-100 text-[8px] px-2 py-0.5 font-bold uppercase tracking-wide">Void</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-3.5 px-4 font-mono font-bold text-neutral-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
-                                    <td class="py-3.5 px-4 text-center">
-                                        <div class="flex items-center justify-center gap-1.5">
-                                            <button type="button"
-                                                data-restaurant-order-detail
-                                                data-detail-url="{{ route('admin.restaurant.order.json', $order->id) }}"
-                                                class="w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-amber-700 cursor-pointer flex items-center justify-center shadow-xs" title="Lihat detail pesanan">
-                                                <i class="fa-solid fa-eye text-xs"></i>
-                                            </button>
-                                            @if(auth()->user()->role !== 'manager')
-                                                <button type="button" 
-                                                        onclick="openOrderDropdown(event, {{ $order->id }}, '{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}')"
-                                                        class="dropdown-trigger-btn w-7 h-7 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-500 cursor-pointer flex items-center justify-center shadow-xs" title="Ubah status pesanan">
-                                                    <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
-                                                </button>
-                                                @if($order->status === 'cancelled')
-                                                    <form action="{{ route('admin.restaurant.order.delete', $order->id) }}" method="POST" class="inline-flex" data-confirm="Hapus pesanan batal #RS-{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}? Pesanan dengan jejak pembayaran tetap akan dilindungi." data-confirm-title="Hapus Pesanan Batal">
-                                                        @csrf @method('DELETE')
-                                                        <button type="submit" class="w-7 h-7 bg-white border border-neutral-200 hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center justify-center shadow-xs" title="Hapus pesanan batal">
-                                                            <i class="fa-solid fa-trash-can text-xs"></i>
-                                                        </button>
-                                                    </form>
-                                                @endif
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="py-12 text-center text-neutral-400 font-sans italic">No gastronomy billing records matched criteria.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="flex justify-between items-center text-[11px] text-neutral-400 pt-1 font-medium">
-                    <span>Showing entries {{ $orders->firstItem() ?? 0 }} to {{ $orders->lastItem() ?? 0 }} of {{ $orders->total() }} results</span>
-                    <div class="font-sans text-neutral-800">
-                        {{ $orders->links() }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white border border-neutral-200 shadow-sm p-6 flex flex-col justify-between">
-                <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
-                    <div>
-                        <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Revenue Overview</h3>
-                        <span class="text-[9px] text-neutral-400 block font-normal mt-0.5">Real-time daily financial matrix trendlines</span>
-                    </div>
-                </div>
-                
-                <div class="relative w-full h-44 flex flex-col justify-between pt-2">
-                    <svg viewBox="0 0 600 140" class="w-full h-full overflow-visible">
-                        <line x1="0" y1="20" x2="600" y2="20" stroke="#f3f4f6" stroke-width="1" />
-                        <line x1="0" y1="60" x2="600" y2="60" stroke="#f3f4f6" stroke-width="1" />
-                        <line x1="0" y1="100" x2="600" y2="100" stroke="#f3f4f6" stroke-width="1" />
-                        <path d="M 0,140 L {{ $polylineCoordinates }} L 600,140 Z" fill="#fef3c7" fill-opacity="0.25"/>
-                        <path d="M {{ $polylineCoordinates }}" fill="none" stroke="#d97706" stroke-width="2.5" />
-                    </svg>
-                    <div class="flex justify-between text-[9px] text-neutral-400 font-mono font-bold pt-2 border-t border-neutral-100">
-                        @foreach($chartLabels as $label)
-                            <span>{{ $label }}</span>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <aside class="w-full xl:w-80 space-y-6 shrink-0">
-            <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col justify-between">
-                <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
-                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Order Status Shares</h3>
-                </div>
-                
-                <div class="flex items-center gap-4 my-2">
-                    <div class="relative w-20 h-20 shrink-0 flex items-center justify-center">
-                        <div class="absolute text-center">
-                            <span class="text-xl font-light font-serif text-neutral-900 block leading-none">{{ $stats['total'] }}</span>
-                            <span class="text-[7px] text-neutral-400 uppercase tracking-wider font-bold block mt-0.5">Total</span>
-                        </div>
-                        <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
-                            <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e5e7eb" stroke-width="3.5"></circle>
-                        </svg>
-                    </div>
-                    <div class="space-y-1.5 w-full text-[10px] font-semibold text-neutral-500">
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-emerald-500 inline-block mr-1.5"></span>Completed</span><span class="text-neutral-800 font-mono font-bold">{{ $statusCounts['completed'] }}</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-blue-500 inline-block mr-1.5"></span>Preparing</span><span class="text-neutral-800 font-mono font-bold">{{ $statusCounts['progress'] }}</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-amber-500 inline-block mr-1.5"></span>Pending</span><span class="text-neutral-800 font-mono font-bold">{{ $statusCounts['pending'] }}</span></div>
-                        <div class="flex justify-between items-center"><span><span class="w-1.5 h-1.5 bg-red-500 inline-block mr-1.5"></span>Cancelled</span><span class="text-neutral-800 font-mono font-bold">{{ $statusCounts['cancelled'] }}</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white border border-neutral-200 p-6 shadow-sm flex flex-col">
-                <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
-                    <h3 class="font-serif text-sm text-neutral-900 font-medium tracking-wide">Top Selling Items</h3>
-                </div>
-                
-                <div class="space-y-4 flex-1">
-                    @forelse($topSellingItems as $item)
-                        <div class="flex items-center justify-between text-xs font-semibold text-neutral-700">
-                            <div class="flex items-center gap-3 truncate max-w-[170px]">
-                                <img src="{{ $item->foto_url ?? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=100' }}" class="w-8 h-8 object-cover border border-neutral-200 rounded-xs shrink-0">
-                                <div class="truncate">
-                                    <span class="block truncate text-neutral-900">{{ $item->name }}</span>
-                                    <span class="block text-[9px] text-neutral-400 font-normal mt-0.5">{{ $item->total_qty }} Units Sold</span>
+                <div class="mt-5 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
+                    @forelse($venues as $venue)
+                        @php($formId = 'venue-update-'.$venue->id)
+                        <article class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <img src="{{ $venue->image_url ?: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop' }}" alt="{{ $venue->name }}" class="h-44 w-full object-cover">
+                            <div class="space-y-4 p-5">
+                                <div class="flex items-start justify-between gap-4"><div class="min-w-0"><input form="{{ $formId }}" type="text" name="name" value="{{ $venue->name }}" required class="w-full rounded-xl border-slate-200 px-3 py-2 text-lg font-semibold text-slate-900"><p class="mt-2 text-xs text-slate-500">{{ $venue->reservations_count }} reservation record(s)</p></div><span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold {{ $venue->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $venue->is_active ? 'Active' : 'Hidden' }}</span></div>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <input form="{{ $formId }}" type="text" name="location" value="{{ $venue->location }}" placeholder="Location" class="rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                                    <input form="{{ $formId }}" type="url" name="image_url" value="{{ $venue->image_url }}" placeholder="Image URL" class="rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                                    <input form="{{ $formId }}" type="time" name="opens_at" value="{{ $venue->opens_at ? substr((string) $venue->opens_at, 0, 5) : '' }}" class="rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                                    <input form="{{ $formId }}" type="time" name="closes_at" value="{{ $venue->closes_at ? substr((string) $venue->closes_at, 0, 5) : '' }}" class="rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                                    <input form="{{ $formId }}" type="number" name="capacity" min="1" max="500" value="{{ $venue->capacity }}" required class="rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                                    <input form="{{ $formId }}" type="number" name="sort_order" min="0" max="999" value="{{ $venue->sort_order }}" class="rounded-xl border-slate-200 px-3 py-2.5 text-sm">
+                                </div>
+                                <textarea form="{{ $formId }}" name="description" rows="3" class="w-full rounded-xl border-slate-200 px-3 py-2.5 text-sm">{{ $venue->description }}</textarea>
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="flex flex-wrap gap-4 text-sm text-slate-600"><label class="flex items-center gap-2"><input form="{{ $formId }}" type="checkbox" name="reservation_enabled" value="1" {{ $venue->reservation_enabled ? 'checked' : '' }} class="h-4 w-4">Reservations</label><label class="flex items-center gap-2"><input form="{{ $formId }}" type="checkbox" name="is_active" value="1" {{ $venue->is_active ? 'checked' : '' }} class="h-4 w-4">Active</label></div>
+                                    <div class="flex gap-2"><form id="{{ $formId }}" action="{{ $venueRoute('update', $venue) }}" method="POST" class="hidden">@csrf @method('PATCH')</form><button form="{{ $formId }}" type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white">Save</button><form action="{{ $venueRoute('destroy', $venue) }}" method="POST" data-confirm="Hapus venue {{ $venue->name }}? Venue dengan riwayat reservasi akan dilindungi." data-confirm-title="Delete venue">@csrf @method('DELETE')<button type="submit" class="rounded-lg border border-rose-200 px-4 py-2.5 text-xs font-semibold text-rose-600">Delete</button></form></div>
                                 </div>
                             </div>
-                            <span class="font-mono text-neutral-900 text-[11px] font-bold">Rp {{ number_format($item->total_revenue, 0, ',', '.') }}</span>
-                        </div>
+                        </article>
                     @empty
-                        <div class="text-center text-neutral-400 italic py-4 text-[11px]">No sales items compiled yet.</div>
+                        <div class="xl:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">No dining venues are stored yet. Add the first venue using the form above.</div>
                     @endforelse
                 </div>
-            </div>
-        </aside>
+            </section>
 
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <header class="border-b border-slate-100 p-5"><p class="text-xs text-slate-500">Latest public bookings</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Venue reservations</h3></header>
+                <div class="max-w-full overflow-x-auto"><table class="min-w-[850px] text-left text-sm"><thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">Guest</th><th class="px-4 py-3">Venue</th><th class="px-4 py-3">Schedule</th><th class="px-4 py-3">Guests</th><th class="px-4 py-3">Preference</th><th class="px-5 py-3">Status</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse($venueReservations as $reservation)<tr><td class="px-5 py-4"><p class="font-semibold text-slate-900">{{ $reservation->user?->name ?: 'Guest' }}</p><p class="mt-1 text-xs text-slate-500">{{ $reservation->user?->email }}</p></td><td class="px-4 py-4 font-semibold text-slate-900">{{ $reservation->venue?->name ?: 'Venue removed' }}</td><td class="px-4 py-4 text-slate-600">{{ optional($reservation->reservation_date)->format('d M Y') }} · {{ substr((string) $reservation->reservation_time, 0, 5) }}</td><td class="px-4 py-4 text-slate-600">{{ $reservation->guests_count }}</td><td class="px-4 py-4 text-slate-600">{{ $reservation->seating_preference ?: 'No preference' }}</td><td class="px-5 py-4"><span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{{ ucwords($reservation->status) }}</span></td></tr>@empty<tr><td colspan="6" class="px-5 py-10 text-center text-sm text-slate-500">No venue reservations yet.</td></tr>@endforelse</tbody></table></div>
+            </section>
+        @else
+            <section class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+                @foreach([
+                    ['Total orders', $stats['total'], 'fa-receipt', 'bg-blue-50 text-blue-700'],
+                    ['Active', $stats['active'], 'fa-fire-burner', 'bg-amber-50 text-amber-700'],
+                    ['Completed', $stats['completed'], 'fa-circle-check', 'bg-emerald-50 text-emerald-700'],
+                    ['Revenue', 'Rp '.number_format($stats['revenue'],0,',','.'), 'fa-wallet', 'bg-violet-50 text-violet-700'],
+                    ['Average order', 'Rp '.number_format($stats['avg_value'],0,',','.'), 'fa-chart-line', 'bg-cyan-50 text-cyan-700'],
+                ] as [$label,$value,$icon,$tone])
+                    <article class="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="text-xs text-slate-500">{{ $label }}</p><p class="mt-2 break-words text-lg font-semibold text-slate-900">{{ $value }}</p></div><span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl {{ $tone }}"><i class="fa-solid {{ $icon }}"></i></span></div></article>
+                @endforeach
+            </section>
+
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <header class="flex flex-col gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div><p class="text-xs text-slate-500">Order management</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Restaurant orders</h3></div>
+                    <form action="{{ route($portalPrefix.'.restaurant') }}" method="GET" class="flex w-full min-w-0 gap-2 lg:max-w-xl"><input type="hidden" name="view" value="orders"><input type="hidden" name="tab" value="{{ $currentTab }}"><div class="relative min-w-0 flex-1"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i><input type="search" name="search" value="{{ request('search') }}" placeholder="Search order ID or guest" class="w-full rounded-xl border-slate-200 py-2.5 pl-11 pr-4 text-sm"></div><button class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">Search</button></form>
+                </header>
+                <nav class="flex gap-2 overflow-x-auto border-b border-slate-100 p-3">@foreach([['all','All orders'],['dine_in','Dine in'],['room_service','Room service']] as [$key,$label])<a href="{{ request()->fullUrlWithQuery(['view'=>'orders','tab'=>$key,'page'=>null]) }}" class="min-w-max rounded-xl px-3 py-2 text-sm font-semibold {{ $currentTab === $key ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50' }}">{{ $label }}</a>@endforeach</nav>
+                <div class="max-w-full overflow-x-auto"><table class="min-w-[980px] text-left text-sm"><thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">Order</th><th class="px-4 py-3">Guest</th><th class="px-4 py-3">Delivery</th><th class="px-4 py-3">Created</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Amount</th><th class="px-5 py-3 text-right">Actions</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse($orders as $order)<tr class="hover:bg-slate-50"><td class="px-5 py-4 font-mono text-xs font-semibold text-slate-900">#RS-{{ str_pad((string)$order->id,4,'0',STR_PAD_LEFT) }}</td><td class="px-4 py-4"><p class="font-semibold text-slate-900">{{ $order->guest_name }}</p><p class="mt-1 text-xs text-slate-500">{{ $order->guest_phone ?: 'No phone' }}</p></td><td class="px-4 py-4 text-slate-600">{{ $order->room_number ? 'Room '.$order->room_number : 'Dine in' }}</td><td class="px-4 py-4 text-slate-600">{{ \Carbon\Carbon::parse($order->created_at)->format('d M Y H:i') }}</td><td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $order->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($order->status === 'preparing' ? 'bg-blue-50 text-blue-700' : ($order->status === 'cancelled' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700')) }}">{{ ucwords($order->status) }}</span></td><td class="px-4 py-4 text-right font-semibold text-slate-900">Rp {{ number_format($order->total_price,0,',','.') }}</td><td class="px-5 py-4"><div class="flex justify-end gap-2"><button type="button" data-restaurant-order-detail data-detail-url="{{ route('admin.restaurant.order.json',$order->id) }}" class="staff-view-action" title="View order details"><i class="fa-solid fa-eye"></i></button>@if(!$isManager)<button type="button" onclick="openOrderDropdown(event,{{ $order->id }},'{{ str_pad((string)$order->id,4,'0',STR_PAD_LEFT) }}')" class="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"><i class="fa-solid fa-ellipsis-vertical"></i></button>@endif</div></td></tr>@empty<tr><td colspan="7" class="px-5 py-12 text-center text-sm text-slate-500">No restaurant orders match the selected filter.</td></tr>@endforelse</tbody></table></div>
+                <footer class="border-t border-slate-100 p-4">{{ $orders->links() }}</footer>
+            </section>
+
+            <section class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs text-slate-500">Last seven days</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Paid revenue trend</h3><div class="mt-6 h-48 overflow-hidden rounded-xl bg-slate-50 p-4"><svg viewBox="0 0 600 140" class="h-full w-full" preserveAspectRatio="none"><path d="M {{ $polylineCoordinates }}" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="mt-3 flex justify-between text-[10px] text-slate-400">@foreach($chartLabels as $label)<span>{{ $label }}</span>@endforeach</div></article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs text-slate-500">Sales ranking</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Top selling items</h3><div class="mt-5 space-y-3">@forelse($topSellingItems as $item)<div class="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3"><div class="flex min-w-0 items-center gap-3"><img src="{{ $item->foto_url ?: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=200' }}" class="h-11 w-11 rounded-xl object-cover"><div class="min-w-0"><p class="truncate font-semibold text-slate-900">{{ $item->name }}</p><p class="mt-1 text-xs text-slate-500">{{ $item->total_qty }} sold</p></div></div><strong class="shrink-0 text-sm text-slate-900">Rp {{ number_format($item->total_revenue,0,',','.') }}</strong></div>@empty<p class="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">No paid menu sales yet.</p>@endforelse</div></article>
+            </section>
+        @endif
     </div>
 
-    <div id="restaurant-order-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-        <button type="button" data-close-restaurant-detail class="absolute inset-0 cursor-default" aria-label="Tutup detail pesanan"></button>
-        <div class="relative bg-white max-w-md w-full border border-neutral-200 p-6 shadow-2xl flex flex-col text-left font-sans text-neutral-900">
-            <div class="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
-                <h4 class="text-xs font-bold uppercase tracking-widest text-neutral-800">Gastronomy Manifest Audit</h4>
-                <button type="button" data-close-restaurant-detail class="text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 text-[11px] font-medium text-neutral-500 mb-4 pb-3 border-b border-neutral-50">
-                <div>
-                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Order ID</span>
-                    <span id="restaurant-detail-id" class="font-mono text-neutral-900 font-bold">-</span>
-                </div>
-                <div>
-                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Destination Assignment</span>
-                    <span id="restaurant-detail-room" class="text-neutral-900 font-bold">-</span>
-                </div>
-                <div>
-                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Guest Profile</span>
-                    <span id="restaurant-detail-guest" class="text-neutral-900 font-bold">-</span>
-                </div>
-                <div>
-                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Timestamp</span>
-                    <span id="restaurant-detail-time" class="text-neutral-700 font-mono text-[10px]">-</span>
-                </div>
-            </div>
-
-            <div class="text-[11px] w-full mb-4">
-                <div class="bg-neutral-50 p-2 flex justify-between font-bold text-[8px] text-neutral-400 uppercase tracking-wider">
-                    <span>Menu Item</span>
-                    <span class="w-12 text-center">Qty</span>
-                    <span class="w-24 text-right">Price</span>
-                </div>
-                <div id="restaurant-detail-items" class="divide-y divide-neutral-100 max-h-40 overflow-y-auto custom-scrollbar">
-                </div>
-            </div>
-
-            <div class="flex justify-between items-baseline border-t border-neutral-100 pt-3 font-sans mt-2">
-                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Total Charged Invoice:</span>
-                <span id="restaurant-detail-total" class="text-md font-mono font-bold text-neutral-900">Rp 0</span>
-            </div>
-
-            <div class="mt-5 flex gap-2">
-                <div class="flex-1 bg-neutral-50 border p-2 text-center">
-                    <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block">Workflow Matrix</span>
-                    <span id="restaurant-detail-status" class="text-[10px] font-bold uppercase font-mono tracking-wide mt-0.5 inline-block text-amber-700 animate-pulse">-</span>
-                </div>
-                <button type="button" data-close-restaurant-detail class="bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[9px] uppercase tracking-widest px-6 py-3 transition-colors shadow-sm cursor-pointer">
-                    Dismiss View
-                </button>
-            </div>
-        </div>
+    <div id="restaurant-order-detail-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto p-4">
+        <button type="button" data-close-restaurant-detail class="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" aria-label="Close order details"></button>
+        <section class="staff-detail-panel relative my-auto w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <header class="flex items-start justify-between gap-4 border-b border-slate-100 p-5 sm:p-6"><div><p class="text-sm font-semibold text-blue-600">Restaurant order</p><h3 class="mt-1 text-xl font-semibold text-slate-900">Order details</h3></div><button type="button" data-close-restaurant-detail class="grid h-10 w-10 place-items-center rounded-xl text-slate-400 hover:bg-slate-100"><i class="fa-solid fa-xmark"></i></button></header>
+            <div class="p-5 sm:p-6"><div class="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-4"><div><p class="text-xs text-slate-500">Order</p><p id="restaurant-detail-id" class="mt-1 font-mono font-semibold text-slate-900">-</p></div><div><p class="text-xs text-slate-500">Delivery</p><p id="restaurant-detail-room" class="mt-1 font-semibold text-slate-900">-</p></div><div><p class="text-xs text-slate-500">Guest</p><p id="restaurant-detail-guest" class="mt-1 font-semibold text-slate-900">-</p></div><div><p class="text-xs text-slate-500">Created</p><p id="restaurant-detail-time" class="mt-1 text-slate-700">-</p></div></div><div class="mt-5 overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500"><span>Menu item</span><span>Quantity & price</span></div><div id="restaurant-detail-items" class="max-h-72 divide-y divide-slate-100 overflow-y-auto"></div></div><div class="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs text-slate-500">Status</p><p id="restaurant-detail-status" class="mt-1 font-semibold text-blue-700">-</p></div><div class="text-right"><p class="text-xs text-slate-500">Total amount</p><p id="restaurant-detail-total" class="mt-1 text-xl font-semibold text-slate-900">Rp 0</p></div></div></div>
+        </section>
     </div>
 
-    <div id="order-status-dropdown" class="hidden fixed w-48 bg-white border border-neutral-200 shadow-2xl z-50 text-left font-sans text-xs">
-        <div class="p-2 border-b border-neutral-100 bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Update Order <span id="drop-order-id" class="font-mono text-neutral-900"></span></div>
-        <form id="form-update-order-status" action="" method="POST" class="m-0" data-confirm="Ubah status operasional pesanan ini?" data-confirm-title="Perbarui Status Pesanan">
-            @csrf
-            <input type="hidden" name="prev_tab" value="{{ $currentTab }}">
-            <input type="hidden" name="prev_search" value="{{ request('search') }}">
-            <button name="status" value="ordered" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-amber-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span> Set ordered (Pending)</button>
-            <button name="status" value="preparing" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-blue-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> Set Preparing</button>
-            <button name="status" value="paid" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-emerald-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Set paid (Ready)</button>
-            <button name="status" value="cancelled" class="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center text-rose-700 font-semibold cursor-pointer"><span class="w-2 h-2 rounded-full bg-rose-500 mr-2"></span> Set Cancelled</button>
-        </form>
-    </div>
-
+    @if(!$isManager)
+        <div id="order-status-dropdown" class="hidden fixed z-[140] w-52 overflow-hidden rounded-xl border border-slate-200 bg-white text-left text-sm shadow-2xl"><div class="border-b border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-500">Update <span id="drop-order-id" class="font-mono text-slate-900"></span></div><form id="form-update-order-status" action="" method="POST" data-confirm="Update this restaurant order status?">@csrf<input type="hidden" name="prev_tab" value="{{ $currentTab }}"><input type="hidden" name="prev_search" value="{{ request('search') }}">@foreach([['ordered','Pending','text-amber-700'],['preparing','Preparing','text-blue-700'],['paid','Paid / ready','text-emerald-700'],['cancelled','Cancelled','text-rose-700']] as [$value,$label,$tone])<button name="status" value="{{ $value }}" class="block w-full px-4 py-2.5 text-left font-medium hover:bg-slate-50 {{ $tone }}">{{ $label }}</button>@endforeach</form></div>
+    @endif
 </x-admin-dashboard-layout>
 
-<script type="text/javascript">
+<script>
     function openOrderDropdown(event, orderId, orderString) {
         event.stopPropagation();
         const dropdown = document.getElementById('order-status-dropdown');
-        const triggerBtn = event.currentTarget;
-        
-        document.getElementById('drop-order-id').innerText = '#RS-' + orderString;
+        if (!dropdown) return;
+        document.getElementById('drop-order-id').textContent = '#RS-' + orderString;
         document.getElementById('form-update-order-status').action = `/admin/restaurant-order/${orderId}/update-status`;
-        
-        const rect = triggerBtn.getBoundingClientRect();
-        dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
-        dropdown.style.left = (rect.left + window.scrollX - 160) + 'px';
+        const rect = event.currentTarget.getBoundingClientRect();
+        dropdown.style.top = `${Math.min(window.innerHeight - 230, rect.bottom + 6)}px`;
+        dropdown.style.left = `${Math.max(12, rect.right - 208)}px`;
         dropdown.classList.remove('hidden');
     }
-
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', (event) => {
         const dropdown = document.getElementById('order-status-dropdown');
-        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.dropdown-trigger-btn')) {
-            dropdown.classList.add('hidden');
-        }
+        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('[onclick^="openOrderDropdown"]')) dropdown.classList.add('hidden');
     });
 </script>
