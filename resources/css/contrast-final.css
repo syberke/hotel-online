@@ -1,0 +1,80 @@
+/* Highest-priority contrast rules for nested surfaces. */
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-blue-600,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-blue-700,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-emerald-600,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-emerald-700,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-rose-600,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-rose-700,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-red-600,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-red-700,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-slate-900,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-slate-950,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-neutral-900,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-neutral-950 {
+    color: #fff !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-blue-600 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-blue-700 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-emerald-600 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-emerald-700 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-rose-600 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-rose-700 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-slate-900 > *,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(button, a).bg-slate-950 > * {
+    color: inherit !important;
+}
+
+/* Light cards nested inside dark sections must return to dark text. */
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-slate-900, .bg-slate-950, .bg-neutral-900, .bg-neutral-950) :where(.bg-white, .bg-slate-50, .bg-slate-100) {
+    color: #0f172a !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-slate-900, .bg-slate-950, .bg-neutral-900, .bg-neutral-950) :where(.bg-white, .bg-slate-50, .bg-slate-100) :where(h1, h2, h3, h4, strong, b) {
+    color: #0f172a !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-slate-900, .bg-slate-950, .bg-neutral-900, .bg-neutral-950) :where(.bg-white, .bg-slate-50, .bg-slate-100) :where(p, span, label, small) {
+    color: #475569;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-blue-50, .bg-blue-100) :where(h1, h2, h3, h4, strong, b) {
+    color: #1e3a8a !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-emerald-50, .bg-emerald-100) :where(h1, h2, h3, h4, strong, b) {
+    color: #065f46 !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-amber-50, .bg-amber-100) :where(h1, h2, h3, h4, strong, b) {
+    color: #78350f !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-rose-50, .bg-rose-100, .bg-red-50, .bg-red-100) :where(h1, h2, h3, h4, strong, b) {
+    color: #9f1239 !important;
+}
+
+/* Form controls and modal surfaces always use readable foregrounds. */
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(input, select, textarea, option) {
+    color: #0f172a !important;
+    background-color: #fff !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where([role="dialog"], .swal2-popup, [id*="modal"], [id*="Modal"]) :where(.bg-white, form, input, select, textarea) {
+    color: #0f172a !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where([role="dialog"], .swal2-popup, [id*="modal"], [id*="Modal"]) :where(h1, h2, h3, h4) {
+    color: #0f172a !important;
+}
+
+/* Disabled buttons retain visible labels. */
+:is(.public-site, .auth-site, .guest-content, .staff-portal) button:disabled {
+    opacity: .62;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) button:disabled.bg-slate-100,
+:is(.public-site, .auth-site, .guest-content, .staff-portal) button:disabled.bg-slate-200 {
+    color: #64748b !important;
+}
