@@ -1,5 +1,4 @@
-
-
+import '../css/portal.css';
 import Alpine from 'alpinejs';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
@@ -10,11 +9,11 @@ window.Swal = Swal;
 const oasisDialogOptions = {
     buttonsStyling: false,
     customClass: {
-        popup: 'rounded-none border border-neutral-200 shadow-2xl',
-        title: 'font-serif text-2xl text-neutral-900',
-        htmlContainer: 'text-sm text-neutral-600',
-        confirmButton: 'bg-neutral-950 hover:bg-neutral-800 text-white px-6 py-2.5 text-xs font-bold uppercase tracking-widest mx-1',
-        cancelButton: 'bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 px-6 py-2.5 text-xs font-bold uppercase tracking-widest mx-1',
+        popup: 'rounded-2xl border border-slate-200 shadow-2xl',
+        title: 'text-2xl font-semibold tracking-tight text-slate-900',
+        htmlContainer: 'text-sm leading-6 text-slate-600',
+        confirmButton: 'rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-sm font-semibold mx-1',
+        cancelButton: 'rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-6 py-3 text-sm font-semibold mx-1',
     },
 };
 
@@ -91,7 +90,7 @@ function renderRestaurantOrderItems(items) {
 
     if (!items.length) {
         const empty = document.createElement('p');
-        empty.className = 'p-4 text-center text-[11px] italic text-neutral-400';
+        empty.className = 'p-4 text-center text-sm text-slate-500';
         empty.textContent = 'Tidak ada item menu pada pesanan ini.';
         container.appendChild(empty);
         return;
@@ -99,18 +98,18 @@ function renderRestaurantOrderItems(items) {
 
     items.forEach((item) => {
         const row = document.createElement('div');
-        row.className = 'p-2 flex justify-between items-center text-neutral-700 font-medium';
+        row.className = 'flex items-center justify-between gap-4 border-b border-slate-100 p-3 text-sm text-slate-700 last:border-0';
 
         const name = document.createElement('span');
-        name.className = 'font-bold text-neutral-900 truncate max-w-[180px]';
+        name.className = 'max-w-[180px] truncate font-semibold text-slate-900';
         name.textContent = item.name ?? '-';
 
         const quantity = document.createElement('span');
-        quantity.className = 'w-12 text-center font-mono text-neutral-500';
+        quantity.className = 'w-12 text-center font-mono text-slate-500';
         quantity.textContent = item.quantity ?? 0;
 
         const price = document.createElement('span');
-        price.className = 'w-24 text-right font-mono text-neutral-900 font-bold';
+        price.className = 'w-28 text-right font-mono font-semibold text-slate-900';
         price.textContent = `Rp ${restaurantCurrency.format(Number(item.price || 0))}`;
 
         row.append(name, quantity, price);
