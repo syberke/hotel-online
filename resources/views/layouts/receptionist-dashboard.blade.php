@@ -35,8 +35,7 @@
                 ['receptionist.guesthistory', 'fa-clock-rotate-left', 'Guest History'],
             ],
             'Operations' => [
-                ['receptionist.roomavailability', 'fa-table-cells', 'Room Availability'],
-                ['receptionist.housestatus', 'fa-broom', 'House Status'],
+                ['receptionist.roomavailability', 'fa-bed', 'Rooms'],
                 ['profile.edit', 'fa-user-gear', 'Profile Settings'],
             ],
         ];
@@ -119,7 +118,7 @@
                     else if (status === 'confirmed') addAction('Check-in', 'fa-right-to-bracket', `{{ route('receptionist.checkin') }}?booking_id=${bookingId}`, 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100');
                     else if (status === 'checked_in') { addAction('Folio', 'fa-file-invoice', `{{ route('receptionist.folio') }}?booking_id=${bookingId}`, 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'); addAction('Check-out', 'fa-right-from-bracket', `{{ route('receptionist.checkout') }}?booking_id=${bookingId}`, 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'); }
                     else if (status === 'checked_out') addAction('Receipt', 'fa-receipt', `{{ route('receptionist.folio') }}?booking_id=${bookingId}`, 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50');
-                    else { const closed = document.createElement('span'); closed.className = `${actionClass} border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed`; closed.innerHTML = '<i class="fa-solid fa-lock"></i><span>Closed</span>'; actionContainer.appendChild(closed); }
+                    else { const closed = document.createElement('span'); closed.className = `${actionClass} border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed`; closed.innerHTML = '<i class="fa-solid fa-lock"></i><span>Closed</span>'; actionContainer.appendChild(closed); }
                 });
             });
         </script>
