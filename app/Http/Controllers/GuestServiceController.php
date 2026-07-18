@@ -40,7 +40,15 @@ class GuestServiceController extends Controller
 
         $menus = DB::table('restaurant_menus')
             ->where('is_available', true)
-            ->select('id', 'name', 'description', 'price', 'foto_url', 'category', 'sales_count')
+            ->select(
+                'id',
+                'name',
+                'description',
+                'price',
+                'foto_url',
+                'category',
+                DB::raw('0 as sales_count'),
+            )
             ->orderBy('category')
             ->orderBy('name')
             ->get();
@@ -53,6 +61,7 @@ class GuestServiceController extends Controller
             ? DB::table('restaurant_orders')
                 ->leftJoin('payments', 'restaurant_orders.id', '=', 'payments.restaurant_order_id')
                 ->where('restaurant_orders.guest_id', $guest->id)
+                ->when($targetBookingId, fn ($query) => $query->where('payments.booking_id', $targetBookingId))
                 ->select(
                     'restaurant_orders.id',
                     'restaurant_orders.total_price',
