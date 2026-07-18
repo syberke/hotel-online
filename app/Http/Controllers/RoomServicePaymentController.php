@@ -192,6 +192,7 @@ class RoomServicePaymentController extends Controller
 
         $menus = DB::table('restaurant_menus')
             ->whereIn('id', $menuIds)
+            ->where('is_available', true)
             ->select('id', 'name', 'price')
             ->get()
             ->keyBy('id');
