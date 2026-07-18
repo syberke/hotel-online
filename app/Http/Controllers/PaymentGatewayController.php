@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Throwable;
 
 class PaymentGatewayController extends Controller
 {
@@ -19,11 +20,12 @@ class PaymentGatewayController extends Controller
 
     public function getSnapToken(Request $request)
     {
-        $request->validate(['booking_id' => 'required|integer']);
-        $this->initMidtrans();
+        $validated = $request->validate([
+            'booking_id' => ['required', 'integer', 'exists:bookings,id'],
+        ]);
 
         $booking = DB::table('bookings')
-            ->where('id', $request->booking_id)
+            ->where('id', $validated['booking_id'])
             ->where('user_id', auth()->id())
             ->first();
 
@@ -31,29 +33,29 @@ class PaymentGatewayController extends Controller
             return response()->json(['success' => false, 'message' => 'Invoice tidak valid.'], 400);
         }
 
-        $grandTotalInt = (int) round($booking->total_price);
-        $params = [
-            'transaction_details' => [
-                'order_id' => 'OA-' . $booking->id . '-' . time(),
-                'gross_amount' => $grandTotalInt,
-            ],
-            'customer_details' => [
-                'first_name' => auth()->user()->name,
-                'email' => auth()->user()->email,
-            ],
-            'item_details' => [[
-                'id' => 'ROOM-' . $booking->room_id,
-                'price' => $grandTotalInt,
-                'quantity' => 1,
-                'name' => 'Oasis Room Reservation #' . $booking->id,
-            ]],
-        ];
+        $this->initMidtrans();
+        $grandTotal = (int) round($booking->total_price);
 
         try {
-            $snapToken = Snap::getSnapToken($params);
+            $snapToken = Snap::getSnapToken([
+                'transaction_details' => [
+                    'order_id' => 'OA-' . $booking->id . '-' . time(),
+                    'gross_amount' => $grandTotal,
+                ],
+                'customer_details' => [
+                    'first_name' => auth()->user()->name,
+                    'email' => auth()->user()->email,
+                ],
+                'item_details' => [[
+                    'id' => 'ROOM-' . $booking->room_id,
+                    'price' => $grandTotal,
+                    'quantity' => 1,
+                    'name' => 'Oasis Room Reservation #' . $booking->id,
+                ]],
+            ]);
 
             return response()->json(['success' => true, 'token' => $snapToken]);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             return response()->json([
@@ -72,41 +74,61 @@ class PaymentGatewayController extends Controller
             return response()->json(['message' => 'Invalid Signature'], 403);
         }
 
-        $orderParts = explode('-', (string) $request->order_id);
-        $bookingId = $orderParts[1] ?? null;
-        $transactionStatus = $request->transaction_status;
-        $statusToUpdate = ($transactionStatus === 'capture' || $transactionStatus === 'settlement')
-            ? 'confirmed'
-            : (in_array($transactionStatus, ['deny', 'expire', 'cancel'], true) ? 'canceled' : null);
+        $parts = explode('-', (string) $request->order_id);
+        $prefix = strtoupper((string) ($parts[0] ?? ''));
+        $entityId = isset($parts[1]) && ctype_digit((string) $parts[1]) ? (int) $parts[1] : 0;
+        $transactionStatus = strtolower((string) $request->transaction_status);
+        $isPaid = in_array($transactionStatus, ['capture', 'settlement'], true);
+        $isFailed = in_array($transactionStatus, ['deny', 'expire', 'cancel'], true);
 
-        if ($statusToUpdate && $bookingId) {
-            DB::transaction(function () use ($bookingId, $statusToUpdate, $transactionStatus): void {
-                DB::table('bookings')->where('id', $bookingId)->update([
-                    'status' => $statusToUpdate,
-                    'updated_at' => now(),
-                ]);
-
-                DB::table('payments')->where('booking_id', $bookingId)->update([
-                    'payment_status' => $statusToUpdate === 'confirmed' ? 'paid' : 'failed',
-                    'payment_method' => 'e_wallet',
-                    'note' => 'Midtrans status: ' . $transactionStatus,
-                    'updated_at' => now(),
-                ]);
-            });
+        if (! $entityId || (! $isPaid && ! $isFailed)) {
+            return response()->json(['status' => 'ignored']);
         }
+
+        DB::transaction(function () use ($prefix, $entityId, $transactionStatus, $isPaid): void {
+            if ($prefix === 'OA') {
+                DB::table('bookings')->where('id', $entityId)->update([
+                    'status' => $isPaid ? 'confirmed' : 'canceled',
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('payments')->where('booking_id', $entityId)->update([
+                    'payment_status' => $isPaid ? 'paid' : 'failed',
+                    'payment_method' => 'e_wallet',
+                    'note' => 'Midtrans booking status: ' . $transactionStatus,
+                    'updated_at' => now(),
+                ]);
+
+                return;
+            }
+
+            if (in_array($prefix, ['RESTO', 'ROOMSERVICE'], true)) {
+                DB::table('restaurant_orders')->where('id', $entityId)->update([
+                    'status' => $isPaid ? 'paid' : 'cancelled',
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('payments')->where('restaurant_order_id', $entityId)->update([
+                    'payment_status' => $isPaid ? 'paid' : 'failed',
+                    'payment_method' => 'e_wallet',
+                    'note' => 'Midtrans restaurant status: ' . $transactionStatus,
+                    'updated_at' => now(),
+                ]);
+            }
+        });
 
         return response()->json(['status' => 'success']);
     }
 
-    /**
-     * Return a guest-owned room receipt for confirmed, checked-in, and checked-out stays.
-     */
     public function getRoomInvoiceDetails(int $id)
     {
         $booking = DB::table('bookings')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-            ->leftJoin('payments', 'payments.booking_id', '=', 'bookings.id')
+            ->leftJoin('payments', function ($join) {
+                $join->on('payments.booking_id', '=', 'bookings.id')
+                    ->whereNull('payments.restaurant_order_id');
+            })
             ->where('bookings.id', $id)
             ->where('bookings.user_id', auth()->id())
             ->select(
@@ -119,7 +141,7 @@ class PaymentGatewayController extends Controller
                 'rooms.room_number',
                 'room_types.name as room_type_name',
                 'payments.payment_status',
-                'payments.updated_at as payment_updated_at'
+                'payments.updated_at as payment_updated_at',
             )
             ->first();
 
@@ -186,40 +208,63 @@ class PaymentGatewayController extends Controller
 
     public function payRestaurantOrder(Request $request)
     {
-        $guest = DB::table('guests')->where('email', auth()->user()->email)->first();
+        $validated = $request->validate([
+            'cart_data' => ['required', 'array', 'min:1'],
+            'cart_data.*.id' => ['required', 'integer', 'exists:restaurant_menus,id'],
+            'cart_data.*.quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            'booking_id' => ['nullable', 'integer', 'exists:bookings,id'],
+            'delivery_note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $guest = DB::table('guests')
+            ->whereRaw('LOWER(email) = ?', [strtolower((string) auth()->user()->email)])
+            ->first();
+
         if (! $guest) {
             return response()->json(['success' => false, 'message' => 'Profil tidak ditemukan.'], 404);
         }
 
-        $cartItems = $request->input('cart_data', []);
-        if (empty($cartItems)) {
-            return response()->json(['success' => false, 'message' => 'Keranjang kosong.'], 400);
+        $bookingId = $validated['booking_id'] ?? null;
+        if ($bookingId) {
+            $bookingExists = DB::table('bookings')
+                ->where('id', $bookingId)
+                ->where('user_id', auth()->id())
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->exists();
+
+            if (! $bookingExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reservasi tujuan tidak valid.',
+                ], 422);
+            }
         }
 
-        $subtotal = 0;
-        foreach ($cartItems as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
+        $calculation = $this->calculateRestaurantCart($validated['cart_data']);
+        if ($calculation === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Salah satu menu sudah tidak tersedia. Muat ulang halaman.',
+            ], 422);
         }
 
-        $serviceCharge = (int) round($subtotal * 0.10);
-        $tax = (int) round(($subtotal + $serviceCharge) * 0.11);
-        $grandTotal = (int) ($subtotal + $serviceCharge + $tax);
+        $orderId = null;
 
         try {
-            $orderId = DB::transaction(function () use ($grandTotal, $cartItems, $guest) {
+            $orderId = DB::transaction(function () use ($guest, $bookingId, $validated, $calculation): int {
                 $id = DB::table('restaurant_orders')->insertGetId([
                     'guest_id' => $guest->id,
-                    'total_price' => $grandTotal,
+                    'total_price' => $calculation['grand_total'],
                     'status' => 'ordered',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                foreach ($cartItems as $item) {
+                foreach ($calculation['items'] as $item) {
                     DB::table('restaurant_order_details')->insert([
                         'restaurant_order_id' => $id,
                         'restaurant_menu_id' => $item['id'],
-                        'quantity' => (int) $item['quantity'],
+                        'quantity' => $item['quantity'],
                         'price' => $item['price'],
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -227,10 +272,12 @@ class PaymentGatewayController extends Controller
                 }
 
                 DB::table('payments')->insert([
+                    'booking_id' => $bookingId,
                     'restaurant_order_id' => $id,
-                    'amount' => $grandTotal,
-                    'payment_method' => 'transfer',
+                    'amount' => $calculation['grand_total'],
+                    'payment_method' => 'e_wallet',
                     'payment_status' => 'pending',
+                    'note' => $validated['delivery_note'] ?? 'Restaurant online payment',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -239,22 +286,41 @@ class PaymentGatewayController extends Controller
             });
 
             $this->initMidtrans();
-            $params = [
+            $snapToken = Snap::getSnapToken([
                 'transaction_details' => [
                     'order_id' => 'RESTO-' . $orderId . '-' . time(),
-                    'gross_amount' => $grandTotal,
+                    'gross_amount' => $calculation['grand_total'],
                 ],
                 'customer_details' => [
                     'first_name' => auth()->user()->name,
                     'email' => auth()->user()->email,
                 ],
-            ];
+                'item_details' => [[
+                    'id' => 'RESTAURANT-' . $orderId,
+                    'price' => $calculation['grand_total'],
+                    'quantity' => 1,
+                    'name' => 'Restaurant Order #' . $orderId,
+                ]],
+            ]);
 
-            $snapToken = Snap::getSnapToken($params);
-
-            return response()->json(['success' => true, 'token' => $snapToken, 'order_id' => $orderId]);
-        } catch (\Throwable $exception) {
+            return response()->json([
+                'success' => true,
+                'token' => $snapToken,
+                'order_id' => $orderId,
+            ]);
+        } catch (Throwable $exception) {
             report($exception);
+
+            if ($orderId) {
+                DB::transaction(function () use ($orderId): void {
+                    DB::table('payments')
+                        ->where('restaurant_order_id', $orderId)
+                        ->where('payment_status', 'pending')
+                        ->delete();
+                    DB::table('restaurant_order_details')->where('restaurant_order_id', $orderId)->delete();
+                    DB::table('restaurant_orders')->where('id', $orderId)->delete();
+                });
+            }
 
             return response()->json([
                 'success' => false,
@@ -265,13 +331,26 @@ class PaymentGatewayController extends Controller
 
     public function settleRestaurantOrder(Request $request)
     {
-        $request->validate(['order_id' => 'required|integer']);
-        DB::transaction(function () use ($request) {
-            DB::table('payments')->where('restaurant_order_id', $request->order_id)->update([
+        $validated = $request->validate([
+            'order_id' => ['required', 'integer', 'exists:restaurant_orders,id'],
+        ]);
+
+        $order = $this->guestOwnedRestaurantOrder($validated['order_id']);
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak ditemukan atau bukan milik akun ini.',
+            ], 404);
+        }
+
+        DB::transaction(function () use ($order): void {
+            DB::table('payments')->where('restaurant_order_id', $order->id)->update([
+                'payment_method' => 'e_wallet',
                 'payment_status' => 'paid',
+                'note' => 'Payment completed through Midtrans Snap.',
                 'updated_at' => now(),
             ]);
-            DB::table('restaurant_orders')->where('id', $request->order_id)->update([
+            DB::table('restaurant_orders')->where('id', $order->id)->update([
                 'status' => 'paid',
                 'updated_at' => now(),
             ]);
@@ -280,41 +359,75 @@ class PaymentGatewayController extends Controller
         return response()->json(['success' => true, 'message' => 'Pembayaran terverifikasi.']);
     }
 
-    public function cancelRestaurantOrder($id)
+    public function cancelRestaurantOrder(int $id)
     {
-        DB::transaction(function () use ($id) {
-            DB::table('payments')->where('restaurant_order_id', $id)->where('payment_status', 'pending')->delete();
-            DB::table('restaurant_order_details')->where('restaurant_order_id', $id)->delete();
-            DB::table('restaurant_orders')->where('id', $id)->delete();
+        $order = $this->guestOwnedRestaurantOrder($id);
+        if (! $order) {
+            return back()->with('error', 'Pesanan tidak ditemukan atau bukan milik akun ini.');
+        }
+
+        $hasPaidPayment = DB::table('payments')
+            ->where('restaurant_order_id', $order->id)
+            ->where('payment_status', 'paid')
+            ->exists();
+
+        if ($hasPaidPayment) {
+            return back()->with('error', 'Pesanan yang sudah dibayar tidak dapat dibatalkan dari portal guest.');
+        }
+
+        DB::transaction(function () use ($order): void {
+            DB::table('payments')->where('restaurant_order_id', $order->id)->delete();
+            DB::table('restaurant_order_details')->where('restaurant_order_id', $order->id)->delete();
+            DB::table('restaurant_orders')->where('id', $order->id)->delete();
         });
 
-        return redirect()->back()->with('success', 'Pesanan kuliner berhasil dibatalkan.');
+        return back()->with('success', 'Pesanan kuliner berhasil dibatalkan.');
     }
 
-    public function reTokenPendingOrder($id)
+    public function reTokenPendingOrder(int $id)
     {
-        $order = DB::table('restaurant_orders')->where('id', $id)->first();
+        $order = $this->guestOwnedRestaurantOrder($id);
         if (! $order) {
-            return response()->json(['success' => false, 'message' => 'Manifes order tidak ditemukan.'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak ditemukan atau bukan milik akun ini.',
+            ], 404);
+        }
+
+        $pendingPayment = DB::table('payments')
+            ->where('restaurant_order_id', $order->id)
+            ->where('payment_status', 'pending')
+            ->first();
+
+        if (! $pendingPayment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak mempunyai pembayaran pending.',
+            ], 422);
         }
 
         $this->initMidtrans();
-        $params = [
-            'transaction_details' => [
-                'order_id' => 'RESTO-' . $order->id . '-' . time(),
-                'gross_amount' => (int) round($order->total_price),
-            ],
-            'customer_details' => [
-                'first_name' => auth()->user()->name,
-                'email' => auth()->user()->email,
-            ],
-        ];
 
         try {
-            $snapToken = Snap::getSnapToken($params);
+            $snapToken = Snap::getSnapToken([
+                'transaction_details' => [
+                    'order_id' => 'RESTO-' . $order->id . '-' . time(),
+                    'gross_amount' => (int) round($order->total_price),
+                ],
+                'customer_details' => [
+                    'first_name' => auth()->user()->name,
+                    'email' => auth()->user()->email,
+                ],
+                'item_details' => [[
+                    'id' => 'RESTAURANT-' . $order->id,
+                    'price' => (int) round($order->total_price),
+                    'quantity' => 1,
+                    'name' => 'Restaurant Order #' . $order->id,
+                ]],
+            ]);
 
             return response()->json(['success' => true, 'token' => $snapToken]);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             return response()->json([
@@ -326,10 +439,12 @@ class PaymentGatewayController extends Controller
 
     public function localPaymentSuccess(Request $request)
     {
-        $request->validate(['booking_id' => 'required|integer']);
+        $validated = $request->validate([
+            'booking_id' => ['required', 'integer', 'exists:bookings,id'],
+        ]);
 
         $booking = DB::table('bookings')
-            ->where('id', $request->booking_id)
+            ->where('id', $validated['booking_id'])
             ->where('user_id', auth()->id())
             ->first();
 
@@ -345,14 +460,78 @@ class PaymentGatewayController extends Controller
                 ]);
             }
 
-            DB::table('payments')->where('booking_id', $booking->id)->update([
-                'payment_status' => 'paid',
-                'payment_method' => 'e_wallet',
-                'note' => 'Payment completed through Midtrans Snap.',
-                'updated_at' => now(),
-            ]);
+            DB::table('payments')
+                ->where('booking_id', $booking->id)
+                ->whereNull('restaurant_order_id')
+                ->update([
+                    'payment_status' => 'paid',
+                    'payment_method' => 'e_wallet',
+                    'note' => 'Payment completed through Midtrans Snap.',
+                    'updated_at' => now(),
+                ]);
         });
 
         return response()->json(['success' => true, 'message' => 'Pembayaran dan receipt berhasil diperbarui.']);
+    }
+
+    private function guestOwnedRestaurantOrder(int $orderId): ?object
+    {
+        $guest = DB::table('guests')
+            ->whereRaw('LOWER(email) = ?', [strtolower((string) auth()->user()->email)])
+            ->first();
+
+        if (! $guest) {
+            return null;
+        }
+
+        return DB::table('restaurant_orders')
+            ->where('id', $orderId)
+            ->where('guest_id', $guest->id)
+            ->first();
+    }
+
+    private function calculateRestaurantCart(array $cartItems): ?array
+    {
+        $menuIds = collect($cartItems)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $menus = DB::table('restaurant_menus')
+            ->whereIn('id', $menuIds)
+            ->where('is_available', true)
+            ->select('id', 'name', 'price')
+            ->get()
+            ->keyBy('id');
+
+        if ($menus->count() !== $menuIds->count()) {
+            return null;
+        }
+
+        $items = [];
+        $subtotal = 0;
+
+        foreach ($cartItems as $cartItem) {
+            $menu = $menus->get((int) $cartItem['id']);
+            $quantity = max(1, min(20, (int) $cartItem['quantity']));
+            $price = (int) round((float) $menu->price);
+
+            $items[] = [
+                'id' => (int) $menu->id,
+                'name' => $menu->name,
+                'quantity' => $quantity,
+                'price' => $price,
+            ];
+            $subtotal += $price * $quantity;
+        }
+
+        $serviceCharge = (int) round($subtotal * 0.10);
+        $tax = (int) round(($subtotal + $serviceCharge) * 0.11);
+
+        return [
+            'items' => $items,
+            'grand_total' => $subtotal + $serviceCharge + $tax,
+        ];
     }
 }
