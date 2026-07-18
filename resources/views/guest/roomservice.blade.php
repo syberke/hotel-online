@@ -1,9 +1,16 @@
+@php
+    $midtransReady = filled(config('services.midtrans.client_key'))
+        && filled(config('services.midtrans.server_key'));
+    $activeBookingId = $currentBooking->booking_id ?? null;
+@endphp
+
 <x-guest-dashboard-layout>
     <div
         x-data="{
             searchQuery: '',
             selectedCategory: 'all',
             sortBy: 'popular',
+            paymentLoading: false,
             cart: JSON.parse(localStorage.getItem('oasis_room_service_cart') || '[]'),
             taxRate: 0.11,
             serviceRate: 0.10,
@@ -11,12 +18,12 @@
                 @foreach($menus as $menu)
                 {
                     id: {{ $menu->id }},
-                    name: '{{ addslashes($menu->name) }}',
-                    price: {{ $menu->price }},
-                    category: '{{ $menu->category ?? 'main course' }}',
-                    description: '{{ addslashes($menu->description) }}',
-                    foto_url: '{{ $menu->foto_url }}',
-                    sales_count: {{ $menu->sales_count ?? 0 }}
+                    name: @js($menu->name),
+                    price: {{ (int) round($menu->price) }},
+                    category: @js($menu->category ?? 'main course'),
+                    description: @js($menu->description ?? ''),
+                    foto_url: @js($menu->foto_url ?? ''),
+                    sales_count: {{ (int) ($menu->sales_count ?? 0) }}
                 },
                 @endforeach
             ],
@@ -67,6 +74,88 @@
                 else if (this.sortBy === 'high-to-low') result.sort((a, b) => b.price - a.price);
                 else result.sort((a, b) => b.sales_count - a.sales_count);
                 return result;
+            },
+            async payNow() {
+                if (this.cart.length === 0 || this.paymentLoading) return;
+
+                if (!{{ $activeBookingId ? 'true' : 'false' }}) {
+                    window.OasisDialog?.error('Tidak ada reservasi aktif yang dapat menerima Room Service.', 'Room unavailable');
+                    return;
+                }
+
+                if (!{{ $midtransReady ? 'true' : 'false' }} || !window.snap || typeof window.snap.pay !== 'function') {
+                    window.OasisDialog?.error('Midtrans Snap belum tersedia. Periksa konfigurasi pembayaran lalu muat ulang halaman.', 'Payment unavailable');
+                    return;
+                }
+
+                this.paymentLoading = true;
+
+                try {
+                    const response = await fetch('{{ route('room.service.pay') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            booking_id: {{ $activeBookingId ?: 'null' }},
+                            cart_data: this.cart.map(item => ({ id: item.id, quantity: item.quantity }))
+                        })
+                    });
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.success || !payload.token) {
+                        throw new Error(payload.message || 'Token pembayaran Room Service tidak dapat dibuat.');
+                    }
+
+                    const orderId = payload.order_id;
+                    this.clearCart();
+
+                    window.snap.pay(payload.token, {
+                        onSuccess: async () => {
+                            try {
+                                const settleResponse = await fetch('{{ route('room.service.settle') }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    },
+                                    body: JSON.stringify({ order_id: orderId })
+                                });
+                                const settlePayload = await settleResponse.json();
+                                if (!settleResponse.ok || !settlePayload.success) {
+                                    throw new Error(settlePayload.message || 'Pembayaran berhasil, tetapi sinkronisasi pesanan gagal.');
+                                }
+                                await window.OasisDialog?.success('Pembayaran berhasil. Pesanan Room Service sudah diteruskan ke dapur.');
+                                window.location.reload();
+                            } catch (error) {
+                                this.paymentLoading = false;
+                                window.OasisDialog?.error(error.message || 'Sinkronisasi pembayaran gagal.');
+                            }
+                        },
+                        onPending: async () => {
+                            this.paymentLoading = false;
+                            await window.OasisDialog?.info('Transaksi Room Service masih menunggu pembayaran. Pesanan tersimpan sebagai pending.', 'Payment pending');
+                            window.location.reload();
+                        },
+                        onError: async () => {
+                            this.paymentLoading = false;
+                            await window.OasisDialog?.error('Pembayaran Room Service ditolak atau gagal diproses.');
+                            window.location.reload();
+                        },
+                        onClose: () => {
+                            this.paymentLoading = false;
+                            window.location.reload();
+                        }
+                    });
+                } catch (error) {
+                    this.paymentLoading = false;
+                    window.OasisDialog?.error(error.message || 'Gateway pembayaran Room Service tidak dapat dihubungi.');
+                }
             }
         }"
         class="space-y-6"
@@ -76,6 +165,19 @@
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         </style>
+
+        @if(session('success'))
+            <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                <i class="fa-solid fa-circle-check mt-0.5"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
 
         <section class="relative overflow-hidden rounded-2xl bg-slate-900 p-6 text-white shadow-sm md:p-8">
             <img src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop" alt="Room service dining" class="absolute inset-0 h-full w-full object-cover opacity-30">
@@ -87,40 +189,47 @@
                         Available 24 hours
                     </span>
                     <h2 class="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">Room Service</h2>
-                    <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">Choose meals and drinks, review the order clearly, and send everything directly to your active room.</p>
+                    <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">Order to your room, pay securely now, or add the charge to your room folio for Front Desk settlement.</p>
                 </div>
 
                 <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
                     <p class="text-xs text-slate-300">Delivery destination</p>
-                    @if(isset($allActiveBookings) && $allActiveBookings->count() > 1)
+                    @if($allActiveBookings->count() > 1)
                         <form action="{{ route('guest.room.service') }}" method="GET" class="mt-2">
                             <select name="booking_id" onchange="this.form.submit()" class="min-w-52 rounded-xl border-white/15 bg-white px-3 py-2 text-sm font-semibold text-slate-900">
                                 @foreach($allActiveBookings as $activeTab)
-                                    <option value="{{ $activeTab->id }}" {{ $activeTab->id == ($currentBooking->booking_id ?? null) ? 'selected' : '' }}>
-                                        Room {{ $activeTab->room_number }}
+                                    <option value="{{ $activeTab->id }}" {{ $activeTab->id == $activeBookingId ? 'selected' : '' }}>
+                                        Room {{ $activeTab->room_number }} · {{ ucwords(str_replace('_', ' ', $activeTab->status)) }}
                                     </option>
                                 @endforeach
                             </select>
                         </form>
+                    @elseif($currentBooking)
+                        <p class="mt-1 text-lg font-semibold text-white">Room {{ $currentBooking->room_number }}</p>
+                        <p class="text-xs text-slate-300">{{ $currentBooking->room_name }} · {{ ucwords(str_replace('_', ' ', $currentBooking->status)) }}</p>
                     @else
-                        <p class="mt-1 text-lg font-semibold text-white">Room {{ $currentBooking->room_number ?? 'TBA' }}</p>
-                        <p class="text-xs text-slate-300">{{ $currentBooking->room_name ?? 'Active stay' }}</p>
+                        <p class="mt-1 text-sm font-semibold text-amber-200">No confirmed or checked-in stay</p>
                     @endif
                 </div>
             </div>
         </section>
 
-        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        @if(!$midtransReady)
+            <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <div>
+                    <p class="font-semibold">Online payment is not configured</p>
+                    <p class="mt-1 text-amber-800">Pay Now requires valid Midtrans keys. Charge to room folio remains available.</p>
+                </div>
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
             <div class="min-w-0 space-y-5">
                 <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                     <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                         <template x-for="category in ['all', 'breakfast', 'main course', 'desserts', 'beverages']" :key="category">
-                            <button
-                                type="button"
-                                @click="selectedCategory = category"
-                                :class="selectedCategory === category ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
-                                class="inline-flex min-w-max items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition"
-                            >
+                            <button type="button" @click="selectedCategory = category" :class="selectedCategory === category ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'" class="inline-flex min-w-max items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition">
                                 <i class="fa-solid" :class="category === 'all' ? 'fa-utensils' : (category === 'breakfast' ? 'fa-egg' : (category === 'main course' ? 'fa-bowl-food' : (category === 'desserts' ? 'fa-ice-cream' : 'fa-mug-hot')))"></i>
                                 <span x-text="category === 'all' ? 'All menu' : category.replace(/\b\w/g, letter => letter.toUpperCase())"></span>
                             </button>
@@ -156,7 +265,7 @@
                                     </div>
                                     <p class="shrink-0 text-sm font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(menu.price)"></p>
                                 </div>
-                                <button type="button" @click="addToCart(menu)" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+                                <button type="button" @click="addToCart(menu)" {{ $currentBooking ? '' : 'disabled' }} class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-45">
                                     <i class="fa-solid fa-plus text-xs"></i>
                                     Add to cart
                                 </button>
@@ -172,7 +281,7 @@
                 </section>
             </div>
 
-            <aside class="self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-4 md:p-6">
+            <aside class="min-w-0 self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-4 md:p-6">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <p class="text-xs font-medium text-slate-500">Current order</p>
@@ -214,45 +323,72 @@
                     <div class="flex justify-between border-t border-slate-100 pt-3"><span class="font-semibold text-slate-900">Total</span><span class="text-lg font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(grandTotal)"></span></div>
                 </div>
 
-                <form action="{{ route('room.service.order') }}" method="POST" @submit="localStorage.removeItem('oasis_room_service_cart')" x-show="cart.length > 0" x-cloak class="mt-5">
-                    @csrf
-                    <input type="hidden" name="cart_data" :value="JSON.stringify(cart)">
-                    <input type="hidden" name="booking_id" value="{{ $currentBooking->booking_id ?? '' }}">
-                    <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700">
-                        <i class="fa-solid fa-paper-plane text-xs"></i>
-                        Place room order
-                    </button>
-                </form>
+                @if($currentBooking)
+                    <div x-show="cart.length > 0" x-cloak class="mt-5 space-y-3">
+                        <button type="button" @click="payNow()" :disabled="paymentLoading || !{{ $midtransReady ? 'true' : 'false' }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-45">
+                            <i class="fa-solid" :class="paymentLoading ? 'fa-circle-notch animate-spin' : 'fa-credit-card'"></i>
+                            <span x-text="paymentLoading ? 'Opening payment...' : 'Pay now'"></span>
+                        </button>
+
+                        <form action="{{ route('room.service.order') }}" method="POST" @submit="clearCart()">
+                            @csrf
+                            <input type="hidden" name="cart_data" :value="JSON.stringify(cart.map(item => ({ id: item.id, quantity: item.quantity })))">
+                            <input type="hidden" name="booking_id" value="{{ $activeBookingId }}">
+                            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                                <i class="fa-solid fa-file-invoice-dollar text-xs"></i>
+                                Charge to room folio
+                            </button>
+                        </form>
+
+                        <p class="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">Pay Now marks the order paid after Midtrans verification. Charge to room creates a pending folio charge for Front Desk settlement.</p>
+                    </div>
+                @else
+                    <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">A confirmed or checked-in reservation is required before placing Room Service.</div>
+                @endif
 
                 <div class="mt-7 border-t border-slate-100 pt-5">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-medium text-slate-500">Recent activity</p>
-                            <h4 class="mt-1 text-sm font-semibold text-slate-900">Order history</h4>
+                            <h4 class="mt-1 text-sm font-semibold text-slate-900">Room Service payments</h4>
                         </div>
-                        @if(Route::has('guest.restaurant.orders'))
-                            <a href="{{ route('guest.restaurant.orders') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700">View all</a>
-                        @endif
+                        <a href="{{ route('guest.restaurant.orders') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700">View all</a>
                     </div>
 
-                    <div class="mt-3 max-h-56 space-y-2 overflow-y-auto">
-                        @forelse($orderHistory ?? [] as $history)
-                            <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                                <div>
-                                    <p class="font-mono text-xs font-semibold text-slate-900">#RS-{{ str_pad($history->id, 4, '0', STR_PAD_LEFT) }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">{{ date('d M Y, H:i', strtotime($history->created_at)) }}</p>
+                    <div class="mt-3 max-h-60 space-y-2 overflow-y-auto">
+                        @forelse($orderHistory as $history)
+                            @php
+                                $paymentStatus = $history->payment_status ?? 'pending';
+                                $statusClass = $paymentStatus === 'paid'
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : ($paymentStatus === 'failed' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700');
+                                $statusLabel = $paymentStatus === 'paid'
+                                    ? 'Paid'
+                                    : ($paymentStatus === 'failed' ? 'Payment failed' : 'Pending / folio');
+                            @endphp
+                            <div class="rounded-xl bg-slate-50 p-3">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="font-mono text-xs font-semibold text-slate-900">#RS-{{ str_pad((string) $history->id, 4, '0', STR_PAD_LEFT) }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">{{ date('d M Y, H:i', strtotime($history->created_at)) }}</p>
+                                    </div>
+                                    <span class="shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
                                 </div>
-                                <div class="text-right">
-                                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">Delivered</span>
-                                    <p class="mt-1 text-xs font-semibold text-slate-700">Rp {{ number_format($history->total_price, 0, ',', '.') }}</p>
+                                <div class="mt-2 flex items-center justify-between gap-3">
+                                    <span class="text-xs text-slate-500">{{ ucwords(str_replace('_', ' ', $history->status)) }}</span>
+                                    <span class="text-xs font-semibold text-slate-800">Rp {{ number_format($history->total_price, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         @empty
-                            <div class="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">No previous room-service orders.</div>
+                            <div class="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">No previous Room Service payments.</div>
                         @endforelse
                     </div>
                 </div>
             </aside>
         </div>
     </div>
+
+    @if($midtransReady)
+        <script src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+    @endif
 </x-guest-dashboard-layout>
