@@ -10,55 +10,93 @@
     </div>
 </section>
 
+<style>
+    .staff-main-content button[name="status"][value="dirty"] {
+        display: none !important;
+    }
+</style>
+
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const root = document.querySelector('.staff-main-content');
-        if (!root) return;
+    (() => {
+        const normalizeRoomStatusUi = () => {
+            const root = document.querySelector('.staff-main-content');
+            if (!root) return;
 
-        root.querySelectorAll('option[value="dirty"]').forEach((option) => option.remove());
+            root.querySelectorAll('option[value="dirty"], button[name="status"][value="dirty"]').forEach((element) => element.remove());
 
-        const replacements = new Map([
-            ['Reserved Rooms', 'Reserved Bookings'],
-            ['Reserved', 'Reserved Booking'],
-            ['Out Of Order', 'Maintenance'],
-            ['Out of Order', 'Maintenance'],
-            ['Cleaning', 'Maintenance'],
-        ]);
+            root.querySelectorAll('span, p, label, option, button').forEach((element) => {
+                const text = element.textContent.trim();
 
-        root.querySelectorAll('span, option, th, p, label').forEach((element) => {
-            if (element.children.length > 0) return;
+                if (text === 'Cleaning Process') {
+                    element.closest('.bg-white.p-5')?.remove();
+                    return;
+                }
 
-            const current = element.textContent.trim();
-            if (replacements.has(current)) {
-                element.textContent = replacements.get(current);
+                if (text === 'Cleaning') {
+                    const legendItem = element.closest('div.flex.items-center');
+                    if (legendItem?.querySelector('.bg-purple-500')) {
+                        legendItem.remove();
+                        return;
+                    }
+
+                    element.textContent = 'Maintenance';
+                    return;
+                }
+
+                if (text === 'Dirty / Cleaning Turn' || text === 'Set Cleaning') {
+                    element.remove();
+                    return;
+                }
+
+                if (text === 'Out Of Order' || text === 'Out of Order') {
+                    element.textContent = 'Maintenance';
+                    return;
+                }
+
+                if (text === 'Set Out Of Order') {
+                    element.innerHTML = '<span class="mr-2 inline-block h-2 w-2 rounded-full bg-amber-500"></span> Set Maintenance';
+                    return;
+                }
+
+                if (text === 'Maint. Block') {
+                    element.textContent = 'Maintenance';
+                    return;
+                }
+
+                if (text === 'Reserved Rooms') {
+                    element.textContent = 'Reserved Bookings';
+                    return;
+                }
+
+                if (text === 'Reserved') {
+                    element.textContent = 'Reserved Booking';
+                }
+            });
+
+            const statusBadge = document.getElementById('mv_room_status');
+            if (statusBadge) {
+                const status = statusBadge.textContent.trim().toLowerCase();
+
+                if (status === 'dirty' || status === 'cleaning') {
+                    statusBadge.textContent = 'Maintenance';
+                    statusBadge.className = 'inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900';
+                } else if (status === 'reserved') {
+                    statusBadge.textContent = 'Reserved Booking';
+                }
             }
-        });
-
-        root.querySelectorAll('span').forEach((label) => {
-            if (label.textContent.trim() !== 'Cleaning Process') return;
-
-            const card = label.closest('.bg-white.p-5');
-            card?.remove();
-        });
-
-        const normalizeDetailStatus = () => {
-            const badge = document.getElementById('mv_room_status');
-            if (!badge) return;
-
-            const current = badge.textContent.trim().toLowerCase();
-            if (current === 'dirty') badge.textContent = 'Maintenance';
-            if (current === 'reserved') badge.textContent = 'Reserved Booking';
-            if (current === 'maintenance') badge.textContent = 'Maintenance';
         };
 
-        const detailBadge = document.getElementById('mv_room_status');
-        if (detailBadge) {
-            normalizeDetailStatus();
-            new MutationObserver(normalizeDetailStatus).observe(detailBadge, {
-                childList: true,
-                subtree: true,
-                characterData: true,
-            });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', normalizeRoomStatusUi, { once: true });
+        } else {
+            normalizeRoomStatusUi();
         }
-    });
+
+        const observer = new MutationObserver(normalizeRoomStatusUi);
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+        });
+    })();
 </script>
