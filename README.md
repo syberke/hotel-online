@@ -1,145 +1,62 @@
 # Oasis Hotel Online
 
-Sistem operasional hotel berbasis Laravel untuk reservasi, front office, kamar,
-tamu, restoran, fasilitas, pembayaran, dan laporan manajemen.
+Sistem operasional hotel berbasis Laravel untuk reservasi, front office, kamar, guest, Room Service, restoran, venue, fasilitas, pembayaran, folio, dan laporan.
 
 ## Dokumentasi
 
-Dokumentasi repository disederhanakan menjadi dua dokumen utama:
+- [Penjelasan aplikasi dan fitur](docs/HOTEL_ONLINE.md)
+- [Ringkasan tugas dan checklist UKK](docs/UKK_MANUAL.md)
+- [Tutorial Docker UKK lengkap dari nol](docs/DOCKER_UKK_LENGKAP.md)
 
-- [Penjelasan Aplikasi dan Fitur Hotel Online](docs/HOTEL_ONLINE.md)
-- [Tutorial Manual UKK Instalasi Komputasi Awan](docs/UKK_MANUAL.md)
+## Kebijakan konfigurasi Docker
 
-Dokumen pertama menjelaskan fitur, role, alur booking, Room Service, folio,
-checkout, restoran, venue, Contact, database, dan pengujian aplikasi. Dokumen
-kedua menjelaskan instalasi infrastruktur UKK secara manual.
+Repository utama sengaja **tidak menyediakan konfigurasi Docker siap pakai**.
 
-## Arsitektur deployment
-
-Stack menjalankan tiga node web identik dari custom image Apache/PHP. Nginx
-mendistribusikan request dengan strategi `least_conn`, sedangkan MariaDB
-menyimpan data pada named volume yang persisten.
+File berikut harus dibuat manual di VM saat latihan atau ujian dengan mengikuti tutorial Docker:
 
 ```text
-Browser :8080
-     |
-Nginx load balancer
-     |
-     +-- web1 (Apache + Laravel, hijau)
-     +-- web2 (Apache + Laravel, jingga)
-     +-- web3 (Apache + Laravel, ungu)
-     |
-MariaDB + hotel_database volume
+Dockerfile
+entrypoint.sh
+docker-compose.yml
+nginx.conf
+.env.docker
+.dockerignore
 ```
 
-Semua service memakai network bridge internal `hotel_internal` dan restart
-policy `unless-stopped`. Database tidak diekspos ke host.
+Tujuannya agar peserta dapat menjelaskan dan mendemonstrasikan proses pembuatan custom image, database, network, volume, scaling tiga container web, serta load balancing sesuai tugas UKK.
 
-## Menjalankan aplikasi dengan Docker
+## Pengembangan lokal tanpa Docker
 
-Prasyarat: Docker Engine, Docker Compose v2, OpenSSL, dan port 8080 yang kosong.
+Prasyarat:
 
-Jika `.env` lama masih berisi koneksi Supabase, email, reCAPTCHA, dan Midtrans,
-file tersebut dapat langsung digunakan tanpa mengubah API key satu per satu.
-Saat deployment, nilai koneksi `DB_*` di dalam container otomatis diarahkan ke
-MariaDB. `.dockerignore` memastikan `.env` tidak masuk ke image.
+- PHP 8.3 atau lebih baru;
+- Composer;
+- Node.js dan npm;
+- PostgreSQL atau MariaDB.
 
-Untuk deployment Ubuntu yang lebih aman dan tidak terganggu `git pull`, simpan
-environment satu kali di `/etc/oasis-hotel/oasis.env`. Script deployment akan
-mendeteksinya otomatis jika `.env` tidak ada di folder project:
+Setup:
 
 ```bash
-sudo install -d -m 750 /etc/oasis-hotel
-sudo nano /etc/oasis-hotel/oasis.env
-sudo chown root:$(id -gn) /etc/oasis-hotel /etc/oasis-hotel/oasis.env
-sudo chmod 750 /etc/oasis-hotel
-sudo chmod 640 /etc/oasis-hotel/oasis.env
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run build
+php artisan serve
 ```
 
-File tersebut tidak berada di repository dan tidak masuk ke Docker image. Untuk
-lokasi custom, jalankan `OASIS_ENV_FILE=/lokasi/rahasia.env ./deploy.sh`.
-
-Jika belum ada environment, cukup jalankan `./deploy.sh`. Script akan meminta
-seluruh isi `.env` melalui input terminal yang disembunyikan, membuat APP_KEY
-jika kosong, dan menyimpannya ke lokasi permanen tersebut. Untuk mengganti
-environment di kemudian hari, jalankan:
+Mode development lengkap:
 
 ```bash
-./deploy.sh --setup-env
-```
-
-Kemudian jalankan:
-
-```bash
-chmod +x deploy.sh
-./deploy.sh
-```
-
-Script otomatis menjalankan migrasi, seeding kondisional, optimasi cache, serta
-verifikasi endpoint. Untuk instalasi manual, topologi dua VM, pembuatan
-credential MariaDB, build, migrate, seed, load balancing, dan troubleshooting,
-baca [Tutorial Manual UKK Instalasi Komputasi Awan](docs/UKK_MANUAL.md).
-
-Untuk memahami fitur dan alur bisnis aplikasi sebelum deployment, baca
-[Penjelasan Aplikasi dan Fitur Hotel Online](docs/HOTEL_ONLINE.md).
-
-Aplikasi tersedia di <http://localhost:8080>.
-
-### Database MariaDB
-
-MariaDB selalu dijalankan sebagai container internal. Pada deployment pertama,
-`deploy.sh` membuat user dan password acak yang kuat lalu menyimpannya di
-`/etc/oasis-hotel/database.env` dengan permission terbatas. Jangan menghapus file
-tersebut selama volume `hotel_database` masih digunakan karena credential harus
-tetap sama. Data database disimpan di named volume Docker dan tidak hilang saat
-container dibuat ulang.
-
-## Membuktikan load balancing
-
-Halaman publik menampilkan badge node dengan warna berbeda. Header respons juga
-memuat identitas node. Jalankan request berulang:
-
-```bash
-for i in 1 2 3 4 5 6; do
-  curl -sI http://localhost:8080 | grep -i X-App-Node
-done
-```
-
-Hasil akan bergantian antara `Web 1`, `Web 2`, dan `Web 3` mengikuti kondisi
-koneksi. Periksa kondisi stack dengan:
-
-```bash
-docker compose ps
-docker compose logs -f loadbalancer web1 web2 web3
-```
-
-## Laporan
-
-Laporan menggunakan satu halaman terpadu agar KPI hotel mudah dibandingkan.
-Isi dibagi menjadi section Overview, Rooms, Gastronomy, dan Facilities. Export
-Excel tetap menggunakan beberapa sheet agar data setiap divisi mudah diolah,
-sedangkan PDF memakai format ringkasan eksekutif.
-
-## Pengembangan lokal
-
-```bash
-composer run setup
 composer run dev
 ```
 
-Jalankan pemeriksaan sebelum membuat pull request:
+## Pemeriksaan
 
 ```bash
-composer test
-./vendor/bin/pint --test
+php artisan test
 npm run build
 ```
 
-## Catatan keamanan
-
-- Jangan commit `.env`, credential, private key, atau backup database.
-- Gunakan password database yang kuat dan `APP_DEBUG=false` di production.
-- Endpoint admin, manager, receptionist, dan guest dibatasi berdasarkan role.
-- Status pembayaran online hanya boleh dianggap final setelah callback Midtrans
-  yang valid diterima. Room Service folio diselesaikan oleh Front Desk.
-- Pasang TLS pada reverse proxy atau platform ingress saat digunakan di internet.
+Jangan commit `.env`, password database, key Midtrans, key reCAPTCHA, credential email, private key SSH, atau backup database.
