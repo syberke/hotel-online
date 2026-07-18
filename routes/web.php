@@ -34,6 +34,7 @@ use App\Http\Controllers\CoreFacilityViewController;
 use App\Http\Controllers\LiveReportViewController;
 use App\Http\Controllers\CoreManagerReportController;
 use App\Http\Controllers\StaffRoomDetailController;
+use App\Http\Controllers\StaffRoomServiceController;
 
 Route::post('/midtrans/callback', [PaymentGatewayController::class, 'handleMidtransCallback']);
 
@@ -144,7 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/front-desk', [OperationalViewController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
-        Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
+        Route::get('/room-service-orders', [StaffRoomServiceController::class, 'index'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [StaffRestaurantController::class, 'index'])->name('restaurant');
         Route::redirect('/restaurant/venues', '/manager/restaurant-gastronomy?view=venues')->name('restaurant.venues');
         Route::get('/facilities-wellness', [CoreFacilityViewController::class, 'adminFacilitiesView'])->name('facilities');
@@ -169,7 +170,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/front-desk', [OperationalViewController::class, 'adminFrontDeskView'])->name('frontdesk');
         Route::get('/folio', [FolioController::class, 'show'])->name('folio');
         Route::get('/rooms-inventory', [AdminOperationController::class, 'adminRoomsInventoryView'])->name('rooms');
-        Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
+        Route::get('/room-service-orders', [StaffRoomServiceController::class, 'index'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [StaffRestaurantController::class, 'index'])->name('restaurant');
         Route::redirect('/restaurant/menu', '/admin/restaurant-gastronomy?view=venues')->name('restaurant.menu');
         Route::redirect('/restaurant/venues', '/admin/restaurant-gastronomy?view=venues')->name('restaurant.venues');
