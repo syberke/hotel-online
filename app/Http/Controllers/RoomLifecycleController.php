@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
+use App\Services\BookingFolioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RoomLifecycleController extends FrontOfficeCheckController
 {
+    public function __construct(private readonly BookingFolioService $folioService)
+    {
+    }
+
     public function adminStoreRoom(Request $request)
     {
         if (auth()->user()->role === 'manager') {
@@ -17,15 +21,13 @@ class RoomLifecycleController extends FrontOfficeCheckController
         $validated = $request->validate([
             'room_number' => ['required', 'string', 'unique:rooms,room_number'],
             'room_type_id' => ['required', 'integer', 'exists:room_types,id'],
-            'status' => ['required', 'string', 'in:available,occupied,maintenance,dirty'],
+            'status' => ['required', 'string', 'in:available,occupied,maintenance'],
         ]);
-
-        $status = $validated['status'] === 'dirty' ? 'maintenance' : $validated['status'];
 
         DB::table('rooms')->insert([
             'room_number' => $validated['room_number'],
             'room_type_id' => $validated['room_type_id'],
-            'status' => $status,
+            'status' => $validated['status'],
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -40,29 +42,63 @@ class RoomLifecycleController extends FrontOfficeCheckController
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:available,occupied,maintenance,dirty'],
+            'status' => ['required', 'string', 'in:available,occupied,maintenance'],
         ]);
 
-        $status = $validated['status'] === 'dirty' ? 'maintenance' : $validated['status'];
-
         DB::table('rooms')->where('id', $id)->update([
-            'status' => $status,
+            'status' => $validated['status'],
             'updated_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Manifes status operasional unit kamar berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Status operasional kamar berhasil diperbarui.');
     }
 
     public function processCheckOut(Request $request)
     {
-        $search = $request->input('search');
-        $bookingId = $request->input('booking_id');
+        if ($request->isMethod('post') && $request->has('confirm_checkout_id')) {
+            $targetId = $request->integer('confirm_checkout_id');
+            $bookingRecord = DB::table('bookings')->where('id', $targetId)->first();
+            $ledger = $targetId ? $this->folioService->build($targetId) : null;
 
-        $selectedBooking = null;
-        $charges = [];
-        $totalCharges = 0;
-        $totalPayments = 0;
-        $balanceDue = 0;
+            if (! $bookingRecord || $bookingRecord->status !== 'checked_in') {
+                return redirect()
+                    ->route('receptionist.checkout')
+                    ->with('error', 'Tamu ini tidak lagi aktif untuk check-out.');
+            }
+
+            if (! $ledger) {
+                return redirect()
+                    ->route('receptionist.checkout', ['booking_id' => $targetId])
+                    ->with('error', 'Folio reservasi tidak dapat ditemukan.');
+            }
+
+            if ((float) $ledger['balance_due'] > 0) {
+                return redirect()
+                    ->route('receptionist.payments', ['booking_id' => $targetId])
+                    ->with('error', 'Check-out ditahan karena masih ada saldo folio Rp '
+                        . number_format($ledger['balance_due'], 0, ',', '.')
+                        . ', termasuk Room Service yang belum dibayar.');
+            }
+
+            DB::transaction(function () use ($bookingRecord): void {
+                DB::table('bookings')->where('id', $bookingRecord->id)->update([
+                    'status' => 'checked_out',
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('rooms')->where('id', $bookingRecord->room_id)->update([
+                    'status' => 'maintenance',
+                    'updated_at' => now(),
+                ]);
+            });
+
+            return redirect()
+                ->route('receptionist.dashboard')
+                ->with('success', 'Check-out berhasil diselesaikan dan folio sudah lunas.');
+        }
+
+        $search = trim((string) $request->input('search'));
+        $bookingId = $request->integer('booking_id');
 
         $activeBookingsQuery = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
@@ -82,86 +118,53 @@ class RoomLifecycleController extends FrontOfficeCheckController
                 'room_types.price as room_price'
             );
 
-        if ($search) {
-            $activeBookingsQuery->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhere('rooms.room_number', 'like', "%{$search}%")
-                    ->orWhere('bookings.id', 'like', "%{$search}%");
+        if ($search !== '') {
+            $cleanId = preg_replace('/\D+/', '', $search);
+            $needle = '%' . strtolower($search) . '%';
+
+            $activeBookingsQuery->where(function ($query) use ($cleanId, $needle, $search) {
+                $query->whereRaw("LOWER(COALESCE(users.name, '')) LIKE ?", [$needle])
+                    ->orWhere('rooms.room_number', 'like', '%' . $search . '%');
+
+                if ($cleanId !== '') {
+                    $query->orWhere('bookings.id', (int) $cleanId);
+                }
             });
         }
 
-        $activeBookings = $activeBookingsQuery->orderBy('bookings.created_at', 'desc')->get();
+        $activeBookings = $activeBookingsQuery
+            ->orderByDesc('bookings.created_at')
+            ->get();
+
+        if (! $bookingId && $activeBookings->isNotEmpty()) {
+            $bookingId = (int) (($search !== '' ? $activeBookings->first() : $activeBookings->firstWhere('status', 'checked_in'))?->id
+                ?? $activeBookings->first()->id);
+        }
+
+        $selectedBooking = null;
+        $charges = [];
+        $totalCharges = 0.0;
+        $totalPayments = 0.0;
+        $balanceDue = 0.0;
 
         if ($bookingId) {
-            $selectedBooking = $activeBookings->firstWhere('id', $bookingId);
-        } elseif ($search && $activeBookings->isNotEmpty()) {
-            $selectedBooking = $activeBookings->first();
-        } elseif ($activeBookings->isNotEmpty()) {
-            $selectedBooking = $activeBookings->firstWhere('status', 'checked_in') ?? $activeBookings->first();
-        }
+            $ledger = $this->folioService->build($bookingId);
 
-        if ($selectedBooking) {
-            $selectedBooking->guest_name = $selectedBooking->guest_name ?? 'Tamu';
-            $selectedBooking->room_number = $selectedBooking->room_number ?? 'TBD';
-            $selectedBooking->room_type = $selectedBooking->room_type ?? 'Standard';
-            $selectedBooking->room_price = $selectedBooking->room_price ?? 0;
-
-            $checkInDate = Carbon::parse($selectedBooking->check_in);
-            $checkOutDate = Carbon::parse($selectedBooking->check_out);
-            $nights = $checkInDate->diffInDays($checkOutDate) ?: 1;
-
-            for ($i = 0; $i < $nights; $i++) {
-                $charges[] = [
-                    'date' => $checkInDate->copy()->addDays($i)->format('d M Y'),
-                    'description' => "Room Charge ({$selectedBooking->room_type})",
-                    'reference' => "Room {$selectedBooking->room_number}",
-                    'debit' => $selectedBooking->room_price,
-                    'credit' => 0,
-                ];
-                $totalCharges += $selectedBooking->room_price;
+            if ($ledger && $activeBookings->contains('id', $bookingId)) {
+                $selectedBooking = $ledger['booking'];
+                $charges = $ledger['charges']
+                    ->map(fn ($charge) => [
+                        'date' => $charge->date,
+                        'description' => $charge->description,
+                        'reference' => $charge->reference,
+                        'debit' => $charge->debit,
+                        'credit' => $charge->credit,
+                    ])
+                    ->all();
+                $totalCharges = $ledger['total_charges'];
+                $totalPayments = $ledger['total_payments'];
+                $balanceDue = $ledger['balance_due'];
             }
-
-            $extraServices = DB::table('payments')
-                ->where('booking_id', $selectedBooking->id)
-                ->where('payment_status', 'paid')
-                ->whereNull('restaurant_order_id')
-                ->get();
-
-            foreach ($extraServices as $service) {
-                $totalPayments += $service->amount;
-                $charges[] = [
-                    'date' => Carbon::parse($service->created_at)->format('d M Y'),
-                    'description' => 'Advance Deposit / System Payment',
-                    'reference' => 'PAY-00' . $service->id,
-                    'debit' => 0,
-                    'credit' => $service->amount,
-                ];
-            }
-
-            $balanceDue = max(0, $totalCharges - $totalPayments);
-        }
-
-        if ($request->isMethod('post') && $request->has('confirm_checkout_id')) {
-            $targetId = $request->input('confirm_checkout_id');
-            $bookingRecord = DB::table('bookings')->where('id', $targetId)->first();
-
-            if ($bookingRecord && $bookingRecord->status === 'checked_in') {
-                DB::transaction(function () use ($bookingRecord) {
-                    DB::table('bookings')->where('id', $bookingRecord->id)->update([
-                        'status' => 'checked_out',
-                        'updated_at' => now(),
-                    ]);
-
-                    DB::table('rooms')->where('id', $bookingRecord->room_id)->update([
-                        'status' => 'maintenance',
-                        'updated_at' => now(),
-                    ]);
-                });
-
-                return redirect()->route('receptionist.dashboard')->with('success', 'Proses check-out Kamar berhasil diselesaikan.');
-            }
-
-            return redirect()->route('receptionist.checkout')->with('error', 'Tamu ini tidak lagi aktif untuk check-out.');
         }
 
         return view('receptionist.checkout', compact(
