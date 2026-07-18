@@ -91,8 +91,6 @@ class ReceptionistDashboardController extends Controller
         }
         $svgPathD = 'M ' . implode(' L ', $svgPoints);
 
-        // PostgreSQL room_status_enum only permits available, occupied, and maintenance.
-        // Rooms are moved to maintenance after checkout until housekeeping marks them available.
         $maintenanceRooms = DB::table('rooms')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->where('rooms.status', 'maintenance')
@@ -131,20 +129,18 @@ class ReceptionistDashboardController extends Controller
             ->get();
 
         $vacantClean = DB::table('rooms')->where('status', 'available')->count();
-        $outOfService = $maintenanceRooms->count();
-        $vacantDirty = 0;
-        $outOfOrder = $outOfService;
+        $outOfOrder = $maintenanceRooms->count();
 
         $attentionAlerts = collect();
         if ($maintenanceRooms->isNotEmpty()) {
             $attentionAlerts->push([
                 'tone' => 'amber',
-                'icon' => 'fa-broom',
-                'title' => $maintenanceRooms->count() . ' room(s) need housekeeping or maintenance',
-                'description' => 'Rooms move to maintenance after checkout and remain unavailable until staff marks them ready.',
+                'icon' => 'fa-screwdriver-wrench',
+                'title' => $maintenanceRooms->count() . ' room(s) in maintenance',
+                'description' => 'Rooms remain unavailable until staff marks them ready in the room inventory.',
                 'items' => $maintenanceRooms->take(5)->map(fn ($room) => 'Room ' . $room->room_number . ' · ' . ($room->room_type ?: 'Unknown type'))->all(),
-                'url' => route('receptionist.housestatus'),
-                'action' => 'Review room readiness',
+                'url' => route('receptionist.roomavailability', ['status' => 'maintenance']),
+                'action' => 'Review maintenance rooms',
             ]);
         }
         if ($pendingPayments->isNotEmpty()) {
@@ -175,7 +171,7 @@ class ReceptionistDashboardController extends Controller
             'checkoutsToday', 'expectedCheckouts', 'inhouseGuests', 'inhouseReservations',
             'revenueToday', 'revenueDiffPct', 'arrivals', 'arrivalsCount', 'inHouseTabCount',
             'departuresTabCount', 'noShowTabCount', 'trendDates', 'svgPathD',
-            'vacantClean', 'vacantDirty', 'outOfOrder', 'outOfService', 'attentionAlerts'
+            'vacantClean', 'outOfOrder', 'attentionAlerts'
         ));
     }
 }
