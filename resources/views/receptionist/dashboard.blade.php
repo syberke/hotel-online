@@ -1,8 +1,7 @@
 <x-receptionist-dashboard-layout>
     @php
-        $vacantCleanPct = $totalRooms > 0 ? ($vacantClean / $totalRooms) * 100 : 0;
-        $vacantDirtyPct = $totalRooms > 0 ? ($vacantDirty / $totalRooms) * 100 : 0;
-        $outOfOrderPct = $totalRooms > 0 ? ($outOfOrder / $totalRooms) * 100 : 0;
+        $availablePct = $totalRooms > 0 ? ($vacantClean / $totalRooms) * 100 : 0;
+        $maintenancePct = $totalRooms > 0 ? ($outOfOrder / $totalRooms) * 100 : 0;
         $occupiedPct = $totalRooms > 0 ? ($occupiedRooms / $totalRooms) * 100 : 0;
         $alertTones = [
             'rose' => ['border-rose-200 bg-rose-50', 'text-rose-600', 'text-rose-900', 'text-rose-700', 'bg-rose-100 text-rose-800'],
@@ -57,7 +56,7 @@
                                             @elseif($booking->booking_status === 'checked_in')
                                                 <a href="{{ route('receptionist.folio', ['booking_id' => $booking->booking_id]) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-file-invoice"></i>Folio</a>
                                             @else
-                                                <span class="text-xs text-slate-400">Closed</span>
+                                                <span class="text-xs text-slate-500">Closed</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -78,17 +77,17 @@
 
             <aside class="min-w-0 space-y-6">
                 <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div class="border-b border-slate-100 pb-4"><p class="text-xs font-medium text-slate-500">Current inventory</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Room status</h3></div>
+                    <div class="border-b border-slate-100 pb-4"><p class="text-xs font-medium text-slate-500">Current inventory</p><h3 class="mt-1 text-lg font-semibold text-slate-900">Physical room status</h3></div>
                     <div class="mt-5 space-y-5">
                         @foreach([
+                            ['Available', $vacantClean, $availablePct, 'bg-emerald-500'],
                             ['Occupied', $occupiedRooms, $occupiedPct, 'bg-blue-600'],
-                            ['Vacant clean', $vacantClean, $vacantCleanPct, 'bg-emerald-500'],
-                            ['Vacant dirty', $vacantDirty, $vacantDirtyPct, 'bg-amber-500'],
-                            ['Out of order', $outOfOrder, $outOfOrderPct, 'bg-rose-500'],
+                            ['Maintenance', $outOfOrder, $maintenancePct, 'bg-amber-500'],
                         ] as [$label, $count, $percentage, $barClass])
                             <div><div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-600">{{ $label }}</span><span class="font-semibold text-slate-900">{{ $count }} · {{ round($percentage) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $barClass }}" style="width: {{ min(100, $percentage) }}%"></div></div></div>
                         @endforeach
                     </div>
+                    <a href="{{ route('receptionist.roomavailability') }}" class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800">Open room map<i class="fa-solid fa-arrow-right text-xs"></i></a>
                 </article>
 
                 <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
