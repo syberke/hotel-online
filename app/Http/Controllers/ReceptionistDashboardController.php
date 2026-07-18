@@ -132,6 +132,8 @@ class ReceptionistDashboardController extends Controller
 
         $vacantClean = DB::table('rooms')->where('status', 'available')->count();
         $outOfService = $maintenanceRooms->count();
+        $vacantDirty = 0;
+        $outOfOrder = $outOfService;
 
         $attentionAlerts = collect();
         if ($maintenanceRooms->isNotEmpty()) {
@@ -173,7 +175,7 @@ class ReceptionistDashboardController extends Controller
             'checkoutsToday', 'expectedCheckouts', 'inhouseGuests', 'inhouseReservations',
             'revenueToday', 'revenueDiffPct', 'arrivals', 'arrivalsCount', 'inHouseTabCount',
             'departuresTabCount', 'noShowTabCount', 'trendDates', 'svgPathD',
-            'vacantClean', 'outOfService', 'attentionAlerts'
+            'vacantClean', 'vacantDirty', 'outOfOrder', 'outOfService', 'attentionAlerts'
         ));
     }
 }
