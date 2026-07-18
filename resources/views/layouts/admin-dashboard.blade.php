@@ -23,7 +23,6 @@
             'Operations' => array_values(array_filter([
                 [Route::has($portalPrefix . '.reservation') ? $portalPrefix . '.reservation' : null, 'fa-calendar-check', 'Reservations'],
                 [Route::has($portalPrefix . '.frontdesk') ? $portalPrefix . '.frontdesk' : null, 'fa-bell-concierge', 'Front Desk'],
-                [Route::has($portalPrefix . '.folio') ? $portalPrefix . '.folio' : null, 'fa-file-invoice', 'Folio'],
                 [Route::has($portalPrefix . '.rooms') ? $portalPrefix . '.rooms' : null, 'fa-bed', 'Rooms & Inventory'],
                 [Route::has($portalPrefix . '.roomservice') ? $portalPrefix . '.roomservice' : null, 'fa-bowl-food', 'Room Service'],
                 [Route::has($portalPrefix . '.restaurant') ? $portalPrefix . '.restaurant' : null, 'fa-utensils', 'Restaurant'],
@@ -95,6 +94,10 @@
 
                     @if(request()->routeIs('admin.facilities') && !$isManager)
                         <section class="flex min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><p class="text-sm font-semibold text-blue-600">Facility master data</p><p class="mt-1 text-sm text-slate-500">Add a new facility area to the hotel inventory.</p></div><button type="button" onclick="openCreateFacilityModal()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-plus text-xs"></i>Add facility</button></section>
+                    @endif
+
+                    @if(request()->routeIs('admin.rooms', 'manager.rooms'))
+                        @include('admin.partials.room-status-guide')
                     @endif
 
                     {{ $slot }}
