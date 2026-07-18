@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminOperationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -33,6 +34,16 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/admin/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail'])
+        ->whereNumber('id')
+        ->name('admin.finance.transaction.detail');
+
+    Route::get('/manager/finance/transaction/{id}/detail', [AdminOperationController::class, 'adminTransactionDetail'])
+        ->whereNumber('id')
+        ->name('manager.finance.transaction.detail');
 });
 
 Route::middleware('auth')->group(function () {
