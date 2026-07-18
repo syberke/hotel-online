@@ -1,15 +1,12 @@
 @php
-    $midtransReady = filled(config('services.midtrans.client_key'))
-        && filled(config('services.midtrans.server_key'));
     $activeBookingId = $currentBooking->booking_id ?? null;
     $menuPayload = $menus->map(fn ($menu) => [
         'id' => (int) $menu->id,
         'name' => $menu->name,
         'price' => (int) round($menu->price),
-        'category' => $menu->category ?? 'main course',
+        'category' => $menu->category ?? 'Main Courses',
         'description' => $menu->description ?? '',
         'foto_url' => $menu->foto_url ?? '',
-        'sales_count' => (int) ($menu->sales_count ?? 0),
     ])->values()->all();
 @endphp
 
@@ -20,16 +17,13 @@
         x-data="{
             searchQuery: '',
             selectedCategory: 'all',
-            sortBy: 'popular',
-            paymentLoading: false,
+            sortBy: 'name',
             cart: JSON.parse(localStorage.getItem('oasis_room_service_cart') || '[]'),
             taxRate: 0.11,
             serviceRate: 0.10,
             allMenus: JSON.parse(document.getElementById('room-service-menu-data')?.textContent || '[]'),
             init() {
-                if ({{ session('success') ? 'true' : 'false' }}) {
-                    this.clearCart();
-                }
+                if ({{ session('success') ? 'true' : 'false' }}) this.clearCart();
                 this.$watch('cart', value => localStorage.setItem('oasis_room_service_cart', JSON.stringify(value)));
             },
             addToCart(item) {
@@ -63,6 +57,9 @@
             get tax() { return Math.round((this.subtotal + this.serviceCharge) * this.taxRate); },
             get grandTotal() { return this.subtotal + this.serviceCharge + this.tax; },
             get totalItems() { return this.cart.reduce((sum, item) => sum + item.quantity, 0); },
+            get categories() {
+                return ['all', ...new Set(this.allMenus.map(menu => menu.category).filter(Boolean))];
+            },
             get filteredMenus() {
                 let result = [...this.allMenus];
                 if (this.selectedCategory !== 'all') {
@@ -74,90 +71,8 @@
                 }
                 if (this.sortBy === 'low-to-high') result.sort((a, b) => a.price - b.price);
                 else if (this.sortBy === 'high-to-low') result.sort((a, b) => b.price - a.price);
-                else result.sort((a, b) => b.sales_count - a.sales_count);
+                else result.sort((a, b) => a.name.localeCompare(b.name));
                 return result;
-            },
-            async payNow() {
-                if (this.cart.length === 0 || this.paymentLoading) return;
-
-                if (!{{ $activeBookingId ? 'true' : 'false' }}) {
-                    window.OasisDialog?.error('Tidak ada reservasi aktif yang dapat menerima Room Service.', 'Room unavailable');
-                    return;
-                }
-
-                if (!{{ $midtransReady ? 'true' : 'false' }} || !window.snap || typeof window.snap.pay !== 'function') {
-                    window.OasisDialog?.error('Midtrans Snap belum tersedia. Periksa konfigurasi pembayaran lalu muat ulang halaman.', 'Payment unavailable');
-                    return;
-                }
-
-                this.paymentLoading = true;
-
-                try {
-                    const response = await fetch('{{ route('room.service.pay') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            booking_id: {{ $activeBookingId ?: 'null' }},
-                            cart_data: this.cart.map(item => ({ id: item.id, quantity: item.quantity }))
-                        })
-                    });
-                    const payload = await response.json();
-
-                    if (!response.ok || !payload.success || !payload.token) {
-                        throw new Error(payload.message || 'Token pembayaran Room Service tidak dapat dibuat.');
-                    }
-
-                    const orderId = payload.order_id;
-                    this.clearCart();
-
-                    window.snap.pay(payload.token, {
-                        onSuccess: async () => {
-                            try {
-                                const settleResponse = await fetch('{{ route('room.service.settle') }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Accept': 'application/json',
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                    },
-                                    body: JSON.stringify({ order_id: orderId })
-                                });
-                                const settlePayload = await settleResponse.json();
-                                if (!settleResponse.ok || !settlePayload.success) {
-                                    throw new Error(settlePayload.message || 'Pembayaran berhasil, tetapi sinkronisasi pesanan gagal.');
-                                }
-                                await window.OasisDialog?.success('Pembayaran berhasil. Pesanan Room Service sudah diteruskan ke dapur.');
-                                window.location.reload();
-                            } catch (error) {
-                                this.paymentLoading = false;
-                                window.OasisDialog?.error(error.message || 'Sinkronisasi pembayaran gagal.');
-                            }
-                        },
-                        onPending: async () => {
-                            this.paymentLoading = false;
-                            await window.OasisDialog?.info('Transaksi Room Service masih menunggu pembayaran. Pesanan tersimpan sebagai pending.', 'Payment pending');
-                            window.location.reload();
-                        },
-                        onError: async () => {
-                            this.paymentLoading = false;
-                            await window.OasisDialog?.error('Pembayaran Room Service ditolak atau gagal diproses.');
-                            window.location.reload();
-                        },
-                        onClose: () => {
-                            this.paymentLoading = false;
-                            window.location.reload();
-                        }
-                    });
-                } catch (error) {
-                    this.paymentLoading = false;
-                    window.OasisDialog?.error(error.message || 'Gateway pembayaran Room Service tidak dapat dihubungi.');
-                }
             }
         }"
         class="space-y-6"
@@ -174,6 +89,7 @@
                 <span>{{ session('success') }}</span>
             </div>
         @endif
+
         @if(session('error'))
             <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
                 <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
@@ -191,7 +107,7 @@
                         Available 24 hours
                     </span>
                     <h2 class="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">Room Service</h2>
-                    <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">Order to your room, pay securely now, or add the charge to your room folio for Front Desk settlement.</p>
+                    <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">Order meals directly to your room. The charge is added automatically to your room folio and settled together with the final hotel bill.</p>
                 </div>
 
                 <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
@@ -216,24 +132,22 @@
             </div>
         </section>
 
-        @if(!$midtransReady)
-            <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
-                <div>
-                    <p class="font-semibold">Online payment is not configured</p>
-                    <p class="mt-1 text-amber-800">Pay Now requires valid Midtrans keys. Charge to room folio remains available.</p>
-                </div>
+        <div class="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <i class="fa-solid fa-file-invoice-dollar mt-0.5"></i>
+            <div>
+                <p class="font-semibold">No payment is required now</p>
+                <p class="mt-1 text-blue-800">Room Service is not included in the room rate. Every order is recorded as a pending folio charge and paid through Front Desk during checkout.</p>
             </div>
-        @endif
+        </div>
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
             <div class="min-w-0 space-y-5">
                 <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                     <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                        <template x-for="category in ['all', 'breakfast', 'main courses', 'desserts', 'beverages']" :key="category">
+                        <template x-for="category in categories" :key="category">
                             <button type="button" @click="selectedCategory = category" :class="selectedCategory === category ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'" class="inline-flex min-w-max items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition">
-                                <i class="fa-solid" :class="category === 'all' ? 'fa-utensils' : (category === 'breakfast' ? 'fa-egg' : (category === 'main courses' ? 'fa-bowl-food' : (category === 'desserts' ? 'fa-ice-cream' : 'fa-mug-hot')))"></i>
-                                <span x-text="category === 'all' ? 'All menu' : category.replace(/\b\w/g, letter => letter.toUpperCase())"></span>
+                                <i class="fa-solid" :class="category === 'all' ? 'fa-utensils' : 'fa-bowl-food'"></i>
+                                <span x-text="category === 'all' ? 'All menu' : category"></span>
                             </button>
                         </template>
                     </div>
@@ -245,7 +159,7 @@
                             <input type="search" x-model="searchQuery" placeholder="Search meals or drinks" class="w-full rounded-xl border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm">
                         </label>
                         <select x-model="sortBy" class="w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
-                            <option value="popular">Most popular</option>
+                            <option value="name">Name</option>
                             <option value="low-to-high">Price: low to high</option>
                             <option value="high-to-low">Price: high to low</option>
                         </select>
@@ -322,28 +236,20 @@
                     <div class="flex justify-between text-slate-500"><span>Subtotal</span><span class="font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(subtotal)"></span></div>
                     <div class="flex justify-between text-slate-500"><span>Service charge</span><span class="font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(serviceCharge)"></span></div>
                     <div class="flex justify-between text-slate-500"><span>Tax</span><span class="font-semibold text-slate-900" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(tax)"></span></div>
-                    <div class="flex justify-between border-t border-slate-100 pt-3"><span class="font-semibold text-slate-900">Total</span><span class="text-lg font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(grandTotal)"></span></div>
+                    <div class="flex justify-between border-t border-slate-100 pt-3"><span class="font-semibold text-slate-900">Total folio charge</span><span class="text-lg font-semibold text-blue-700" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(grandTotal)"></span></div>
                 </div>
 
                 @if($currentBooking)
-                    <div x-show="cart.length > 0" x-cloak class="mt-5 space-y-3">
-                        <button type="button" @click="payNow()" :disabled="paymentLoading || !{{ $midtransReady ? 'true' : 'false' }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-45">
-                            <i class="fa-solid" :class="paymentLoading ? 'fa-circle-notch animate-spin' : 'fa-credit-card'"></i>
-                            <span x-text="paymentLoading ? 'Opening payment...' : 'Pay now'"></span>
+                    <form action="{{ route('room.service.order') }}" method="POST" x-show="cart.length > 0" x-cloak class="mt-5 space-y-3">
+                        @csrf
+                        <input type="hidden" name="cart_data" :value="JSON.stringify(cart.map(item => ({ id: item.id, quantity: item.quantity })))">
+                        <input type="hidden" name="booking_id" value="{{ $activeBookingId }}">
+                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                            <i class="fa-solid fa-bell-concierge text-xs"></i>
+                            Place order & add to folio
                         </button>
-
-                        <form action="{{ route('room.service.order') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="cart_data" :value="JSON.stringify(cart.map(item => ({ id: item.id, quantity: item.quantity })))">
-                            <input type="hidden" name="booking_id" value="{{ $activeBookingId }}">
-                            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
-                                <i class="fa-solid fa-file-invoice-dollar text-xs"></i>
-                                Charge to room folio
-                            </button>
-                        </form>
-
-                        <p class="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">Pay Now marks the order paid after Midtrans verification. Charge to room creates a pending folio charge for Front Desk settlement.</p>
-                    </div>
+                        <p class="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">No payment popup will open. The full amount is recorded on Room {{ $currentBooking->room_number }} and settled at checkout.</p>
+                    </form>
                 @else
                     <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">A confirmed or checked-in reservation is required before placing Room Service.</div>
                 @endif
@@ -352,7 +258,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-medium text-slate-500">Recent activity</p>
-                            <h4 class="mt-1 text-sm font-semibold text-slate-900">Room Service payments</h4>
+                            <h4 class="mt-1 text-sm font-semibold text-slate-900">Room Service charges</h4>
                         </div>
                         <a href="{{ route('guest.restaurant.orders') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700">View all</a>
                     </div>
@@ -365,8 +271,8 @@
                                     ? 'bg-emerald-50 text-emerald-700'
                                     : ($paymentStatus === 'failed' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700');
                                 $statusLabel = $paymentStatus === 'paid'
-                                    ? 'Paid'
-                                    : ($paymentStatus === 'failed' ? 'Payment failed' : 'Pending / folio');
+                                    ? 'Settled'
+                                    : ($paymentStatus === 'failed' ? 'Settlement failed' : 'On room folio');
                             @endphp
                             <div class="rounded-xl bg-slate-50 p-3">
                                 <div class="flex items-start justify-between gap-3">
@@ -382,15 +288,11 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">No previous Room Service payments.</div>
+                            <div class="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">No previous Room Service charges.</div>
                         @endforelse
                     </div>
                 </div>
             </aside>
         </div>
     </div>
-
-    @if($midtransReady)
-        <script src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
-    @endif
 </x-guest-dashboard-layout>
