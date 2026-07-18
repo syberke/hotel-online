@@ -43,4 +43,23 @@ class RoomServicePaymentFlowTest extends TestCase
         $this->assertStringContainsString("'payment_status' => 'pending'", $controller);
         $this->assertStringContainsString('Room Service charged to room folio', $controller);
     }
+
+    public function test_checkout_payment_and_folio_share_the_same_room_service_ledger(): void
+    {
+        $service = file_get_contents(app_path('Services/BookingFolioService.php'));
+        $checkout = file_get_contents(app_path('Http/Controllers/RoomLifecycleController.php'));
+        $payments = file_get_contents(app_path('Http/Controllers/FrontOfficeFlowController.php'));
+        $folio = file_get_contents(app_path('Http/Controllers/FolioController.php'));
+        $checkoutView = file_get_contents(resource_path('views/receptionist/checkout.blade.php'));
+
+        $this->assertStringContainsString("whereNotNull('payments.restaurant_order_id')", $service);
+        $this->assertStringContainsString('Room Service #', $service);
+        $this->assertStringContainsString("where('payments.payment_status', 'pending')", $service);
+        $this->assertStringContainsString("'payment_status' => 'paid'", $service);
+        $this->assertStringContainsString('BookingFolioService', $checkout);
+        $this->assertStringContainsString('BookingFolioService', $payments);
+        $this->assertStringContainsString('BookingFolioService', $folio);
+        $this->assertStringContainsString('Settle folio first', $checkoutView);
+        $this->assertStringContainsString('including Room Service', $checkoutView);
+    }
 }
