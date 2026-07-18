@@ -28,7 +28,7 @@ class StaffOperationsRoutesTest extends TestCase
     {
         $this->assertSame(
             ReceptionistGuestHistoryController::class . '@updateIdentity',
-            Route::getRoutes()->getByName('receptionist.guesthistory')?->getActionName(),
+            Route::getRoutes()->getByName('receptionist.guesthistory.identity.update')?->getActionName(),
         );
         $this->assertTrue(method_exists(ReceptionistGuestHistoryController::class, 'updateIdentity'));
     }
