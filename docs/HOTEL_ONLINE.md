@@ -1,9 +1,8 @@
 # Dokumentasi Oasis Hotel Online
 
-Dokumen ini menjelaskan tujuan aplikasi, fitur setiap role, alur operasional hotel, pembayaran, folio, struktur data penting, serta contoh pengisian placeholder yang digunakan pada panduan UKK.
+Dokumen ini hanya menjelaskan aplikasi dan fitur Hotel Online. Konfigurasi Ubuntu, Docker, database container, Nginx, SSH, FTP, dan load balancing berada di dokumen terpisah:
 
-Panduan instalasi Ubuntu, Docker, Nginx, MariaDB, SSH, FTP, dan load balancing tetap berada di:
-
+- [`DOCKER_UKK_LENGKAP.md`](DOCKER_UKK_LENGKAP.md)
 - [`UKK_MANUAL.md`](UKK_MANUAL.md)
 
 ---
@@ -25,39 +24,22 @@ Oasis Hotel Online adalah aplikasi manajemen hotel berbasis Laravel yang menghub
 - pengelolaan pesan Contact;
 - akses berbasis role.
 
-Aplikasi menggunakan Laravel Blade. Navigasi antarhalaman memuat halaman baru, tetapi posisi scroll sidebar staf disimpan agar tidak selalu kembali ke atas.
-
----
-
-## 2. Teknologi utama
+## 2. Teknologi aplikasi
 
 | Bagian | Teknologi |
 |---|---|
 | Backend | PHP 8.3+ dan Laravel 13 |
 | Tampilan | Blade, Tailwind CSS, Alpine.js |
 | Build frontend | Vite dan npm |
-| Database cloud | PostgreSQL, termasuk Supabase |
-| Database UKK Docker | MariaDB |
+| Database | PostgreSQL atau MariaDB |
 | Pembayaran reservasi | Midtrans Snap |
-| Autentikasi | Laravel Breeze, email verification, reset password |
+| Autentikasi | Laravel Breeze dan email verification |
 | Proteksi form | CSRF dan reCAPTCHA jika key tersedia |
 | PWA | Web App Manifest dan Service Worker |
-| Laporan | PhpSpreadsheet dan export laporan |
-| Pengujian | PHPUnit melalui `php artisan test` |
+| Laporan | PhpSpreadsheet |
+| Pengujian | PHPUnit |
 
-Status enum kamar final adalah:
-
-```text
-available
-occupied
-maintenance
-```
-
-Status `dirty` tidak digunakan pada database final. Kamar yang baru selesai checkout masuk ke `maintenance` sampai dinyatakan siap kembali.
-
----
-
-## 3. Role dan hak akses
+## 3. Role pengguna
 
 Sistem memiliki empat role:
 
@@ -66,103 +48,66 @@ Sistem memiliki empat role:
 3. Manager;
 4. Admin.
 
-### 3.1 Ringkasan hak akses
-
 | Modul | Guest | Receptionist | Manager | Admin |
 |---|---:|---:|---:|---:|
 | Halaman publik | Ya | Ya | Ya | Ya |
-| Booking kamar pribadi | Ya | Tidak | Lihat | Kelola |
+| Booking kamar | Milik sendiri | Tidak | Lihat | Kelola |
 | My Stay | Ya | Tidak | Tidak | Tidak |
-| Room Service | Pesan | Proses melalui folio | Lihat laporan | Kelola status |
+| Room Service | Pesan | Proses tagihan | Lihat laporan | Kelola status |
 | Check-in dan check-out | Tidak | Ya | Lihat | Lihat |
-| Room Assignment | Tidak | Ya | Lihat | Lihat dan kelola inventori |
-| Folio | Receipt pribadi | Lihat dan proses pembayaran | Lihat dan cetak | Lihat dan cetak |
-| Guest History | Profil pribadi | Lihat dan edit identitas | Lihat | Lihat |
-| Venue restoran | Lihat venue aktif | Tidak dikelola | CRUD | CRUD |
-| Contact Inbox | Kirim pesan | Tidak | Read-only | Update status dan hapus |
+| Room Assignment | Tidak | Ya | Lihat | Lihat inventori |
+| Folio | Receipt pribadi | Lihat dan bayar | Lihat dan cetak | Lihat dan cetak |
+| Guest History | Profil sendiri | Lihat dan edit identitas | Lihat | Lihat |
+| Venue restoran | Lihat | Tidak | CRUD | CRUD |
+| Contact Inbox | Kirim pesan | Tidak | Read-only | Kelola |
 | Reports | Tidak | Tidak | Ya | Ya |
-| User management | Profil sendiri | Tidak | Read-only | Kelola akun |
+| User management | Profil sendiri | Tidak | Read-only | Kelola |
 
-Manager umumnya read-only untuk transaksi sensitif. Pengecualian saat ini adalah CRUD venue restoran.
+Manager umumnya bersifat read-only untuk transaksi sensitif. Pengecualian saat ini adalah CRUD venue restoran.
 
 ---
 
 ## 4. Fitur publik
 
-### 4.1 Home
+### Home
 
-Home menampilkan:
+Home menampilkan pengenalan hotel, kamar unggulan, fasilitas, restoran, lokasi jika dikonfigurasi, FAQ, dan tombol menuju halaman utama lainnya.
 
-- pengenalan hotel;
-- kamar unggulan;
-- fasilitas;
-- restoran;
-- lokasi hotel jika koordinat sudah dikonfigurasi;
-- FAQ;
-- tombol menuju Rooms, Restaurant, Facilities, dan Contact.
-
-Form Check Room tidak ditempatkan di Home. Pengecekan tanggal dilakukan di halaman Rooms.
-
-### 4.2 Rooms
+### Rooms
 
 Halaman Rooms menyediakan:
 
-- daftar kamar;
-- tipe kamar;
+- daftar kamar dan tipe kamar;
 - harga;
 - kapasitas;
 - fasilitas kamar;
 - detail kamar;
-- tanggal check-in dan check-out;
+- pemilihan tanggal;
 - proses booking.
 
-### 4.3 Restaurant
+### Restaurant
 
-Halaman Restaurant membaca data asli dari database.
+Halaman Restaurant membaca menu dan venue dari database.
 
-Data menu memuat:
+Data menu mencakup nama, kategori, deskripsi, harga, gambar, dan status ketersediaan.
 
-- nama;
-- kategori;
-- deskripsi;
-- harga;
-- gambar;
-- status tersedia.
+Data venue mencakup nama, lokasi, deskripsi, jam operasional, kapasitas, gambar, status reservasi, dan status aktif.
 
-Data venue memuat:
+### Facilities
 
-- nama venue;
-- lokasi;
-- deskripsi;
-- jam buka dan tutup;
-- kapasitas;
-- gambar;
-- status reservasi;
-- status aktif.
+Guest dapat melihat fasilitas dan membuat reservasi sesuai ketersediaan.
 
-### 4.4 Facilities
+### Contact
 
-Halaman Facilities menampilkan fasilitas aktif dan memungkinkan guest membuat reservasi sesuai ketersediaan.
+Pesan Contact disimpan ke tabel `contact_messages`.
 
-### 4.5 Contact
-
-Form Contact menyimpan pesan ke tabel `contact_messages`.
-
-Admin dapat:
-
-- melihat pesan;
-- mengubah status `new`, `in_progress`, atau `resolved`;
-- menghapus pesan;
-- membuka balasan email;
-- membuka panggilan telepon.
-
-Manager hanya dapat membaca pesan.
+Admin dapat membaca, mengubah status, menghapus, membuka balasan email, dan menggunakan tombol Call. Manager hanya dapat membaca.
 
 ---
 
 ## 5. Autentikasi
 
-Fitur autentikasi meliputi:
+Fitur autentikasi:
 
 - Register;
 - Login;
@@ -172,45 +117,23 @@ Fitur autentikasi meliputi:
 - Verify Email;
 - Confirm Password;
 - Logout;
-- reCAPTCHA jika key tersedia.
-
-Checkbox Keep me signed in dapat diklik melalui kotak maupun teks labelnya.
-
----
+- reCAPTCHA jika dikonfigurasi.
 
 ## 6. Portal Guest
 
-### 6.1 Guest Dashboard
+### Guest Dashboard
 
-Menampilkan:
+Menampilkan booking aktif, status kamar, jadwal menginap, dan shortcut menuju layanan guest.
 
-- ringkasan booking aktif;
-- status kamar;
-- jadwal menginap;
-- shortcut ke My Bookings, My Stay, Room Service, Restaurant Orders, dan Facilities.
+### My Bookings
 
-### 6.2 My Bookings
+Guest dapat melihat booking, membayar reservasi pending melalui Midtrans, membatalkan booking sesuai ketentuan, serta membuka dan mencetak receipt.
 
-Guest dapat:
+### My Stay
 
-- melihat booking;
-- membayar reservasi pending melalui Midtrans;
-- membatalkan booking yang masih memenuhi ketentuan;
-- membuka receipt untuk status confirmed, checked-in, dan checked-out;
-- mencetak receipt.
+Guest dapat melihat kamar, tanggal menginap, status stay, digital key saat checked-in, service request, dan receipt.
 
-### 6.3 My Stay
-
-Guest dapat melihat:
-
-- kamar;
-- tanggal menginap;
-- status check-in atau check-out;
-- digital key saat checked-in;
-- service request;
-- receipt setelah checkout.
-
-### 6.4 Profile
+### Profile
 
 Guest dapat memperbarui data profil sesuai field yang tersedia.
 
@@ -218,151 +141,92 @@ Guest dapat memperbarui data profil sesuai field yang tersedia.
 
 ## 7. Room Service dan folio
 
-Room Service bukan makanan gratis yang otomatis termasuk pada harga kamar.
+Room Service adalah pesanan tambahan dan tidak otomatis termasuk harga kamar.
 
-Aturannya:
-
-- harga kamar membayar akomodasi;
-- sarapan hanya termasuk jika paket kamar menyebutkannya;
-- Room Service adalah pesanan tambahan;
-- guest tidak perlu membayar saat memesan;
-- biaya otomatis masuk ke folio kamar;
-- pembayaran dilakukan bersama tagihan akhir melalui Front Desk.
-
-Alur:
+Alurnya:
 
 ```text
 Guest memilih menu
-    ↓
-Place order & add to folio
-    ↓
-restaurant_orders dibuat
-    ↓
-restaurant_order_details dibuat
-    ↓
-payments dibuat sebagai pending
-    ↓
-biaya muncul pada Folio dan Checkout
-    ↓
-Receptionist menyelesaikan pembayaran
-    ↓
-payment_status menjadi paid
-    ↓
-Check-out dapat dilakukan
+→ Place order & add to folio
+→ restaurant_orders dibuat
+→ restaurant_order_details dibuat
+→ payments dibuat sebagai pending
+→ biaya muncul pada Folio dan Checkout
+→ Receptionist menerima pembayaran
+→ payment_status menjadi paid
+→ Check-out dapat dilakukan
 ```
 
-Record Room Service terhubung melalui:
+Room Service terhubung melalui:
 
 ```text
 payments.booking_id
 payments.restaurant_order_id
 ```
 
-Checkout harus ditahan jika `balance_due` masih lebih besar dari nol.
-
----
-
-## 8. Front Desk dan Receptionist
-
-### 8.1 Dashboard
-
-Receptionist Dashboard menampilkan:
-
-- occupancy;
-- check-in hari ini;
-- check-out hari ini;
-- in-house guests;
-- revenue hari ini;
-- expected arrivals;
-- room status;
-- Needs Attention.
-
-Needs Attention menyebutkan booking atau kamar yang perlu diproses, bukan hanya angka.
-
-### 8.2 Room Assignment
-
-Queue membaca booking pending dan confirmed yang masih membutuhkan konfirmasi kamar.
-
-Sistem memeriksa:
-
-- tipe kamar;
-- status kamar;
-- konflik tanggal;
-- status pembayaran;
-- status booking.
-
-### 8.3 Check-in
-
-Check-in hanya dilakukan pada booking yang valid dan kamar yang siap.
-
-### 8.4 Payments
-
-Halaman Payments menghitung:
+Perhitungan:
 
 ```text
-Total Charges = harga kamar + Room Service
-Total Payments = pembayaran yang sudah paid
+Total Charges = biaya kamar + Room Service
+Total Payments = seluruh pembayaran paid
 Balance Due = Total Charges - Total Payments
 ```
 
-Pembayaran Front Desk dapat menggunakan:
+Checkout ditahan selama `balance_due` lebih besar dari nol.
 
-- cash;
-- transfer;
-- credit card;
-- e-wallet.
+---
 
-### 8.5 Check-out
+## 8. Receptionist
 
-Check-out hanya dapat diselesaikan jika folio sudah lunas.
+### Dashboard
 
-Setelah checkout:
+Menampilkan occupancy, check-in, check-out, in-house guests, revenue, expected arrivals, room status, serta Needs Attention.
 
-- booking menjadi `checked_out`;
-- kamar menjadi `maintenance`;
-- receipt tetap dapat dibuka;
-- kamar harus dinyatakan `available` kembali melalui proses operasional.
+Needs Attention menyebutkan kamar atau booking yang perlu diproses dan menyediakan tombol menuju tindakan yang tepat.
 
-### 8.6 Guest History
+### Room Assignment
 
-Receptionist dapat melihat riwayat guest dan memperbarui:
+Queue membaca booking pending dan confirmed. Sistem memeriksa tipe kamar, status kamar, konflik tanggal, pembayaran, dan status booking.
 
-- nama;
-- nomor telepon;
-- nomor identitas;
-- alamat.
+### Check-in
 
-Email tidak diubah dari halaman ini karena digunakan sebagai penghubung akun dan histori.
+Check-in hanya dapat dilakukan untuk booking yang valid dan kamar yang siap.
 
-### 8.7 House Status
+### Payments
 
-Status kamar yang digunakan:
+Receptionist memproses pembayaran cash, transfer, credit card, atau e-wallet.
+
+### Check-out
+
+Checkout hanya dapat dilakukan setelah folio lunas. Setelah checkout, booking menjadi `checked_out` dan kamar menjadi `maintenance`.
+
+### Guest History
+
+Receptionist dapat memperbarui nama, nomor telepon, nomor identitas, dan alamat guest. Email tidak diubah dari fitur ini karena menjadi penghubung akun dan histori.
+
+### House Status
+
+Status kamar final:
 
 | Status | Arti |
 |---|---|
-| `available` | Kamar siap digunakan |
-| `occupied` | Kamar sedang ditempati |
-| `maintenance` | Kamar belum siap atau sedang diperbaiki |
+| `available` | Siap digunakan |
+| `occupied` | Sedang ditempati |
+| `maintenance` | Belum siap atau sedang diperbaiki |
+
+Status `dirty` tidak digunakan.
 
 ---
 
 ## 9. Admin dan Manager
 
-### 9.1 Rooms & Inventory
+### Rooms & Inventory
 
-Menyediakan:
+Menampilkan unit kamar, tipe, harga, kapasitas, status, dan detail tombol mata.
 
-- daftar kamar;
-- tipe kamar;
-- harga;
-- kapasitas;
-- status;
-- detail melalui tombol mata;
-- pengelolaan inventori sesuai hak role.
+### Restaurant
 
-### 9.2 Restaurant
-
-Halaman Restaurant staf memiliki tab:
+Halaman staf memiliki tab:
 
 ```text
 Orders
@@ -371,517 +235,48 @@ Venues
 
 Tab Today’s Menu sudah dihapus.
 
-Admin dan Manager dapat mengelola Venue langsung di tab Venues tanpa pindah halaman.
+Admin dan Manager dapat menambah, melihat, mengubah, mengaktifkan, menonaktifkan, dan menghapus venue sesuai aturan histori reservasi.
 
-CRUD Venue meliputi:
+### Facilities
 
-- Create;
-- Read;
-- Update;
-- Delete;
-- aktif atau nonaktif;
-- reservasi aktif atau nonaktif;
-- urutan tampil.
+Admin mengelola fasilitas dan status reservasinya. Manager dapat melihat data sesuai hak akses.
 
-Venue yang sudah memiliki histori reservasi sebaiknya dinonaktifkan, bukan dihapus.
+### Finance dan Folio
 
-### 9.3 Reports
+Admin dan Manager dapat melihat serta mencetak folio. Pembayaran operasional dilakukan Receptionist.
 
-Reports menampilkan data nyata dari database:
+### Reports
 
-- occupancy;
-- booking;
-- revenue;
-- top menu;
-- top facility;
-- ringkasan restoran;
-- ringkasan kamar;
-- export Excel dan PDF.
+Reports menggunakan data database untuk occupancy, booking, revenue, top menu, top facility, restoran, kamar, dan export.
 
-### 9.4 Folio
+### Contact Inbox
 
-Admin dan Manager dapat membuka serta mencetak folio. Proses pembayaran tetap dilakukan Receptionist.
+Admin dapat mengelola status dan menghapus pesan. Manager read-only.
 
 ---
 
 ## 10. Fitur yang sengaja tidak digunakan
 
-Fitur berikut sudah dihapus atau tidak digunakan:
-
 - Walk-in;
 - Today’s Menu sebagai tab staf;
 - status kamar `dirty`;
-- data folio dummy;
+- folio dummy;
 - charge dummy;
 - link action `#`;
 - pembayaran langsung Midtrans untuk Room Service.
 
-Jangan menambahkan kembali tombol menuju route tersebut tanpa kebutuhan operasional baru.
-
----
-
-# BAGIAN CONTOH PLACEHOLDER UKK
-
-## 11. Aturan menggunakan contoh
-
-Nilai pada bagian ini hanya simulasi agar mudah mengikuti panduan.
-
-Saat penguji memberikan IP, interface, gateway, atau DNS yang berbeda, ganti nilai contoh tersebut. Konfigurasi Docker tetap menggunakan nama service dan tidak memakai IP VM.
-
-Contoh simulasi yang digunakan:
-
-| Placeholder | Contoh isi | Keterangan |
-|---|---|---|
-| `<NAMA_SISWA>` | `budi` | Gunakan nama singkat tanpa spasi |
-| `<USERNAME>` | `ujikom` | Username Ubuntu |
-| `<NAMA_APLIKASI>` | `hotel-online` | Nama folder project |
-| `<PROJECT_PATH>` | `/home/ujikom/hotel-online` | Lokasi project Laravel |
-| `<IP_HOST>` | `172.20.3.2` | IP komputer penguji |
-| `<IP_VM1>` | `172.20.3.3` | IP deployment server |
-| `<IP_VM2>` | `172.20.3.4` | IP management server |
-| `<IP_VM>/<PREFIX>` | `172.20.3.3/24` | IP dan prefix Netplan VM1 |
-| `<GATEWAY>` | `172.20.3.1` | Gateway jaringan Bridge |
-| `<DNS>` | `8.8.8.8` | DNS contoh |
-| `<INTERFACE_NAT>` | `enp0s3` | Contoh saja, cek dengan `ip -br address` |
-| `<INTERFACE_BRIDGE>` | `enp0s8` | Contoh saja, cek dengan `ip -br address` |
-| `<DB_DATABASE>` | `oasis_hotel` | Nama database MariaDB |
-| `<DB_USERNAME>` | `oasis_hotel` | User database |
-| `<DB_PASSWORD>` | `UkkHotel123!` | Contoh password latihan |
-| `<MARIADB_ROOT_PASSWORD>` | `RootUkk123!` | Contoh password root latihan |
-| `<APP_KEY>` | `base64:HASIL_PERINTAH_KEY` | Dibuat dengan Artisan atau OpenSSL |
-
-Hostname contoh:
-
-```text
-VM1: budi-deployment
-VM2: budi-management
-```
-
-Gunakan tanda hubung pada hostname Linux agar lebih aman daripada underscore.
-
----
-
-## 12. Contoh mengganti placeholder pada command
-
-Command panduan:
-
-```bash
-cd /home/<USERNAME>/<NAMA_APLIKASI>
-```
-
-Contoh terisi:
-
-```bash
-cd /home/ujikom/hotel-online
-```
-
-Command panduan:
-
-```bash
-ping <IP_VM2>
-```
-
-Contoh terisi:
-
-```bash
-ping 172.20.3.4
-```
-
-Command panduan:
-
-```bash
-curl http://<IP_VM1>:8080
-```
-
-Contoh terisi:
-
-```bash
-curl http://172.20.3.3:8080
-```
-
-Command SSH panduan:
-
-```bash
-ssh <USERNAME>@<IP_VM2>
-```
-
-Contoh terisi:
-
-```bash
-ssh ujikom@172.20.3.4
-```
-
-Command FTP panduan:
-
-```bash
-ftp <IP_VM2>
-```
-
-Contoh terisi:
-
-```bash
-ftp 172.20.3.4
-```
-
-Akses browser panduan:
-
-```text
-http://<IP_VM1>:8080
-```
-
-Contoh terisi:
-
-```text
-http://172.20.3.3:8080
-```
-
----
-
-## 13. Contoh Netplan dengan placeholder
-
-File contoh:
-
-```text
-/etc/netplan/01-ukk.yaml
-```
-
-Template:
-
-```yaml
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    <INTERFACE_NAT>:
-      dhcp4: true
-    <INTERFACE_BRIDGE>:
-      dhcp4: false
-      addresses:
-        - <IP_VM>/<PREFIX>
-      routes:
-        - to: default
-          via: <GATEWAY>
-      nameservers:
-        addresses:
-          - <DNS>
-```
-
-Contoh terisi untuk VM1:
-
-```yaml
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    enp0s3:
-      dhcp4: true
-    enp0s8:
-      dhcp4: false
-      addresses:
-        - 172.20.3.3/24
-      routes:
-        - to: default
-          via: 172.20.3.1
-      nameservers:
-        addresses:
-          - 8.8.8.8
-```
-
-Contoh terisi untuk VM2 hanya mengganti IP Bridge:
-
-```yaml
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    enp0s3:
-      dhcp4: true
-    enp0s8:
-      dhcp4: false
-      addresses:
-        - 172.20.3.4/24
-      routes:
-        - to: default
-          via: 172.20.3.1
-      nameservers:
-        addresses:
-          - 8.8.8.8
-```
-
-Sebelum menyalin contoh, periksa interface:
-
-```bash
-ip -br address
-ip route
-```
-
-Terapkan dengan:
-
-```bash
-sudo netplan try
-sudo netplan apply
-```
-
-Pengujian VM1:
-
-```bash
-ping -c 4 172.20.3.4
-ping -c 4 8.8.8.8
-ping -c 4 google.com
-```
-
----
-
-## 14. Contoh `.env.docker`
-
-Template tetap menggunakan hostname service `database`, bukan IP VM.
-
-```env
-APP_NAME="Oasis Hotel"
-APP_ENV=production
-APP_DEBUG=false
-APP_KEY=base64:HASIL_PERINTAH_KEY
-APP_URL=http://172.20.3.3:8080
-
-DB_CONNECTION=mysql
-DB_HOST=database
-DB_PORT=3306
-DB_DATABASE=oasis_hotel
-DB_USERNAME=oasis_hotel
-DB_PASSWORD=UkkHotel123!
-
-MARIADB_ROOT_PASSWORD=RootUkk123!
-RUN_MIGRATIONS=false
-```
-
-Hal penting:
-
-```text
-DB_HOST=database
-```
-
-Jangan menggantinya menjadi:
-
-```text
-localhost
-127.0.0.1
-172.20.3.3
-```
-
-Cara membuat APP_KEY menggunakan container web setelah image berhasil dibangun:
-
-```bash
-docker compose run --rm web php artisan key:generate --show
-```
-
-Contoh hasil:
-
-```text
-base64:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=
-```
-
-Salin seluruh hasil tersebut ke `APP_KEY`.
-
----
-
-## 15. Contoh environment database pada Docker Compose
-
-```env
-DB_DATABASE=oasis_hotel
-DB_USERNAME=oasis_hotel
-DB_PASSWORD=UkkHotel123!
-MARIADB_ROOT_PASSWORD=RootUkk123!
-```
-
-Service database tetap bernama:
-
-```text
-database
-```
-
-Service aplikasi tetap bernama:
-
-```text
-web
-```
-
-Network dan volume UKK:
-
-```text
-network-ujikom
-volume-ujikom
-```
-
-Port:
-
-```text
-Load balancer: 8080:80
-Database:      3306:3306
-Web:           expose 80
-```
-
----
-
-## 16. Contoh deployment VM1 yang sudah terisi
-
-```bash
-cd /home/ujikom/hotel-online
-cp .env.docker.example .env
-nano .env
-chmod +x entrypoint.sh
-
-docker compose build
-docker compose up -d database
-
-docker compose run --rm \
-  -e RUN_MIGRATIONS=true \
-  web php artisan migrate --force
-
-docker compose up -d --build --scale web=3
-```
-
-Pemeriksaan:
-
-```bash
-docker compose ps
-docker compose logs
-docker compose logs web
-docker compose logs loadbalancer
-docker network inspect network-ujikom
-docker volume inspect volume-ujikom
-```
-
-Pengujian:
-
-```bash
-curl http://localhost:8080
-curl http://172.20.3.3:8080
-
-for i in {1..10}; do
-  curl http://localhost:8080/instance
-  echo
-done
-```
-
-Akses komputer penguji:
-
-```text
-http://172.20.3.3:8080
-```
-
----
-
-## 17. Contoh SSH passwordless
-
-Pada VM2:
-
-```bash
-sudo apt update
-sudo apt install -y openssh-server
-sudo systemctl enable --now ssh
-sudo systemctl status ssh
-```
-
-Pada VM1:
-
-```bash
-ssh-keygen -t ed25519
-ssh-copy-id ujikom@172.20.3.4
-ssh ujikom@172.20.3.4
-```
-
-Saat `ssh-keygen` meminta lokasi file dan passphrase untuk latihan UKK, tekan Enter sesuai arahan penguji.
-
-Bukti berhasil:
-
-```text
-VM1 dapat masuk ke VM2 tanpa mengetik password akun VM2.
-```
-
----
-
-## 18. Contoh FTP VM2
-
-Pada VM2:
-
-```bash
-sudo apt update
-sudo apt install -y vsftpd
-sudo systemctl enable --now vsftpd
-sudo systemctl status vsftpd
-```
-
-Contoh pengujian dari komputer host:
-
-```bash
-ftp 172.20.3.4
-```
-
-Login contoh:
-
-```text
-Username: ujikom
-Password: password akun Ubuntu VM2
-```
-
----
-
-## 19. Placeholder yang tidak boleh dimasukkan ke Docker
-
-IP berikut hanya digunakan untuk akses dan pengujian:
-
-```text
-<IP_HOST>
-<IP_VM1>
-<IP_VM2>
-<GATEWAY>
-<DNS>
-```
-
-IP tersebut tidak boleh ditulis sebagai alamat container pada:
-
-- Dockerfile;
-- `docker-compose.yml`;
-- `entrypoint.sh`;
-- `nginx.conf`.
-
-Komunikasi container harus menggunakan:
-
-```text
-web
-database
-```
-
-Contoh Nginx:
-
-```nginx
-upstream laravel_web {
-    server web:80;
-}
-```
-
-Contoh Laravel database:
-
-```env
-DB_HOST=database
-```
-
----
-
-## 20. Database utama
-
-Tabel penting aplikasi:
+## 11. Tabel database penting
 
 | Tabel | Fungsi |
 |---|---|
 | `users` | Akun dan role |
 | `guests` | Identitas guest |
-| `room_types` | Tipe, harga, kapasitas kamar |
+| `room_types` | Tipe, harga, dan kapasitas |
 | `rooms` | Unit dan status kamar |
 | `bookings` | Reservasi kamar |
 | `payments` | Pembayaran dan charge folio |
 | `restaurant_menus` | Menu restoran |
-| `restaurant_orders` | Header pesanan restoran |
+| `restaurant_orders` | Pesanan restoran |
 | `restaurant_order_details` | Item pesanan |
 | `restaurant_venues` | Tempat makan |
 | `restaurant_reservations` | Reservasi venue |
@@ -889,52 +284,29 @@ Tabel penting aplikasi:
 | `facility_bookings` | Reservasi fasilitas |
 | `contact_messages` | Pesan Contact |
 
----
-
-## 21. Seeder
-
-Seeder utama yang perlu dijalankan bila database kosong:
-
-```bash
-php artisan db:seed --class=RestaurantMenuSeeder
-php artisan db:seed --class=RestaurantVenueSeeder
-```
-
-Untuk Docker:
-
-```bash
-docker compose exec web php artisan db:seed --class=RestaurantMenuSeeder
-docker compose exec web php artisan db:seed --class=RestaurantVenueSeeder
-```
-
-Jalankan seeder dari satu container saja.
-
----
-
-## 22. Pengembangan lokal
+## 12. Setup lokal tanpa Docker
 
 ```bash
 composer install
-npm install
+cp .env.example .env
+php artisan key:generate
 php artisan migrate
+npm install
 npm run build
 php artisan serve
 ```
 
-Mode development:
+Seeder awal:
 
 ```bash
-composer run dev
+php artisan db:seed
+php artisan db:seed --class=RestaurantMenuSeeder
+php artisan db:seed --class=RestaurantVenueSeeder
 ```
 
----
-
-## 23. Pemeriksaan aplikasi
+## 13. Pengujian
 
 ```bash
-php artisan route:list
-php artisan view:cache
-php artisan view:clear
 php artisan test
 npm run build
 ```
@@ -948,103 +320,4 @@ php artisan test --filter=StaffOperationsRoutesTest
 php artisan test --filter=RolePathGuardTest
 php artisan test --filter=RoomServicePaymentFlowTest
 php artisan test --filter=EnumDatabaseCompatibilityTest
-```
-
----
-
-## 24. Checklist demonstrasi fitur
-
-### Guest
-
-- Register dan login;
-- verify email;
-- booking kamar;
-- pembayaran reservasi;
-- My Bookings;
-- My Stay;
-- receipt;
-- Room Service masuk folio;
-- reservasi fasilitas;
-- Contact.
-
-### Receptionist
-
-- Dashboard;
-- Needs Attention;
-- Room Assignment;
-- Check-in;
-- Folio;
-- pembayaran Room Service;
-- Check-out;
-- Guest History;
-- House Status.
-
-### Admin dan Manager
-
-- Dashboard;
-- Rooms & Inventory;
-- detail tombol mata;
-- Restaurant Orders;
-- CRUD Venue;
-- Facilities;
-- Finance;
-- Folio;
-- Reports;
-- Contact Inbox.
-
-### Infrastruktur UKK
-
-- VM1 dan VM2 saling ping;
-- Docker service aktif;
-- tiga container web;
-- MariaDB aktif;
-- network `network-ujikom`;
-- volume `volume-ujikom`;
-- load balancer port 8080;
-- hostname container bergantian;
-- SSH passwordless;
-- FTP dapat login dan upload.
-
----
-
-## 25. Ringkasan cara mengikuti placeholder
-
-Gunakan pola berikut setiap kali melihat placeholder:
-
-```text
-Baca placeholder
-→ lihat nilai dari penguji
-→ ganti hanya nilai tersebut
-→ jangan mengubah nama service Docker
-→ jalankan command pemeriksaan
-```
-
-Contoh:
-
-```text
-<IP_VM1> diberikan penguji sebagai 10.10.10.11
-```
-
-Maka:
-
-```text
-http://<IP_VM1>:8080
-```
-
-menjadi:
-
-```text
-http://10.10.10.11:8080
-```
-
-Tetapi ini tetap tidak berubah:
-
-```env
-DB_HOST=database
-```
-
-Dan ini tetap tidak berubah:
-
-```nginx
-server web:80;
 ```
