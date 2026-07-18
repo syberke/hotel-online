@@ -53,7 +53,37 @@ Route::get('/dashboard', function () {
     $role = auth()->user()->role ?: 'guest';
     return redirect()->route($role . '.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/instance', function () {
+    $hostname = gethostname() ?: 'unknown-container';
 
+    $html = '<!doctype html>
+    <html lang="id">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Bukti Load Balancer</title>
+      <style>
+        body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;font-family:Arial;color:#e2e8f0}
+        main{width:min(560px,calc(100% - 40px));padding:36px;border:1px solid #334155;border-radius:24px;background:#111827}
+        .ok{display:inline-block;padding:8px 12px;border-radius:999px;background:#064e3b;color:#a7f3d0;font-weight:700}
+        .host{margin-top:20px;padding:18px;border-radius:14px;background:#1e293b;font-family:monospace;font-size:22px;color:#93c5fd;word-break:break-all}
+        p{line-height:1.7;color:#94a3b8}
+      </style>
+    </head>
+    <body>
+      <main>
+        <span class="ok">LOAD BALANCER AKTIF</span>
+        <h1>Oasis Hotel Online</h1>
+        <p>Refresh halaman ini. Hostname akan berganti saat Nginx membagi request.</p>
+        <div class="host">Container: '.e($hostname).'</div>
+      </main>
+    </body>
+    </html>';
+
+    return response($html)
+        ->header('Content-Type', 'text/html; charset=UTF-8')
+        ->header('X-App-Node', $hostname);
+})->name('instance');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
