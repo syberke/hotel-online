@@ -62,6 +62,10 @@ class RestaurantVenueController extends Controller
 
     private function authorizeVenueManagement(Request $request): void
     {
-        abort_unless(in_array($request->user()?->role, ['admin', 'manager'], true), 403);
+        abort_unless(
+            $request->user()?->role === 'admin',
+            403,
+            'Manager hanya memiliki akses baca untuk data venue.'
+        );
     }
 }
