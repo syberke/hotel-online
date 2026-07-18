@@ -2,9 +2,20 @@
     $midtransReady = filled(config('services.midtrans.client_key'))
         && filled(config('services.midtrans.server_key'));
     $activeBookingId = $currentBooking->booking_id ?? null;
+    $menuPayload = $menus->map(fn ($menu) => [
+        'id' => (int) $menu->id,
+        'name' => $menu->name,
+        'price' => (int) round($menu->price),
+        'category' => $menu->category ?? 'main course',
+        'description' => $menu->description ?? '',
+        'foto_url' => $menu->foto_url ?? '',
+        'sales_count' => (int) ($menu->sales_count ?? 0),
+    ])->values()->all();
 @endphp
 
 <x-guest-dashboard-layout>
+    <script type="application/json" id="room-service-menu-data">{!! json_encode($menuPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
     <div
         x-data="{
             searchQuery: '',
@@ -14,20 +25,11 @@
             cart: JSON.parse(localStorage.getItem('oasis_room_service_cart') || '[]'),
             taxRate: 0.11,
             serviceRate: 0.10,
-            allMenus: [
-                @foreach($menus as $menu)
-                {
-                    id: {{ $menu->id }},
-                    name: @js($menu->name),
-                    price: {{ (int) round($menu->price) }},
-                    category: @js($menu->category ?? 'main course'),
-                    description: @js($menu->description ?? ''),
-                    foto_url: @js($menu->foto_url ?? ''),
-                    sales_count: {{ (int) ($menu->sales_count ?? 0) }}
-                },
-                @endforeach
-            ],
+            allMenus: JSON.parse(document.getElementById('room-service-menu-data')?.textContent || '[]'),
             init() {
+                if ({{ session('success') ? 'true' : 'false' }}) {
+                    this.clearCart();
+                }
                 this.$watch('cart', value => localStorage.setItem('oasis_room_service_cart', JSON.stringify(value)));
             },
             addToCart(item) {
@@ -228,9 +230,9 @@
             <div class="min-w-0 space-y-5">
                 <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                     <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                        <template x-for="category in ['all', 'breakfast', 'main course', 'desserts', 'beverages']" :key="category">
+                        <template x-for="category in ['all', 'breakfast', 'main courses', 'desserts', 'beverages']" :key="category">
                             <button type="button" @click="selectedCategory = category" :class="selectedCategory === category ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'" class="inline-flex min-w-max items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition">
-                                <i class="fa-solid" :class="category === 'all' ? 'fa-utensils' : (category === 'breakfast' ? 'fa-egg' : (category === 'main course' ? 'fa-bowl-food' : (category === 'desserts' ? 'fa-ice-cream' : 'fa-mug-hot')))"></i>
+                                <i class="fa-solid" :class="category === 'all' ? 'fa-utensils' : (category === 'breakfast' ? 'fa-egg' : (category === 'main courses' ? 'fa-bowl-food' : (category === 'desserts' ? 'fa-ice-cream' : 'fa-mug-hot')))"></i>
                                 <span x-text="category === 'all' ? 'All menu' : category.replace(/\b\w/g, letter => letter.toUpperCase())"></span>
                             </button>
                         </template>
@@ -330,7 +332,7 @@
                             <span x-text="paymentLoading ? 'Opening payment...' : 'Pay now'"></span>
                         </button>
 
-                        <form action="{{ route('room.service.order') }}" method="POST" @submit="clearCart()">
+                        <form action="{{ route('room.service.order') }}" method="POST">
                             @csrf
                             <input type="hidden" name="cart_data" :value="JSON.stringify(cart.map(item => ({ id: item.id, quantity: item.quantity })))">
                             <input type="hidden" name="booking_id" value="{{ $activeBookingId }}">
