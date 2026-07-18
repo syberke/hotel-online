@@ -40,8 +40,8 @@ class RoomServicePaymentFlowTest extends TestCase
     {
         $controller = file_get_contents(app_path('Http/Controllers/GuestServiceController.php'));
 
-        $this->assertStringContainsString("'booking_id' => $booking->id", $controller);
-        $this->assertStringContainsString("'restaurant_order_id' => $id", $controller);
+        $this->assertStringContainsString("'booking_id' => \$booking->id", $controller);
+        $this->assertStringContainsString("'restaurant_order_id' => \$id", $controller);
         $this->assertStringContainsString("'payment_status' => 'pending'", $controller);
         $this->assertStringContainsString('Room Service charged to room folio', $controller);
     }
@@ -50,8 +50,8 @@ class RoomServicePaymentFlowTest extends TestCase
     {
         $controller = file_get_contents(app_path('Http/Controllers/PaymentGatewayController.php'));
 
-        $this->assertStringContainsString("$prefix === 'OA'", $controller);
+        $this->assertStringContainsString("\$prefix === 'OA'", $controller);
         $this->assertStringContainsString("['RESTO', 'ROOMSERVICE']", $controller);
-        $this->assertStringContainsString("where('restaurant_order_id', $entityId)", $controller);
+        $this->assertStringContainsString("where('restaurant_order_id', \$entityId)", $controller);
     }
 }
