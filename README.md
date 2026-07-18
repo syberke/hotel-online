@@ -3,6 +3,17 @@
 Sistem operasional hotel berbasis Laravel untuk reservasi, front office, kamar,
 tamu, restoran, fasilitas, pembayaran, dan laporan manajemen.
 
+## Dokumentasi
+
+Dokumentasi repository disederhanakan menjadi dua dokumen utama:
+
+- [Penjelasan Aplikasi dan Fitur Hotel Online](docs/HOTEL_ONLINE.md)
+- [Tutorial Manual UKK Instalasi Komputasi Awan](docs/UKK_MANUAL.md)
+
+Dokumen pertama menjelaskan fitur, role, alur booking, Room Service, folio,
+checkout, restoran, venue, Contact, database, dan pengujian aplikasi. Dokumen
+kedua menjelaskan instalasi infrastruktur UKK secara manual.
+
 ## Arsitektur deployment
 
 Stack menjalankan tiga node web identik dari custom image Apache/PHP. Nginx
@@ -65,13 +76,12 @@ chmod +x deploy.sh
 ```
 
 Script otomatis menjalankan migrasi, seeding kondisional, optimasi cache, serta
-verifikasi endpoint. Untuk menjalankan setiap tahap secara manual, termasuk
-pembuatan credential MariaDB, build, migrate, seed, dan troubleshooting, baca
-[Panduan Deployment Docker](docs/DEPLOYMENT.md).
+verifikasi endpoint. Untuk instalasi manual, topologi dua VM, pembuatan
+credential MariaDB, build, migrate, seed, load balancing, dan troubleshooting,
+baca [Tutorial Manual UKK Instalasi Komputasi Awan](docs/UKK_MANUAL.md).
 
-Untuk latihan UKK menggunakan dua VM, NAT dan bridge, konfigurasi manual Docker,
-load balancing, SSH password-less, FTP, serta checklist demonstrasi asesor, baca
-[Tutorial Manual UKK Instalasi Komputasi Awan](docs/UKK_MANUAL.md).
+Untuk memahami fitur dan alur bisnis aplikasi sebelum deployment, baca
+[Penjelasan Aplikasi dan Fitur Hotel Online](docs/HOTEL_ONLINE.md).
 
 Aplikasi tersedia di <http://localhost:8080>.
 
@@ -130,6 +140,6 @@ npm run build
 - Jangan commit `.env`, credential, private key, atau backup database.
 - Gunakan password database yang kuat dan `APP_DEBUG=false` di production.
 - Endpoint admin, manager, receptionist, dan guest dibatasi berdasarkan role.
-- Status pembayaran hanya boleh dianggap final setelah callback bertanda tangan
-  dari Midtrans diterima.
+- Status pembayaran online hanya boleh dianggap final setelah callback Midtrans
+  yang valid diterima. Room Service folio diselesaikan oleh Front Desk.
 - Pasang TLS pada reverse proxy atau platform ingress saat digunakan di internet.
