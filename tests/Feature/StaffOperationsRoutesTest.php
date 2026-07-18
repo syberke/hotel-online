@@ -40,21 +40,26 @@ class StaffOperationsRoutesTest extends TestCase
                 Route::getRoutes()->getByName($routeName)?->getActionName(),
             );
         }
+    }
 
-        foreach (['admin', 'manager'] as $prefix) {
-            $this->assertSame(
-                RestaurantVenueController::class . '@store',
-                Route::getRoutes()->getByName($prefix . '.restaurant.venues.store')?->getActionName(),
-            );
-            $this->assertSame(
-                RestaurantVenueController::class . '@update',
-                Route::getRoutes()->getByName($prefix . '.restaurant.venues.update')?->getActionName(),
-            );
-            $this->assertSame(
-                RestaurantVenueController::class . '@destroy',
-                Route::getRoutes()->getByName($prefix . '.restaurant.venues.destroy')?->getActionName(),
-            );
-        }
+    public function test_only_admin_has_restaurant_venue_write_routes(): void
+    {
+        $this->assertSame(
+            RestaurantVenueController::class . '@store',
+            Route::getRoutes()->getByName('admin.restaurant.venues.store')?->getActionName(),
+        );
+        $this->assertSame(
+            RestaurantVenueController::class . '@update',
+            Route::getRoutes()->getByName('admin.restaurant.venues.update')?->getActionName(),
+        );
+        $this->assertSame(
+            RestaurantVenueController::class . '@destroy',
+            Route::getRoutes()->getByName('admin.restaurant.venues.destroy')?->getActionName(),
+        );
+
+        $this->assertNull(Route::getRoutes()->getByName('manager.restaurant.venues.store'));
+        $this->assertNull(Route::getRoutes()->getByName('manager.restaurant.venues.update'));
+        $this->assertNull(Route::getRoutes()->getByName('manager.restaurant.venues.destroy'));
     }
 
     public function test_restaurant_view_no_longer_exposes_the_today_menu_tab(): void
@@ -64,5 +69,26 @@ class StaffOperationsRoutesTest extends TestCase
         $this->assertStringNotContainsString("Today's Menu", $view);
         $this->assertStringContainsString('>Venues</a>', $view);
         $this->assertStringContainsString('$mainTab === \'venues\'', $view);
+    }
+
+    public function test_staff_sidebars_do_not_expose_standalone_folio_links(): void
+    {
+        $adminLayout = file_get_contents(resource_path('views/layouts/admin-dashboard.blade.php'));
+        $receptionistLayout = file_get_contents(resource_path('views/layouts/receptionist-dashboard.blade.php'));
+
+        $this->assertStringNotContainsString("'.folio', 'fa-file-invoice', 'Folio'", $adminLayout);
+        $this->assertStringNotContainsString("['receptionist.folio'", $receptionistLayout);
+    }
+
+    public function test_receptionist_room_workspace_uses_canonical_room_statuses(): void
+    {
+        $layout = file_get_contents(resource_path('views/layouts/receptionist-dashboard.blade.php'));
+        $view = file_get_contents(resource_path('views/receptionist/roomavailability.blade.php'));
+
+        $this->assertStringContainsString("['receptionist.roomavailability', 'fa-bed', 'Rooms']", $layout);
+        $this->assertStringNotContainsString("['receptionist.housestatus'", $layout);
+        $this->assertStringNotContainsString("'dirty'", $view);
+        $this->assertStringNotContainsString('Vacant Dirty', $view);
+        $this->assertStringContainsString("'maintenance'", $view);
     }
 }
