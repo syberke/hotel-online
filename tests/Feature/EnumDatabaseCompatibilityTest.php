@@ -18,7 +18,7 @@ class EnumDatabaseCompatibilityTest extends TestCase
             $expected = [
                 'facility_booking_status_enum' => 'confirmed,completed,cancelled',
                 'restaurant_order_status_enum' => 'ordered,preparing,paid,cancelled',
-                'room_status_enum' => 'available,occupied,maintenance,dirty',
+                'room_status_enum' => 'available,occupied,maintenance',
                 'user_account_status_enum' => 'active,inactive',
                 'user_role_enum' => 'guest,receptionist,manager,admin',
             ];
@@ -49,7 +49,7 @@ class EnumDatabaseCompatibilityTest extends TestCase
             $expected = [
                 'facility_bookings.status' => "enum('confirmed','completed','cancelled')",
                 'restaurant_orders.status' => "enum('ordered','preparing','paid','cancelled')",
-                'rooms.status' => "enum('available','occupied','maintenance','dirty')",
+                'rooms.status' => "enum('available','occupied','maintenance')",
                 'users.account_status' => "enum('active','inactive')",
                 'users.role' => "enum('guest','receptionist','manager','admin')",
             ];
@@ -79,5 +79,14 @@ class EnumDatabaseCompatibilityTest extends TestCase
         }
 
         $this->markTestSkipped('Native enum compatibility is validated on PostgreSQL and MariaDB jobs.');
+    }
+
+    public function test_receptionist_dashboard_does_not_query_removed_dirty_status(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/ReceptionistDashboardController.php'));
+
+        $this->assertStringNotContainsString("where('rooms.status', 'dirty')", $controller);
+        $this->assertStringNotContainsString("where('status', 'dirty')", $controller);
+        $this->assertStringContainsString("where('rooms.status', 'maintenance')", $controller);
     }
 }
