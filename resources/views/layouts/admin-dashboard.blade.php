@@ -100,6 +100,10 @@
                         @include('admin.partials.room-status-guide')
                     @endif
 
+                    @if(request()->routeIs('admin.finance', 'manager.finance'))
+                        @include('admin.partials.finance-runtime-fixes')
+                    @endif
+
                     {{ $slot }}
 
                     @if(request()->routeIs('admin.restaurant', 'manager.restaurant') && isset($menus))
