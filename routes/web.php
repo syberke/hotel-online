@@ -135,8 +135,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/guest-history', [ReceptionistGuestHistoryController::class, 'receptionistGuestHistoryView'])->name('guesthistory');
         Route::patch('/guest-history/{userId}/identity', [ReceptionistGuestHistoryController::class, 'updateIdentity'])->name('guesthistory.identity.update');
         Route::get('/room-availability', [CoreHousekeepingController::class, 'roomAvailabilityView'])->name('roomavailability');
-        Route::get('/house-status', [CoreHousekeepingController::class, 'houseStatusView'])->name('housestatus');
-        Route::post('/house-status/update', [CoreHousekeepingController::class, 'updateHouseStatus'])->name('housestatus.update');
+        Route::redirect('/house-status', '/receptionist/room-availability')->name('housestatus');
     });
 
     Route::prefix('manager')->name('manager.')->group(function () {
@@ -148,9 +147,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/room-service-orders', [ExecutiveReportController::class, 'adminRoomServiceView'])->name('roomservice');
         Route::get('/restaurant-gastronomy', [StaffRestaurantController::class, 'index'])->name('restaurant');
         Route::redirect('/restaurant/venues', '/manager/restaurant-gastronomy?view=venues')->name('restaurant.venues');
-        Route::post('/restaurant/venues', [RestaurantVenueController::class, 'store'])->name('restaurant.venues.store');
-        Route::patch('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'update'])->name('restaurant.venues.update');
-        Route::delete('/restaurant/venues/{venue}', [RestaurantVenueController::class, 'destroy'])->name('restaurant.venues.destroy');
         Route::get('/facilities-wellness', [CoreFacilityViewController::class, 'adminFacilitiesView'])->name('facilities');
         Route::get('/finance-billing', [OperationalViewController::class, 'adminFinanceView'])->name('finance');
         Route::get('/reports', [LiveReportViewController::class, 'adminReportsView'])->name('reports');
