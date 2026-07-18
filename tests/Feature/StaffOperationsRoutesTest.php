@@ -6,6 +6,7 @@ use App\Http\Controllers\ReceptionistGuestHistoryController;
 use App\Http\Controllers\RestaurantVenueController;
 use App\Http\Controllers\RoomAssignmentController;
 use App\Http\Controllers\StaffRestaurantController;
+use App\Http\Controllers\StaffRoomServiceController;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -27,7 +28,7 @@ class StaffOperationsRoutesTest extends TestCase
     {
         $this->assertSame(
             ReceptionistGuestHistoryController::class . '@updateIdentity',
-            Route::getRoutes()->getByName('receptionist.guesthistory.identity.update')?->getActionName(),
+            Route::getRoutes()->getByName('receptionist.guesthistory')?->getActionName(),
         );
         $this->assertTrue(method_exists(ReceptionistGuestHistoryController::class, 'updateIdentity'));
     }
@@ -90,5 +91,22 @@ class StaffOperationsRoutesTest extends TestCase
         $this->assertStringNotContainsString("'dirty'", $view);
         $this->assertStringNotContainsString('Vacant Dirty', $view);
         $this->assertStringContainsString("'maintenance'", $view);
+    }
+
+    public function test_room_service_detail_uses_one_folio_booking_per_order(): void
+    {
+        foreach (['admin.roomservice', 'manager.roomservice'] as $routeName) {
+            $this->assertSame(
+                StaffRoomServiceController::class . '@index',
+                Route::getRoutes()->getByName($routeName)?->getActionName(),
+            );
+        }
+
+        $controller = file_get_contents(app_path('Http/Controllers/StaffRoomServiceController.php'));
+
+        $this->assertStringContainsString("from('payments')", $controller);
+        $this->assertStringContainsString("groupBy('restaurant_order_id')", $controller);
+        $this->assertStringContainsString("joinSub", $controller);
+        $this->assertStringNotContainsString("join('users'", $controller);
     }
 }
