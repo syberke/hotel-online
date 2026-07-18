@@ -50,5 +50,5 @@ jobs:
       - name: Run shared role detail test
         run: php artisan test --filter=RolePathGuardTest
 
-      - name: Run Room Service payment test
+      - name: Run Room Service folio test
         run: php artisan test --filter=RoomServicePaymentFlowTest
