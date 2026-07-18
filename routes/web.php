@@ -10,7 +10,6 @@ use App\Http\Controllers\RestaurantReservationController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\GuestStayController;
 use App\Http\Controllers\GuestServiceController;
-use App\Http\Controllers\RoomServicePaymentController;
 use App\Http\Controllers\GuestFacilityController;
 use App\Http\Controllers\PaymentGatewayController;
 use App\Http\Controllers\RestaurantOrderController;
@@ -87,8 +86,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/restaurant-order/{id}/details', [RestaurantOrderController::class, 'details'])->name('restaurant.order.details');
 
     Route::post('/room-service/order', [GuestServiceController::class, 'storeRoomServiceOrder'])->name('room.service.order');
-    Route::post('/room-service/pay', [RoomServicePaymentController::class, 'create'])->name('room.service.pay');
-    Route::post('/room-service/settle', [RoomServicePaymentController::class, 'settle'])->name('room.service.settle');
     Route::post('/facilities/book', [GuestFacilityController::class, 'store'])->name('facilities.book');
 
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
