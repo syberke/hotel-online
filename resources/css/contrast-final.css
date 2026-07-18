@@ -36,7 +36,36 @@
 }
 
 :is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-slate-900, .bg-slate-950, .bg-neutral-900, .bg-neutral-950) :where(.bg-white, .bg-slate-50, .bg-slate-100) :where(p, span, label, small) {
-    color: #475569;
+    color: #475569 !important;
+}
+
+/* Prevent foreground utilities from matching their own light background. */
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-white.text-white, .bg-slate-50.text-slate-50, .bg-slate-100.text-slate-100, .bg-neutral-50.text-neutral-50, .bg-neutral-100.text-neutral-100) {
+    color: #0f172a !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-blue-50.text-blue-50, .bg-blue-100.text-blue-100) {
+    color: #1e3a8a !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-emerald-50.text-emerald-50, .bg-emerald-100.text-emerald-100) {
+    color: #065f46 !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-amber-50.text-amber-50, .bg-amber-100.text-amber-100) {
+    color: #78350f !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-rose-50.text-rose-50, .bg-rose-100.text-rose-100, .bg-red-50.text-red-50, .bg-red-100.text-red-100) {
+    color: #9f1239 !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-violet-50.text-violet-50, .bg-violet-100.text-violet-100) {
+    color: #4c1d95 !important;
+}
+
+:is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-cyan-50.text-cyan-50, .bg-cyan-100.text-cyan-100) {
+    color: #164e63 !important;
 }
 
 :is(.public-site, .auth-site, .guest-content, .staff-portal) :where(.bg-blue-50, .bg-blue-100) :where(h1, h2, h3, h4, strong, b) {
