@@ -26,9 +26,7 @@ class RoomAssignmentController extends Controller
 
         $queueQuery = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('guests', function ($join) {
-                $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
-            })
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->leftJoinSub($paymentSummary, 'payment_summary', function ($join) {
@@ -39,7 +37,7 @@ class RoomAssignmentController extends Controller
             ->select(
                 'bookings.*',
                 DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
-                DB::raw("COALESCE(users.email, guests.email, '-') as guest_email"),
+                DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE COALESCE(users.email, guests.email) END as guest_email"),
                 'guests.phone as guest_phone',
                 'rooms.room_number as initial_room_number',
                 'rooms.room_type_id',
@@ -53,8 +51,8 @@ class RoomAssignmentController extends Controller
             $needle = '%' . strtolower($search) . '%';
 
             $queueQuery->where(function ($builder) use ($cleanId, $needle) {
-                $builder->whereRaw('LOWER(COALESCE(users.name, guests.name, \'\')) LIKE ?', [$needle])
-                    ->orWhereRaw('LOWER(COALESCE(users.email, guests.email, \'\')) LIKE ?', [$needle])
+                $builder->whereRaw("LOWER(COALESCE(users.name, guests.name, '')) LIKE ?", [$needle])
+                    ->orWhereRaw("LOWER(COALESCE(users.email, guests.email, '')) LIKE ?", [$needle])
                     ->orWhere('rooms.room_number', 'like', $needle);
 
                 if ($cleanId !== '') {
