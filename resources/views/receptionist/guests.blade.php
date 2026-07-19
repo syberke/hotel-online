@@ -16,11 +16,14 @@
             <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <header class="flex flex-col gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
                     <div><p class="text-xs font-medium text-slate-500">Guest records</p><h2 class="mt-1 text-lg font-semibold text-slate-900">Guest directory</h2></div>
-                    <form action="{{ url()->current() }}" method="GET" class="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
-                        <input type="hidden" name="guest_tab" value="{{ $currentTab }}">
-                        <div class="relative min-w-0 flex-1"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i><input type="search" name="search" value="{{ request('search') }}" placeholder="Search name, phone, email, or identity" class="w-full py-2.5 pr-4 text-sm"></div>
-                        <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Search</button>
-                    </form>
+                    <div class="flex w-full max-w-2xl flex-col gap-2 sm:flex-row">
+                        <form action="{{ url()->current() }}" method="GET" class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row">
+                            <input type="hidden" name="guest_tab" value="{{ $currentTab }}">
+                            <div class="relative min-w-0 flex-1"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i><input type="search" name="search" value="{{ request('search') }}" placeholder="Search name, phone, email, or identity" class="w-full py-2.5 pr-4 text-sm"></div>
+                            <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Search</button>
+                        </form>
+                        <a href="{{ route('receptionist.walk-in.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100"><i class="fa-solid fa-person-walking-luggage"></i>Walk-in</a>
+                    </div>
                 </header>
 
                 <nav class="flex gap-2 overflow-x-auto border-b border-slate-100 p-3">
@@ -34,21 +37,22 @@
                 </nav>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-[850px] text-left text-sm">
-                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">Guest</th><th class="px-4 py-3">Contact</th><th class="px-4 py-3">Identity</th><th class="px-4 py-3">Latest stay</th><th class="px-4 py-3">Status</th><th class="px-5 py-3 text-center">Completed stays</th></tr></thead>
+                    <table class="min-w-[900px] text-left text-sm">
+                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">Guest</th><th class="px-4 py-3">Channel</th><th class="px-4 py-3">Contact</th><th class="px-4 py-3">Identity</th><th class="px-4 py-3">Latest stay</th><th class="px-4 py-3">Status</th><th class="px-5 py-3 text-center">Completed stays</th></tr></thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($guestsList as $guest)
-                                @php($isSelected = $selectedGuest && $selectedGuest->user_id === $guest->user_id)
-                                <tr onclick="window.location.href='{{ request()->fullUrlWithQuery(['selected_guest_id' => $guest->user_id]) }}'" class="cursor-pointer transition hover:bg-slate-50 {{ $isSelected ? 'bg-blue-50/60' : '' }}">
-                                    <td class="px-5 py-4"><div class="flex items-center gap-3"><img src="https://ui-avatars.com/api/?name={{ urlencode($guest->guest_name) }}&background=eff6ff&color=1d4ed8" alt="{{ $guest->guest_name }}" class="h-10 w-10 rounded-xl object-cover"><div><p class="font-semibold text-slate-900">{{ $guest->guest_name }}</p><p class="mt-1 text-xs text-slate-400">Guest #{{ str_pad((string) $guest->user_id, 5, '0', STR_PAD_LEFT) }}</p></div></div></td>
-                                    <td class="px-4 py-4"><p class="font-medium text-slate-700">{{ $guest->guest_phone ?: 'Phone not provided' }}</p><p class="mt-1 text-xs text-slate-500">{{ $guest->guest_email }}</p></td>
+                                @php($isSelected = $selectedGuest && (int) $selectedGuest->guest_id === (int) $guest->guest_id)
+                                <tr onclick="window.location.href='{{ request()->fullUrlWithQuery(['selected_guest_id' => $guest->guest_id]) }}'" class="cursor-pointer transition hover:bg-slate-50 {{ $isSelected ? 'bg-blue-50/60' : '' }}">
+                                    <td class="px-5 py-4"><div class="flex items-center gap-3"><img src="https://ui-avatars.com/api/?name={{ urlencode($guest->guest_name) }}&background=eff6ff&color=1d4ed8" alt="{{ $guest->guest_name }}" class="h-10 w-10 rounded-xl object-cover"><div><p class="font-semibold text-slate-900">{{ $guest->guest_name }}</p><p class="mt-1 text-xs text-slate-400">Guest #{{ str_pad((string) $guest->guest_id, 5, '0', STR_PAD_LEFT) }}</p></div></div></td>
+                                    <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $guest->booking_source === 'walk_in' ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700' }}">{{ $guest->booking_source === 'walk_in' ? 'Walk-In' : 'Online' }}</span></td>
+                                    <td class="px-4 py-4"><p class="font-medium text-slate-700">{{ $guest->guest_phone ?: 'Phone not provided' }}</p><p class="mt-1 text-xs text-slate-500">{{ $guest->guest_email ?: 'No login account' }}</p></td>
                                     <td class="px-4 py-4 text-slate-600">{{ $guest->identity_number ?: 'Not provided' }}</td>
                                     <td class="px-4 py-4"><p class="font-medium text-slate-800">{{ $guest->check_in ? \Carbon\Carbon::parse($guest->check_in)->format('d M Y') : 'No stay yet' }}</p><p class="mt-1 text-xs text-slate-500">{{ $guest->room_number ? 'Room ' . $guest->room_number : 'No room record' }}</p></td>
                                     <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $guest->booking_status === 'checked_in' ? 'bg-emerald-50 text-emerald-700' : ($guest->booking_status === 'checked_out' ? 'bg-slate-100 text-slate-600' : 'bg-blue-50 text-blue-700') }}">{{ $guest->booking_status ? ucwords(str_replace('_', ' ', $guest->booking_status)) : 'Registered' }}</span></td>
                                     <td class="px-5 py-4 text-center font-semibold text-slate-900">{{ $guest->total_stays }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="px-5 py-12 text-center text-sm text-slate-500">No guest profiles match the current search and tab.</td></tr>
+                                <tr><td colspan="7" class="px-5 py-12 text-center text-sm text-slate-500">No guest profiles match the current search and tab.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -58,10 +62,18 @@
 
             <aside class="self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-4">
                 @if($selectedGuest)
-                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4"><div><p class="text-xs text-slate-500">Selected profile</p><h2 class="mt-1 text-lg font-semibold text-slate-900">Guest details</h2></div><a href="{{ route('receptionist.guesthistory', ['guest_id' => $selectedGuest->user_id]) }}" class="text-xs font-semibold text-blue-600">Full history</a></div>
-                    <div class="mt-5 flex items-center gap-4"><img src="https://ui-avatars.com/api/?name={{ urlencode($selectedGuest->name) }}&background=2563eb&color=ffffff" alt="{{ $selectedGuest->name }}" class="h-14 w-14 rounded-2xl object-cover"><div><h3 class="font-semibold text-slate-900">{{ $selectedGuest->name }}</h3><p class="mt-1 text-sm text-slate-500">{{ $selectedGuest->email }}</p></div></div>
+                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div><p class="text-xs text-slate-500">Selected profile</p><h2 class="mt-1 text-lg font-semibold text-slate-900">Guest details</h2></div>
+                        @if($selectedGuest->user_id)
+                            <a href="{{ route('receptionist.guesthistory', ['guest_id' => $selectedGuest->user_id]) }}" class="text-xs font-semibold text-blue-600">Full history</a>
+                        @else
+                            <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">Walk-In</span>
+                        @endif
+                    </div>
+                    <div class="mt-5 flex items-center gap-4"><img src="https://ui-avatars.com/api/?name={{ urlencode($selectedGuest->name) }}&background=2563eb&color=ffffff" alt="{{ $selectedGuest->name }}" class="h-14 w-14 rounded-2xl object-cover"><div><h3 class="font-semibold text-slate-900">{{ $selectedGuest->name }}</h3><p class="mt-1 text-sm text-slate-500">{{ $selectedGuest->email ?: 'No guest login account' }}</p></div></div>
                     <dl class="mt-6 space-y-4 text-sm">
                         @foreach([
+                            ['Channel', $selectedGuest->booking_source === 'walk_in' ? 'Walk-In / Front Desk' : 'Online / Guest Account', 'fa-route'],
                             ['Status', ucwords(str_replace('_', ' ', $selectedGuest->current_status)), 'fa-circle-info'],
                             ['Room', $selectedGuest->room_number ? 'Room ' . $selectedGuest->room_number : 'Not assigned', 'fa-door-open'],
                             ['Check-in', $selectedGuest->check_in ? \Carbon\Carbon::parse($selectedGuest->check_in)->format('d M Y') : '—', 'fa-right-to-bracket'],
