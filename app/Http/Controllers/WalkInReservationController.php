@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -119,7 +120,10 @@ class WalkInReservationController extends Controller
                     ]);
                 }
 
-                $nights = max(1, now()->parse($validated['check_in'])->diffInDays(now()->parse($validated['check_out'])));
+                $nights = max(
+                    1,
+                    Carbon::parse($validated['check_in'])->diffInDays(Carbon::parse($validated['check_out']))
+                );
                 $totalPrice = round((float) $roomType->price * $nights, 2);
                 $bookingStatus = $validated['payment_status'] === 'paid' ? 'confirmed' : 'pending';
 
