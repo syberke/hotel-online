@@ -34,9 +34,37 @@
     padding-left: 2.75rem !important;
 }
 
+/*
+ * Modal guardrails.
+ * Do not override max-w-sm, max-w-md, max-w-2xl, etc. Those classes define
+ * the intended CRUD popup width. The previous viewport max-width rule won
+ * over Tailwind and made every w-full modal stretch across the screen.
+ */
+.staff-portal :where(.fixed.inset-0, [role="dialog"]) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
 .staff-portal :where(.fixed.inset-0, [role="dialog"]) > :where(div, section, article) {
-    max-width: calc(100vw - 2rem);
     max-height: calc(100dvh - 2rem);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin-block: auto;
+    box-sizing: border-box;
+}
+
+/* Fallback only for dialogs that forgot to define a Tailwind max-w class. */
+.staff-portal :where(.fixed.inset-0, [role="dialog"]) > :where(div, section, article):not([class*="max-w-"]) {
+    max-width: calc(100vw - 2rem);
+}
+
+/* Keep SweetAlert confirmations compact and scrollable on short screens. */
+.staff-portal .swal2-popup {
+    width: min(32rem, calc(100vw - 2rem)) !important;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 @media (min-width: 1280px) and (max-width: 1919px) {
@@ -86,5 +114,9 @@
     .staff-portal :where(button, a)[class*="px-6"] {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
+    }
+
+    .staff-portal :where(.fixed.inset-0, [role="dialog"]) > :where(div, section, article) {
+        max-height: calc(100dvh - 1.5rem);
     }
 }
