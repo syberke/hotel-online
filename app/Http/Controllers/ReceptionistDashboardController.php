@@ -22,6 +22,8 @@ class ReceptionistDashboardController extends Controller
         $expectedCheckouts = DB::table('bookings')->whereDate('check_out', $today)->count();
         $inhouseReservations = DB::table('bookings')->where('status', 'checked_in')->count();
         $inhouseGuests = DB::table('bookings')->where('status', 'checked_in')->sum('guests_count') ?: 0;
+        $walkInsToday = DB::table('bookings')->whereDate('created_at', $today)->where('booking_source', 'walk_in')->count();
+        $onlineBookingsToday = DB::table('bookings')->whereDate('created_at', $today)->where('booking_source', 'online')->count();
 
         $revenueToday = DB::table('payments')->whereDate('created_at', $today)->where('payment_status', 'paid')->sum('amount') ?: 0;
         $revenueYesterday = DB::table('payments')->whereDate('created_at', $yesterday)->where('payment_status', 'paid')->sum('amount') ?: 0;
@@ -34,15 +36,14 @@ class ReceptionistDashboardController extends Controller
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-            ->leftJoin('guests', function ($join) {
-                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
-            })
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->whereDate('bookings.check_in', $today)
             ->select(
                 'bookings.id as booking_id',
                 'bookings.check_in',
                 'bookings.check_out',
                 'bookings.status as booking_status',
+                'bookings.booking_source',
                 DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
                 'guests.id as guest_record_id',
                 'guests.identity_number',
@@ -100,17 +101,18 @@ class ReceptionistDashboardController extends Controller
 
         $pendingPayments = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('payments', function ($join) {
                 $join->on('payments.booking_id', '=', 'bookings.id')
                     ->whereNull('payments.restaurant_order_id');
             })
             ->whereDate('bookings.check_in', '<=', $today)
             ->whereIn('bookings.status', ['pending', 'confirmed'])
-            ->groupBy('bookings.id', 'users.name')
+            ->groupBy('bookings.id', 'users.name', 'guests.name')
             ->havingRaw("COALESCE(SUM(CASE WHEN payments.payment_status = 'paid' THEN payments.amount ELSE 0 END), 0) < MAX(bookings.total_price)")
             ->select(
                 'bookings.id',
-                'users.name as guest_name',
+                DB::raw("COALESCE(users.name, guests.name, 'Guest') as guest_name"),
                 DB::raw("COALESCE(SUM(CASE WHEN payments.payment_status = 'paid' THEN payments.amount ELSE 0 END), 0) as paid_amount"),
                 DB::raw('MAX(bookings.total_price) as total_price'),
             )
@@ -119,11 +121,16 @@ class ReceptionistDashboardController extends Controller
 
         $assignmentBookings = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->whereDate('bookings.check_in', '<=', now()->addDay()->toDateString())
             ->whereDate('bookings.check_out', '>=', $today)
             ->whereIn('bookings.status', ['pending', 'confirmed'])
-            ->select('bookings.id', 'users.name as guest_name', 'rooms.room_number')
+            ->select(
+                'bookings.id',
+                DB::raw("COALESCE(users.name, guests.name, 'Guest') as guest_name"),
+                'rooms.room_number'
+            )
             ->orderBy('bookings.check_in')
             ->take(8)
             ->get();
@@ -169,9 +176,9 @@ class ReceptionistDashboardController extends Controller
         return view('receptionist.dashboard', compact(
             'totalRooms', 'occupiedRooms', 'occupancyRate', 'checkinsToday', 'expectedCheckins',
             'checkoutsToday', 'expectedCheckouts', 'inhouseGuests', 'inhouseReservations',
-            'revenueToday', 'revenueDiffPct', 'arrivals', 'arrivalsCount', 'inHouseTabCount',
-            'departuresTabCount', 'noShowTabCount', 'trendDates', 'svgPathD',
-            'vacantClean', 'outOfOrder', 'attentionAlerts'
+            'walkInsToday', 'onlineBookingsToday', 'revenueToday', 'revenueDiffPct',
+            'arrivals', 'arrivalsCount', 'inHouseTabCount', 'departuresTabCount', 'noShowTabCount',
+            'trendDates', 'svgPathD', 'vacantClean', 'outOfOrder', 'attentionAlerts'
         ));
     }
 }
