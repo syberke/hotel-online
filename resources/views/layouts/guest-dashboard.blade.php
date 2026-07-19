@@ -151,10 +151,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <span class="hidden items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 sm:inline-flex">
-                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                        Online
-                    </span>
+                    <x-dashboard-connection-pill />
                     <a href="{{ route('home') }}" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900">
                         <span class="hidden sm:inline">Hotel website</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
@@ -163,7 +160,8 @@
             </header>
 
             <main class="guest-content guest-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
-                <div class="mx-auto w-full max-w-[1500px] p-4 md:p-6 xl:p-8">
+                <div class="mx-auto w-full max-w-[1500px] space-y-5 p-4 md:p-6 xl:p-8">
+                    <x-dashboard-offline-banner portal="guest" />
                     {{ $slot }}
                 </div>
             </main>
