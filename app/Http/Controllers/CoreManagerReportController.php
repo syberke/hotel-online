@@ -127,12 +127,13 @@ class CoreManagerReportController extends ManagerReportController
     private function reservationReportData(): array
     {
         $rows = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->select(
                 'bookings.*',
-                'users.name as guest_name',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
                 'rooms.room_number',
                 'room_types.name as room_type',
                 DB::raw('(SELECT payment_status FROM payments WHERE payments.booking_id = bookings.id ORDER BY payments.created_at DESC LIMIT 1) as payment_status')
@@ -142,6 +143,7 @@ class CoreManagerReportController extends ManagerReportController
             ->get()
             ->map(fn ($booking) => [
                 'reservation' => '#RES-OA-' . $booking->id,
+                'channel' => $booking->booking_source === 'walk_in' ? 'WALK-IN' : 'ONLINE',
                 'guest' => $booking->guest_name,
                 'stay' => date('d M Y', strtotime($booking->check_in)) . ' to ' . date('d M Y', strtotime($booking->check_out)),
                 'room' => ($booking->room_number ?? 'TBD') . ' / ' . ($booking->room_type ?? 'Unassigned'),
@@ -155,12 +157,15 @@ class CoreManagerReportController extends ManagerReportController
             'subtitle' => '',
             'summary' => [
                 ['label' => 'Total Reservations', 'value' => (string) DB::table('bookings')->count()],
+                ['label' => 'Online Reservations', 'value' => (string) DB::table('bookings')->where('booking_source', 'online')->count()],
+                ['label' => 'Walk-In Reservations', 'value' => (string) DB::table('bookings')->where('booking_source', 'walk_in')->count()],
                 ['label' => 'Pending', 'value' => (string) DB::table('bookings')->where('status', 'pending')->count()],
                 ['label' => 'Checked In', 'value' => (string) DB::table('bookings')->where('status', 'checked_in')->count()],
-                ['label' => 'Canceled', 'value' => (string) DB::table('bookings')->where('status', 'canceled')->count()],
+                ['label' => 'Canceled', 'value' => (string) DB::table('bookings')->whereIn('status', ['cancelled', 'canceled'])->count()],
             ],
             'columns' => [
                 ['key' => 'reservation', 'label' => 'Reservation', 'weight' => 1.1, 'bold' => true],
+                ['key' => 'channel', 'label' => 'Channel', 'weight' => 0.9, 'bold' => true],
                 ['key' => 'guest', 'label' => 'Guest', 'weight' => 1.5],
                 ['key' => 'stay', 'label' => 'Stay Period', 'weight' => 1.7],
                 ['key' => 'room', 'label' => 'Room', 'weight' => 1.3],
