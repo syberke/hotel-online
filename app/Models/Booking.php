@@ -9,20 +9,34 @@ class Booking extends Model
 {
     use HasFactory;
 
-    // Menyesuaikan dengan kolom terbaru di database Anda
     protected $fillable = [
-        'user_id', 
-        'room_id', 
-        'check_in_date', 
-        'check_out_date', 
-        'guests_count', 
-        'total_price', 
-        'status'
+        'user_id',
+        'created_by_user_id',
+        'guest_id',
+        'room_id',
+        'check_in',
+        'check_out',
+        'check_in_date',
+        'check_out_date',
+        'guests_count',
+        'total_price',
+        'status',
+        'booking_source',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function guest()
+    {
+        return $this->belongsTo(Guest::class, 'guest_id');
     }
 
     public function room()
