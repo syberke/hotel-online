@@ -13,6 +13,8 @@ class AdminReservationController extends Controller
     {
         $stats = [
             'total_resv' => Booking::count(),
+            'online' => Booking::where('booking_source', 'online')->count(),
+            'walk_in' => Booking::where('booking_source', 'walk_in')->count(),
             'confirmed' => Booking::where('status', 'confirmed')->count(),
             'pending' => Booking::where('status', 'pending')->count(),
             'arrivals' => Booking::whereDate('check_in', now()->toDateString())->count(),
@@ -20,27 +22,42 @@ class AdminReservationController extends Controller
         ];
 
         $roomTypes = DB::table('room_types')->select('name')->distinct()->get();
-        $query = Booking::with(['user.guestProfile', 'room.roomType', 'payments']);
+        $relations = ['user.guestProfile', 'guest', 'creator', 'room.roomType', 'payments'];
+        $query = Booking::with($relations);
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim((string) $request->search);
             $query->where(function ($q) use ($search) {
-                $cleanId = ltrim($search, '#OA-');
-                $q->where('id', 'like', "%{$cleanId}%")
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $needle = '%' . strtolower($search) . '%';
-                        $userQuery->whereRaw('LOWER(name) LIKE ?', [$needle])
-                            ->orWhereRaw('LOWER(email) LIKE ?', [$needle]);
-                    });
+                $cleanId = preg_replace('/\D+/', '', $search);
+                if ($cleanId !== '') {
+                    $q->where('id', (int) $cleanId);
+                }
+
+                $q->orWhereHas('user', function ($userQuery) use ($search) {
+                    $needle = '%' . strtolower($search) . '%';
+                    $userQuery->whereRaw('LOWER(name) LIKE ?', [$needle])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$needle]);
+                })->orWhereHas('guest', function ($guestQuery) use ($search) {
+                    $needle = '%' . strtolower($search) . '%';
+                    $guestQuery->whereRaw('LOWER(name) LIKE ?', [$needle])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$needle])
+                        ->orWhere('phone', 'like', '%' . $search . '%')
+                        ->orWhere('identity_number', 'like', '%' . $search . '%');
+                });
             });
+        }
+
+        if ($request->filled('source') && in_array($request->source, ['online', 'walk_in'], true)) {
+            $query->where('booking_source', $request->source);
         }
 
         if ($request->filled('status') && $request->status !== 'All Status') {
             $statusDb = strtolower(str_replace(' ', '_', $request->status));
             if ($statusDb === 'cancelled') {
-                $statusDb = 'canceled';
+                $query->whereIn('status', ['cancelled', 'canceled']);
+            } else {
+                $query->where('status', $statusDb);
             }
-            $query->where('status', $statusDb);
         }
 
         if ($request->filled('room_type') && $request->room_type !== 'All Room Types') {
@@ -61,11 +78,9 @@ class AdminReservationController extends Controller
         $bookings = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         $selectedBookingId = $request->get('selected_id');
-        if ($selectedBookingId) {
-            $selectedBooking = Booking::with(['user.guestProfile', 'room.roomType', 'payments'])->find($selectedBookingId);
-        } else {
-            $selectedBooking = $bookings->first();
-        }
+        $selectedBooking = $selectedBookingId
+            ? Booking::with($relations)->find($selectedBookingId)
+            : $bookings->first();
 
         return view('admin.reservation', compact('bookings', 'stats', 'roomTypes', 'selectedBooking'));
     }
