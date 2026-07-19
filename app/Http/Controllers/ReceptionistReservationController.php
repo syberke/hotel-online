@@ -14,6 +14,8 @@ class ReceptionistReservationController extends Controller
         $endOfMonth = now()->endOfMonth()->format('Y-m-d');
 
         $totalReservations = DB::table('bookings')->count();
+        $onlineReservations = DB::table('bookings')->where('booking_source', 'online')->count();
+        $walkInReservations = DB::table('bookings')->where('booking_source', 'walk_in')->count();
         $arrivalsCount = DB::table('bookings')->whereDate('check_in', $today)->count();
         $departuresCount = DB::table('bookings')->whereDate('check_out', $today)->count();
         $inHouseCount = DB::table('bookings')->where('status', 'checked_in')->count();
@@ -24,15 +26,14 @@ class ReceptionistReservationController extends Controller
             ->sum('amount') ?: 0;
 
         $query = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('guests', function ($join) {
-                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
-            })
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->select(
                 'bookings.*',
-                'users.name as guest_name',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE users.email END as guest_account_email"),
                 'guests.id as guest_record_id',
                 'guests.identity_number',
                 'guests.phone as guest_phone',
@@ -47,17 +48,28 @@ class ReceptionistReservationController extends Controller
         } elseif ($currentTab === 'tentative') {
             $query->where('bookings.status', 'pending');
         } elseif ($currentTab === 'cancelled' || $currentTab === 'canceled') {
-            $query->where('bookings.status', 'canceled');
+            $query->whereIn('bookings.status', ['cancelled', 'canceled']);
         } elseif ($currentTab === 'no_show') {
             $query->whereRaw('1 = 0');
         }
 
+        $source = $request->string('source')->value();
+        if (in_array($source, ['online', 'walk_in'], true)) {
+            $query->where('bookings.booking_source', $source);
+        }
+
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $cleanSearch = ltrim($search, '#RES-OA-');
-                $q->where('bookings.id', 'like', "%{$cleanSearch}%")
-                    ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
+            $search = trim((string) $request->search);
+            $cleanSearch = preg_replace('/\D+/', '', $search);
+            $needle = '%' . strtolower($search) . '%';
+
+            $query->where(function ($q) use ($search, $cleanSearch, $needle) {
+                if ($cleanSearch !== '') {
+                    $q->where('bookings.id', (int) $cleanSearch);
+                }
+
+                $q->orWhereRaw("LOWER(COALESCE(users.name, guests.name, '')) LIKE ?", [$needle])
+                    ->orWhereRaw("LOWER(COALESCE(users.email, guests.email, '')) LIKE ?", [$needle])
                     ->orWhere('guests.phone', 'like', "%{$search}%")
                     ->orWhere('guests.identity_number', 'like', "%{$search}%");
             });
@@ -72,17 +84,23 @@ class ReceptionistReservationController extends Controller
             'all' => DB::table('bookings')->count(),
             'confirmed' => DB::table('bookings')->where('status', 'confirmed')->count(),
             'tentative' => DB::table('bookings')->where('status', 'pending')->count(),
-            'cancelled' => DB::table('bookings')->where('status', 'canceled')->count(),
+            'cancelled' => DB::table('bookings')->whereIn('status', ['cancelled', 'canceled'])->count(),
             'no_show' => 0,
         ];
 
         $upcomingArrivals = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->whereDate('bookings.check_in', '>=', $today)
             ->whereIn('bookings.status', ['pending', 'confirmed'])
-            ->select('bookings.*', 'users.name as guest_name', 'rooms.room_number', 'room_types.name as room_type')
+            ->select(
+                'bookings.*',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                'rooms.room_number',
+                'room_types.name as room_type'
+            )
             ->orderBy('bookings.check_in', 'asc')
             ->take(2)
             ->get();
@@ -102,6 +120,8 @@ class ReceptionistReservationController extends Controller
 
         return view('receptionist.reservations', compact(
             'totalReservations',
+            'onlineReservations',
+            'walkInReservations',
             'arrivalsCount',
             'departuresCount',
             'inHouseCount',
