@@ -12,15 +12,15 @@ class BookingFolioService
     public function build(int $bookingId): ?array
     {
         $booking = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
             ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->where('bookings.id', $bookingId)
             ->select(
                 'bookings.*',
-                'users.name as guest_name',
-                'users.email as guest_email',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE COALESCE(users.email, guests.email) END as guest_email"),
                 'guests.phone as guest_phone',
                 'rooms.room_number',
                 'room_types.name as room_type',
@@ -132,13 +132,15 @@ class BookingFolioService
             ->orderBy('payments.created_at')
             ->get();
 
-        $facilityReservations = DB::table('facility_bookings')
-            ->where('user_id', $booking->user_id)
-            ->whereNotIn('status', ['cancelled', 'canceled'])
-            ->whereBetween('booking_date', [$booking->check_in, $booking->check_out])
-            ->orderBy('booking_date')
-            ->orderBy('booking_time')
-            ->get();
+        $facilityReservations = $booking->user_id
+            ? DB::table('facility_bookings')
+                ->where('user_id', $booking->user_id)
+                ->whereNotIn('status', ['cancelled', 'canceled'])
+                ->whereBetween('booking_date', [$booking->check_in, $booking->check_out])
+                ->orderBy('booking_date')
+                ->orderBy('booking_time')
+                ->get()
+            : collect();
 
         return [
             'booking' => $booking,
@@ -242,6 +244,23 @@ class BookingFolioService
                         'updated_at' => now(),
                     ]);
             }
+
+            $roomBalance = (float) DB::table('bookings')->where('id', $bookingId)->value('total_price')
+                - (float) DB::table('payments')
+                    ->where('booking_id', $bookingId)
+                    ->whereNull('restaurant_order_id')
+                    ->where('payment_status', 'paid')
+                    ->sum('amount');
+
+            if ($roomBalance <= 0) {
+                DB::table('bookings')
+                    ->where('id', $bookingId)
+                    ->where('status', 'pending')
+                    ->update([
+                        'status' => 'confirmed',
+                        'updated_at' => now(),
+                    ]);
+            }
         });
     }
 
@@ -249,8 +268,12 @@ class BookingFolioService
     {
         $total = array_sum($departmentTotals);
 
+        if ($total <= 0) {
+            return array_fill_keys(array_keys($departmentTotals), 0.0);
+        }
+
         return collect($departmentTotals)
-            ->map(fn (float $amount) => $total > 0 ? round(($amount / $total) * 100, 1) : 0.0)
+            ->map(fn ($amount) => round(((float) $amount / $total) * 100, 1))
             ->all();
     }
 }
