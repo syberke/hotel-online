@@ -20,16 +20,14 @@ class FrontOfficeCheckController extends Controller
         if ($selectedId) {
             $selectedBooking = DB::table('bookings')
                 ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+                ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
                 ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
                 ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-                ->leftJoin('guests', function ($join) {
-                    $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
-                })
                 ->where('bookings.id', $selectedId)
                 ->select(
                     'bookings.*',
-                    'users.name as guest_name',
-                    'users.email as guest_email',
+                    DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                    DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE COALESCE(users.email, guests.email) END as guest_email"),
                     'guests.phone as guest_phone',
                     'guests.address as guest_address',
                     'rooms.room_number',
@@ -41,22 +39,34 @@ class FrontOfficeCheckController extends Controller
 
         $query = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->whereIn('bookings.status', ['confirmed', 'pending']);
 
         if ($search !== '') {
-            $cleanSearch = preg_replace('/\D+/', '', $search) ?: $search;
-            $query->where(function ($builder) use ($search, $cleanSearch) {
-                $builder->whereRaw('CAST(bookings.id AS CHAR) LIKE ?', ['%' . $cleanSearch . '%'])
-                    ->orWhereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%']);
+            $cleanSearch = preg_replace('/\D+/', '', $search);
+            $needle = '%' . strtolower($search) . '%';
+            $query->where(function ($builder) use ($search, $cleanSearch, $needle) {
+                $builder->whereRaw("LOWER(COALESCE(users.name, guests.name, '')) LIKE ?", [$needle])
+                    ->orWhereRaw("LOWER(COALESCE(users.email, guests.email, '')) LIKE ?", [$needle])
+                    ->orWhere('guests.phone', 'like', '%' . $search . '%');
+
+                if ($cleanSearch !== '') {
+                    $builder->orWhere('bookings.id', (int) $cleanSearch);
+                }
             });
         } else {
             $query->whereDate('bookings.check_in', $today);
         }
 
         $bookings = $query
-            ->select('bookings.id', 'users.name as guest_name', 'bookings.check_in', 'rooms.room_number')
+            ->select(
+                'bookings.id',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                'bookings.check_in',
+                'bookings.booking_source',
+                'rooms.room_number'
+            )
             ->orderBy('bookings.check_in')
             ->limit(10)
             ->get();
@@ -147,40 +157,44 @@ class FrontOfficeCheckController extends Controller
 
         $tabCounters = [
             'all' => DB::table('guests')->count(),
-            'in_house' => DB::table('bookings')->where('status', 'checked_in')->distinct('user_id')->count('user_id'),
-            'checked_out' => DB::table('bookings')->where('status', 'checked_out')->distinct('user_id')->count('user_id'),
+            'in_house' => DB::table('bookings')->where('status', 'checked_in')->distinct('guest_id')->count('guest_id'),
+            'checked_out' => DB::table('bookings')->where('status', 'checked_out')->distinct('guest_id')->count('guest_id'),
         ];
 
         $latestBookingSub = DB::table('bookings')
-            ->select('user_id', DB::raw('MAX(id) as latest_booking_id'))
-            ->groupBy('user_id');
+            ->whereNotNull('guest_id')
+            ->select('guest_id', DB::raw('MAX(id) as latest_booking_id'))
+            ->groupBy('guest_id');
 
         $query = DB::table('guests')
-            ->join('users', function ($join) {
+            ->leftJoin('users', function ($join) {
                 $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
             })
             ->leftJoinSub($latestBookingSub, 'latest_res', function ($join) {
-                $join->on('users.id', '=', 'latest_res.user_id');
+                $join->on('guests.id', '=', 'latest_res.guest_id');
             })
             ->leftJoin('bookings', 'latest_res.latest_booking_id', '=', 'bookings.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->select(
+                'guests.id as guest_id',
                 'users.id as user_id',
-                'users.name as guest_name',
-                'users.email as guest_email',
+                'guests.name as guest_name',
+                DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE COALESCE(users.email, guests.email) END as guest_email"),
                 'guests.phone as guest_phone',
                 'guests.identity_number',
+                'bookings.booking_source',
                 'bookings.status as booking_status',
                 'bookings.check_in',
                 'bookings.check_out',
                 'rooms.room_number',
-                DB::raw("(SELECT COUNT(*) FROM bookings AS completed_bookings WHERE completed_bookings.user_id = users.id AND completed_bookings.status = 'checked_out') as total_stays"),
+                DB::raw("(SELECT COUNT(*) FROM bookings AS completed_bookings WHERE completed_bookings.guest_id = guests.id AND completed_bookings.status = 'checked_out') as total_stays"),
             );
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
-                $builder->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%'])
+                $needle = '%' . strtolower($search) . '%';
+                $builder->whereRaw('LOWER(guests.name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(guests.email) LIKE ?', [$needle])
                     ->orWhere('guests.phone', 'like', '%' . $search . '%')
                     ->orWhere('guests.identity_number', 'like', '%' . $search . '%');
             });
@@ -192,28 +206,31 @@ class FrontOfficeCheckController extends Controller
             $query->where('bookings.status', 'checked_out');
         }
 
-        $guestsList = $query->orderBy('users.name')->paginate(10)->withQueryString();
-        $targetUserId = $selectedGuestId ?: optional($guestsList->first())->user_id;
+        $guestsList = $query->orderBy('guests.name')->paginate(10)->withQueryString();
+        $targetGuestId = $selectedGuestId ?: optional($guestsList->first())->guest_id;
         $selectedGuest = null;
 
-        if ($targetUserId) {
-            $targetUser = DB::table('users')->where('id', $targetUserId)->first();
-            if ($targetUser) {
-                $profile = DB::table('guests')->whereRaw('LOWER(email) = ?', [strtolower($targetUser->email)])->first();
+        if ($targetGuestId) {
+            $profile = DB::table('guests')->where('id', $targetGuestId)->first();
+            if ($profile) {
+                $linkedUser = DB::table('users')->whereRaw('LOWER(email) = ?', [strtolower($profile->email)])->first();
                 $lastBooking = DB::table('bookings')
                     ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
-                    ->where('bookings.user_id', $targetUser->id)
+                    ->where('bookings.guest_id', $profile->id)
                     ->select('bookings.*', 'rooms.room_number')
                     ->latest('bookings.id')
                     ->first();
 
+                $isWalkIn = ($lastBooking?->booking_source ?? null) === 'walk_in';
                 $selectedGuest = (object) [
-                    'user_id' => $targetUser->id,
-                    'name' => $targetUser->name,
-                    'email' => $targetUser->email,
-                    'phone' => $profile?->phone,
-                    'identity_number' => $profile?->identity_number,
-                    'address' => $profile?->address,
+                    'guest_id' => $profile->id,
+                    'user_id' => $linkedUser?->id,
+                    'name' => $profile->name,
+                    'email' => $isWalkIn ? null : ($linkedUser?->email ?? $profile->email),
+                    'booking_source' => $lastBooking?->booking_source ?? 'online',
+                    'phone' => $profile->phone,
+                    'identity_number' => $profile->identity_number,
+                    'address' => $profile->address,
                     'check_in' => $lastBooking?->check_in,
                     'check_out' => $lastBooking?->check_out,
                     'guests_count' => $lastBooking?->guests_count ?? 0,
@@ -289,17 +306,15 @@ class FrontOfficeCheckController extends Controller
         $freeRoomsCount = DB::table('rooms')->where('status', 'available')->count();
 
         $unassignedQuery = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
-            ->leftJoin('guests', function ($join) {
-                $join->on(DB::raw('LOWER(guests.email)'), '=', DB::raw('LOWER(users.email)'));
-            })
             ->whereIn('bookings.status', ['confirmed', 'pending'])
             ->select(
                 'bookings.*',
-                'users.name as guest_name',
-                'users.email as guest_email',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE COALESCE(users.email, guests.email) END as guest_email"),
                 'guests.phone as guest_phone',
                 'room_types.name as room_type',
                 'rooms.room_number as initial_room_number',
@@ -308,9 +323,14 @@ class FrontOfficeCheckController extends Controller
 
         if ($search !== '') {
             $unassignedQuery->where(function ($builder) use ($search) {
-                $builder->whereRaw('LOWER(users.name) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(users.email) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('CAST(bookings.id AS CHAR) LIKE ?', ['%' . preg_replace('/\D+/', '', $search) . '%']);
+                $needle = '%' . strtolower($search) . '%';
+                $builder->whereRaw("LOWER(COALESCE(users.name, guests.name, '')) LIKE ?", [$needle])
+                    ->orWhereRaw("LOWER(COALESCE(users.email, guests.email, '')) LIKE ?", [$needle]);
+
+                $cleanId = preg_replace('/\D+/', '', $search);
+                if ($cleanId !== '') {
+                    $builder->orWhere('bookings.id', (int) $cleanId);
+                }
             });
         }
 
