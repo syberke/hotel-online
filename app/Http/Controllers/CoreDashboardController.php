@@ -9,6 +9,8 @@ class CoreDashboardController extends Controller
     public function adminDashboardView()
     {
         $totalReservations = DB::table('bookings')->count();
+        $onlineReservations = DB::table('bookings')->where('booking_source', 'online')->count();
+        $walkInReservations = DB::table('bookings')->where('booking_source', 'walk_in')->count();
         $lastWeekReservations = DB::table('bookings')->where('created_at', '<', now()->subWeek())->count();
         $reservationDiff = $lastWeekReservations > 0
             ? round((($totalReservations - $lastWeekReservations) / $lastWeekReservations) * 100, 1)
@@ -94,19 +96,18 @@ class CoreDashboardController extends Controller
             'confirmed' => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'confirmed')->count() / $totalReservations) * 100 : 0,
             'pending' => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'pending')->count() / $totalReservations) * 100 : 0,
             'checked_in' => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'checked_in')->count() / $totalReservations) * 100 : 0,
-            'cancelled' => $totalReservations > 0 ? (DB::table('bookings')->where('status', 'canceled')->count() / $totalReservations) * 100 : 0,
+            'cancelled' => $totalReservations > 0 ? (DB::table('bookings')->whereIn('status', ['cancelled', 'canceled'])->count() / $totalReservations) * 100 : 0,
         ];
 
         $todayArrivals = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('guests', function ($join) {
-                $join->on(DB::raw('LOWER(users.email)'), '=', DB::raw('LOWER(guests.email)'));
-            })
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->join('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->whereDate('bookings.check_in', now()->toDateString())
             ->select(
-                'users.name as guest_name',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                'bookings.booking_source',
                 'guests.id as guest_record_id',
                 'guests.identity_number',
                 'room_types.name as room_type',
@@ -143,12 +144,13 @@ class CoreDashboardController extends Controller
             : ['room_service' => 0, 'restaurant' => 0, 'spa' => 0];
 
         $recentActivities = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->select(
                 DB::raw("'booking' as type"),
-                DB::raw("CONCAT('Reservasi Baru #OA-', bookings.id, ' Dibuat') as title"),
-                DB::raw("CONCAT('Kamar ', rooms.room_number, ' • Tamu: ', users.name, ' (', bookings.status, ')') as description"),
+                DB::raw("CONCAT(CASE WHEN bookings.booking_source = 'walk_in' THEN 'Walk-In' ELSE 'Online' END, ' Reservation #OA-', bookings.id) as title"),
+                DB::raw("CONCAT('Room ', rooms.room_number, ' • Guest: ', COALESCE(users.name, guests.name, 'Registered guest'), ' (', bookings.status, ')') as description"),
                 'bookings.created_at'
             )
             ->orderByDesc('bookings.id')
@@ -168,7 +170,8 @@ class CoreDashboardController extends Controller
 
         $role = auth()->user()->role;
         $data = compact(
-            'totalReservations', 'reservationDiff', 'totalGuests', 'guestDiff',
+            'totalReservations', 'onlineReservations', 'walkInReservations',
+            'reservationDiff', 'totalGuests', 'guestDiff',
             'occupancyRate', 'occupancyDiff', 'adr', 'adrDiff', 'totalRevenue', 'revenueDiff',
             'occupancyTrend', 'occupancyDates', 'statusShares', 'todayArrivals',
             'roomPerformances', 'deptRevenue', 'deptShares', 'recentActivities', 'hkStatus'
