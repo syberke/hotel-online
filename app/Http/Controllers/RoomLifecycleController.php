@@ -102,6 +102,7 @@ class RoomLifecycleController extends FrontOfficeCheckController
 
         $activeBookingsQuery = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('guests', 'bookings.guest_id', '=', 'guests.id')
             ->leftJoin('rooms', 'bookings.room_id', '=', 'rooms.id')
             ->leftJoin('room_types', 'rooms.room_type_id', '=', 'room_types.id')
             ->whereIn('bookings.status', ['checked_in', 'confirmed'])
@@ -111,8 +112,9 @@ class RoomLifecycleController extends FrontOfficeCheckController
                 'bookings.check_out',
                 'bookings.total_price',
                 'bookings.status',
-                'users.name as guest_name',
-                'users.email as guest_email',
+                'bookings.booking_source',
+                DB::raw("COALESCE(users.name, guests.name, 'Registered guest') as guest_name"),
+                DB::raw("CASE WHEN bookings.booking_source = 'walk_in' THEN NULL ELSE COALESCE(users.email, guests.email) END as guest_email"),
                 'rooms.room_number',
                 'room_types.name as room_type',
                 'room_types.price as room_price'
@@ -123,7 +125,7 @@ class RoomLifecycleController extends FrontOfficeCheckController
             $needle = '%' . strtolower($search) . '%';
 
             $activeBookingsQuery->where(function ($query) use ($cleanId, $needle, $search) {
-                $query->whereRaw("LOWER(COALESCE(users.name, '')) LIKE ?", [$needle])
+                $query->whereRaw("LOWER(COALESCE(users.name, guests.name, '')) LIKE ?", [$needle])
                     ->orWhere('rooms.room_number', 'like', '%' . $search . '%');
 
                 if ($cleanId !== '') {
