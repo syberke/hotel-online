@@ -17,6 +17,7 @@ use App\Http\Controllers\ReceptionistDeskController;
 use App\Http\Controllers\ReceptionistReservationController;
 use App\Http\Controllers\ReceptionistDashboardController;
 use App\Http\Controllers\ReceptionistGuestHistoryController;
+use App\Http\Controllers\WalkInReservationController;
 use App\Http\Controllers\RoomAssignmentController;
 use App\Http\Controllers\FolioController;
 use App\Http\Controllers\FrontOfficeCheckController;
@@ -121,6 +122,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('receptionist')->name('receptionist.')->group(function () {
         Route::get('/dashboard', [ReceptionistDashboardController::class, 'receptionistDashboardView'])->name('dashboard');
+        Route::get('/walk-in', [WalkInReservationController::class, 'create'])->name('walk-in.create');
+        Route::post('/walk-in', [WalkInReservationController::class, 'store'])->name('walk-in.store');
         Route::post('/quick-availability-check', [ReceptionistDeskController::class, 'receptionistQuickCheck'])->name('quick_check');
         Route::get('/check-in', [FrontOfficeCheckController::class, 'receptionistCheckInView'])->name('checkin');
         Route::post('/check-in/process', [FrontOfficeCheckController::class, 'processCheckIn'])->name('checkin.process');
